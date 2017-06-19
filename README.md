@@ -44,7 +44,7 @@ Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구�
 <img src="images/plugin_flow.png" width="550" />
 
 ### 외부 프로세스 호출 흐름
-외부 실행파일이나 스크립트를 실행할 수 있다. 단, 그것들은 입력 파일명과 출력 파일명 두 개를 인자로 받아 실행하도록 구성되어야 한다.
+외부 실행파일이나 스크립트를 실행할 수 있다. 단, 그것들은 입력 파일명과 출력 파일명을 인자로 받아 실행하도록 구성되어야 한다.
 
 <img src="images/process_flow.png" width="700" />
 
@@ -158,15 +158,15 @@ swak test -f test.swak.py -t 0  # 첫 번째 테스크를 실행
 
 Swak의 플러그인 코드는 GitHub을 통해서 관리되는 것으로 가정하며, 다음과 같은 규칙을 따라야 한다.
 
-- GitHub의 리포지토리 명은 `swak-plugin-` 으로 시작한다.
+- GitHub의 저장소(Repository) 명은 `swak-plugin-` 으로 시작한다.
 - `setup.py`를 통해 설치될 수 있어야 한다.
 - 버전 정보를 갖는다.
 
 ## 샘플 플러그인
 간단한 샘플 플러그인(`foo`)을 예제로 하여 알아보자.
 
-1. 먼저 GitHub에서 `swak-plugin-foo`라는 리포지토리를 만든다.
-2. 리포지토리를 로컬로 `clone`한다.
+1. 먼저 GitHub에서 `swak-plugin-foo`라는 저장소를 만든다.
+2. 저장소를 로컬로 `clone`한다.
 
     `git clone https://github.com/GitHub계정/swak-plugin-foo.git`
 
