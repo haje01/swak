@@ -44,6 +44,8 @@ Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구�
 <img src="images/plugin_flow.png" width="550" />
 
 ### 외부 프로세스 호출 흐름
+외부 실행파일이나 스크립트를 실행할 수 있다. 단, 그것들은 입력 파일명과 출력 파일명 두 개를 인자로 받아 실행하도록 구성되어야 한다.
+
 <img src="images/process_flow.png" width="700" />
 
 # Swak 활용하기
