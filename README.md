@@ -165,9 +165,12 @@ swak test -f test.swak.py -t 0  # 첫 번째 테스크를 실행
 
 1. 먼저 GitHub에서 `swak-plugin-foo`라는 리포지토리를 만든다.
 2. 리포지토리를 로컬로 `clone`한다.
-  git clone https://github.com/GitHub계정/swak-plugin-foo.git
+
+    git clone https://github.com/GitHub계정/swak-plugin-foo.git
+
 3. 폴더로 이동 후, 개발용으로 설치한다.
-  python setup.py install -e .
+
+    python setup.py install -e .
 
 ## 개발용 실행
 
