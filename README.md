@@ -44,6 +44,7 @@
 <img src="images/plugin_flow.png" width="600" />
 
 ### 외부 프로세스 호출 흐름
+<img src="images/process_flow.png" width="600" />
 
 ## 샘플 레시피
 
