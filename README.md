@@ -73,7 +73,9 @@ task(
      # 더미 데이터 생성
      in.DummyData(type="people"),
      # 표준 출력으로 스트림 보냄
-     out.Stdout()
+     out.Stdout(),
+     # 3초 후 다시 시작
+     sleep(3)
 )
 ```
 
@@ -154,23 +156,50 @@ swak test test.swak.py -t 0  # 첫 번째 테스크를 실행
 
 ## 외부 플러그인 설치
 
+필요한 플러그인을 GitHub에서 찾아 설치한다. Swak의 외부 플러그인은 `swak-plugin-`으로 시작한다. 여기서는 스트림을 Fluentd로 전달하는 출력 플러그인을 설치해보겠다.
+
+    git clone https://github.com/haje01/swak-plugin-fluentd.git
+
+폴더로 이동 후 다음과 같이 설치한다.
+
+    cd swak-plugin-fluentd
+    python setup.py install
+
+
 ## 배포를 위해 빌드하기
 
-배포를 위한 빌드는 배포할 OS에서 아래와 같이 한다.
+Swak을 빌드할 때는 필요한 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 설정파일** 이 필요하다. 빌드 설정 파일은 `.yml`형식으로 다음과 같은 구조를 가진다.
 
-    pyinstaller -F swak.py --version-file version.py -i swak.ico
+    -name: [빌드명]
+    -imports:
+      - [참조할 외부 플러그인1]
+      - [참조할 외부 플러그인2]
 
-이후 `dist/` 폴더 아래 내용을 배포하면 된다.
+예를 들어 다음과 같은 빌드 설정파일 `myprj-build.yml`이 있다고 할 때,
+
+    - name: myprj
+    - imports:
+      - swak-plugin-fluentd
+
+이를 참고하여 다음과 같이 실행하면
+
+    swak-makebuild myprj-build.yml
+
+**빌드 파일** 이 생성된다. (윈도우에서는 `build.bat` 리눅스/OSX에서는 `build.sh`) 이를 실행해서 실행파일을 만든다.
+
+    build.bat (또는 build.sh)
+
+정상적으로 빌드가 되면, `dist/` 폴더 아래 내용을 배포하면 된다.
 
 # Swak 플러그인 만들기
 플러그인은 크게 표준 플러그인과 외부 플러그인으로 나눈다. 표준 플러그인은 `swak/plugins`에 위치하며, Swak이 기동할 때 자동으로 타입에 맞는 패키지로 로딩된다. 표준 플러그인은 Swak코드 관리자가 만드는 것이기에, 여기에서는 외부 플러그인 만드는 법을 살펴보겠다.
 
 ## 외부 플러그인 규칙
 
-Swak의 플러그인 코드는 GitHub을 통해서 관리되는 것으로 가정하며, 다음과 같은 규칙을 따라야 한다.
+여기서 Swak의 플러그인 코드는 GitHub을 통해서 관리되는 것으로 가정하며, 다음과 같은 규칙을 따라야 한다.
 
 - GitHub의 저장소(Repository) 명은 `swak-plugin-` 으로 시작한다.
-- `setup.py`를 통해 설치될 수 있어야 한다.
+- 설치를 위한 `setup.py`를 제공해야 한다.
 - 버전 정보를 갖는다.
 
 ## 샘플 플러그인
