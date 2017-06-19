@@ -37,16 +37,7 @@
 
 플러그인은 크게 입력(Input)과 출력(Output) 플러그인으로 분류된다. 입력 플러그인은 데이터의 스트림을 얻어내는데 사용되고, 출력 플러그인은 그 스트림을 가공하거나, 최종적으로 전송하는데 사용된다. 일반적인 처리 흐름에서  입력은 한 번 나오고, 출력은 한 번 이상 연쇄될 수 있다.
 
-```sequence
-Input->Engine: emit(tag, EventStream)
-# Note right of Bob: Bob thinks
-Engine->Output1: emit(tag, EventStream)
-Output1->Output2: emit(tag, EventStream)
-Output2-->Output1:
-Output1-->Engine:
-Engine-->Input:
-```
-
+![Plugin Flow](images/plugin_flow.png)
 
 ## 샘플 레시피
 
