@@ -98,7 +98,7 @@ task(
 
 `in.FileTailing`은 지정된 파일에서 추가된 내용을 스트림으로 보낸다.
 
-`out.TimeBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 시간이 되었을 때만 출력해 지나친 IO를 막아준다.
+`out.TimedBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 시간이 되었을 때만 출력해 지나친 IO를 막아준다.
 
 `failover` 함수는 인자 리스트 중 하나로 출력을 하다, 에러가 발생하면 다른 리스트로 시도한다. 시작 출력은 `start_by`로 지정하는 값에 의존하여 결정된다. 모든 출력이 실패하면 `last`로 지정된 출력으로 스트림을 보낸다. `out.Fluentd` 플러그인은 스트림을 지정된 Fluentd 서버로 보낸다.
 
@@ -115,7 +115,7 @@ task(
     # 외부 프로세스 실행
     out.Exec(
         "/usr/bin/r detect.r",
-    )
+    ),
     # 표준 출력으로 스트림 보냄
     out.Stdout()
 )
@@ -165,7 +165,7 @@ swak test -f test.swak.py -t 0  # 첫 번째 테스크를 실행
 
 1. 먼저 GitHub에서 `swak-plugin-foo`라는 리포지토리를 만든다.
 2. 리포지토리를 로컬로 `clone`한다.
-  git clone https://github.com/myaccount/swak-plugin-foo.git
+  git clone https://github.com/[내 GitHub 계정]/swak-plugin-foo.git
 3. 로컬에서 개발용으로 설치한다.
   python setup.py install -e .
 
