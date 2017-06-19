@@ -170,7 +170,7 @@ swak test -f test.swak.py -t 0  # 첫 번째 테스크를 실행
 
 3. 폴더로 이동 후, 개발용으로 설치한다.
 
-    `python setup.py install -e .``
+    `python setup.py install -e .`
 
 ## 개발용 실행
 
