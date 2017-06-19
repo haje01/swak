@@ -88,6 +88,8 @@ task(
 
 `in.FileTailing`은 지정된 파일에서 추가된 내용을 스트림으로 보낸다.
 
+`out.TimeBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 시간이 되었을 때만 출력해 지나친 IO를 막아준다.
+
 `failover` 함수는 인자 리스트 중 하나로 출력을 하다, 에러가 발생하면 다른 리스트로 시도한다. 시작 출력은 `start_by`로 지정하는 값에 의존하여 결정된다. 모든 출력이 실패하면 `last`로 지정된 출력으로 스트림을 보낸다. `out.Fluentd` 플러그인은 스트림을 지정된 Fluentd 서버로 보낸다.
 
 ### 로그DB를 테일링
@@ -99,7 +101,7 @@ task(
 task(
     in.MySQLTailing("127.0.0.1", 'logdb', 'logtbl'),
     # 100라인 단위로 버퍼링
-    out.SizedBuffer(100),
+    out.LinedBuffer(100),
     # 외부 프로세스 실행
     out.Exec(
         "/usr/bin/r detect.r",
@@ -110,6 +112,8 @@ task(
 ```
 
 `in.MySQLTailing` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
+
+`out.LinedBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 크기(행) 되었을 때만 출력해 지나친 IO를 막아준다.
 
 `out.Exec` 플러그인은 데이터 스트림을 임시 파일로 받고, 지정된 별도 프로세스에서 처리한 결과를 다시 임시 파일로 받는다. 여기에서 그 결과를 표준 출력으로 보내고 있다.
     
