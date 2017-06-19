@@ -29,7 +29,7 @@
 
 - 파일 Tailing
 - DB Tailing
-- 시스템(윈도우 이벤트, Syslog) 로그
+- 시스템(윈도우 이벤트, syslog) 로그
 - 프로세스/커넥션 모니터링
 - file, fluentd, elasticsearch, logstash로 출력
 
@@ -41,7 +41,7 @@
 
 입력은 한 번만 나오고, 출력은 한 번 이상 연쇄될 수 있다.
 
-<img src="images/plugin_flow.png" width="600" />
+<img src="images/plugin_flow.png" width="550" />
 
 ### 외부 프로세스 호출 흐름
 <img src="images/process_flow.png" width="700" />
