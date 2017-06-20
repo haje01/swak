@@ -1,6 +1,6 @@
 # swak-plugin-failover
 
-`failover`는 출력 실패에 대응한다. 
+출력 실패에 대응한다. 
 
 ## 설정 예시
 ```yml
