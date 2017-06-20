@@ -3,9 +3,10 @@
 이 페이지에서는 Swak의 기본 플러그인에 대해 설명한다.
 
 ## 입력 플러그인
-[in.FileTail](filetail/README.md)
+[filetail](filetail/README.md)
 
 ## 출력 플러그인
+[fluent](fluent/README.md)
 
 ## 보통 플러그인
 [failover](failover/README.md)
