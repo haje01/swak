@@ -13,28 +13,20 @@
 - 외부 프로세스를 실행히주는 
 - 틀
 
-## 기본 기능
+## 플러그인 구조
 
-주된 기능은 로컬 로그를 파싱하고 포워딩하는 것이나, 플러그인이나 외부 프로세스 실행을 통해 어떤 일이라도 할 수 있다.
-
-- 플러그인 방식으로 파이썬 코드 실행 (with 디버깅)
-- 파일 IN/OUT 형식으로 외부 프로세스 실행
-- 공통 로깅
-- 로그 파싱
-- 데이터 버퍼링
-- Failover
-- 실행 파일 빌드
-
-
-## 주요 플러그인
-Swak은 기본 구조외 모든 기능들을 플러그인으로 구현한다. 대표적인 플러그인은 다음과 같은 것이 있다.
+Swak은 기본 틀외 모든 기능들을 플러그인으로 구현한다. 기본 플러그인은 다음과 같은 것이 있다.
 
 - [파일 Tailing](swak/plugins/filetail)
+- [출력 Failover](swak/plugins/failover)
+- Fluentd 출력
+
+이외 아래와 같은 다양한 플러그인이 나올 수 있을 것이다.
+
 - DB Tailing
 - 시스템(윈도우 이벤트, syslog) 로그
 - 프로세스/커넥션 모니터링
-- [출력 Failover](swak/plugins/failover)
-- file, fluentd, elasticsearch, logstash로 출력
+- elasticsearch, logstash로 출력
 
 # Swak 활용하기
 
