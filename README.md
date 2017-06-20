@@ -89,7 +89,7 @@ Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구�
 - task:
   # 대상 파일 테일링
   - in.FileTail:
-      file: /var/log/mylog.txt
+      path: /var/log/mylog.txt
   # 커스텀 포맷 파서
   - out.MyLogParser
   # 5분 단위로 버퍼링
@@ -172,7 +172,7 @@ swak test task.yml -t 2  # 두 번째 테스크를 실행
 # 기본 플러그인 소개
 
 ## in.FileTail
-파일에 새로 추가된 내용을 스트림에 넣는다.
+대상 파일에 새로 추가된 내용을 스트림에 넣는다.
 
 ### path (필수)
 감시할 파일의 경로. 다음과 같은 식으로 표현 가능하다.
@@ -190,10 +190,15 @@ swak test task.yml -t 2  # 두 번째 테스크를 실행
     path: /path/to/%Y/%m/mylog1-%m%d_*.txt, /path/to/%Y/%m/mylog2-%m%d_*.txt
 
 ### tag (필수)
-스트림 태그 정보
+스트림 태그 정보. `프로젝트.카테고리.타입`형식으로 기입한다.
+
+### pos_dir (필수)
+대상 파일에서 읽어 들인 위치를 저장할 디렉토리를 지정
+
+    pos_dir: $SWAK_TMP/pos/
 
 ## encoding (선택)
-파일의 인코딩을 명시. 지정된 인코딩으로 파일을 읽은 후 UTF8로 변환된다. UTF8을 제외한 다른 인코딩의 파일은 꼭 이 값을 명시해야 한다.
+파일의 인코딩을 명시. UTF8을 제외한 다른 인코딩의 파일은 꼭 명시해야 한다.
 
 # 배포를 위해 빌드하기
 
@@ -201,16 +206,16 @@ swak test task.yml -t 2  # 두 번째 테스크를 실행
 
 ## PyInstaller 설치
 
-[PyInstaller](http://www.pyinstaller.org) 홈페이지를 참고하여 배포 대상 OS에 맞는 버전의 PyInstaller를 설치하자.
+[PyInstaller](http://www.pyinstaller.org) 홈페이지를 참고하여 배포 대상 OS에 맞는 버전의 PyInstaller를 미리 설치하자.
 
-## 빌드 설정파일
-빌드할 때는 사용할 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 설정파일** 이 필요하다. 빌드 설정파일은 YAML(`*-build.yml`) 형식으로 다음과 같은 구조를 가진다.
+## 빌드 파일
+빌드할 때는 사용할 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 파일** 이 필요하다. 빌드 파일은 YAML(`*-build.yml`) 형식으로 다음과 같은 구조를 가진다.
 
 ```yml
 # 빌드명. 생략가능(없으면 기본 이름 swak으로 빌드된다.)
 -name: [빌드명]
 # 사용할 외부 플러그인 리스트
--imports:
+-plugins:
   - [참조할 외부 플러그인1]
   - [참조할 외부 플러그인2]
   ...
@@ -225,13 +230,9 @@ swak test task.yml -t 2  # 두 번째 테스크를 실행
   - swak-plugin-fluentd
 ```
 
-이를 이용하여 다음과 같이 실행하면
+이를 이용하여 다음과 같이 실행하면 빌드가 된다.
 
-    swak-makebuild myprj-build.yml
-
-**빌드 파일**이 생성된다. (윈도우에서는 `myprj-build.bat`, 리눅스/OSX에서는 `myprj-build.sh`) 이를 실행해서 바이너리 파일을 만든다.
-
-    myprj-build.bat (또는 ./myprj-build.sh)
+    swak-build myprj-build.yml
 
 정상적으로 빌드가 되면, `dist/` 폴더 아래 `swak-myprj` 파일이 만들어진다. 이것을 배포하면 된다.
 
