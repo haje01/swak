@@ -10,6 +10,8 @@
 ## 출력 플러그인
 
 - [out.Fluentd](fluentd/README.md)
+- [out.LinedBuffer](linedbuffer/README.md) 
+- [out.TimedBuffer](timedbuffer/README.md)
 
 ## 보통 플러그인
 
