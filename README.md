@@ -3,7 +3,7 @@
 파이썬 기반 멀티 OS 에이전트 플랫폼. '스왴'으로 읽는다. 이 페이지에서는 Swak에 대한 기본적인 소개를 한다. 세부 항목에 대한 내용은 아래 링크를 참고한다.
 
 - [구조](swak/README.md)
-- [플러그인](swak/plugins.README.md)
+- [플러그인](swak/plugins/README.md)
 
 ## 무엇인가?
 
