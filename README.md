@@ -23,17 +23,17 @@
 - 로그 파싱
 - 데이터 버퍼링
 - Failover
-- 인터랙티브 환경
 - 실행 파일 빌드
 
 
 ## 주요 플러그인
-Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구현한다. 대표적인 플러그인은 다음과 같은 것이 있다.
+Swak은 기본 구조외 모든 기능들을 플러그인으로 구현한다. 대표적인 플러그인은 다음과 같은 것이 있다.
 
-- 파일 Tailing
+- [파일 Tailing](swak/plugins/filetail)
 - DB Tailing
 - 시스템(윈도우 이벤트, syslog) 로그
 - 프로세스/커넥션 모니터링
+- [출력 Failover](swak/plugins/failover)
 - file, fluentd, elasticsearch, logstash로 출력
 
 # Swak 활용하기
