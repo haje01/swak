@@ -1,11 +1,12 @@
 # 기본 플러그인 소개
 
-이 페이지에서는 Swak의 기본 플러그인에 대해 설명한다. 일반적인 내용은 [기본](../../README.md) 페이지를 참고한다.
+이 페이지에서는 Swak의 기본 플러그인에 대해 설명한다.
 
 ## 입력 플러그인
+[in.FileTail](filetail/README.md)
 
 ## 출력 플러그인
 
 ## 보통 플러그인
-
+[failover](failover/README.md)
 
