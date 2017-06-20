@@ -1,8 +1,10 @@
 # Swak
 
-파이썬 기반 멀티 OS 에이전트 플랫폼. '스왴'으로 읽는다. 이 페이지에서는 Swak에 대한 기본적인 소개를 한다. 세부 항목에 대한 내용은 아래 링크를 참고한다.
+파이썬 기반 멀티 OS 에이전트 플랫폼. '스왴'으로 읽는다. 
 
-- [구조 소개](swak/README.md)
+이 페이지에서는 Swak 사용자를 위한 기본적인 내용을 설명한다. 더 자세한 내용은 아래 링크를 참고한다.
+
+- [개발자 문서](swak/README.md)
 - [기본 플러그인 소개](swak/plugins/README.md)
 
 ## 무엇인가?
@@ -153,15 +155,26 @@ swak test config.yml -t 2  # 두 번째 테스크를 실행
 
 필요한 플러그인을 GitHub에서 찾아 설치한다. Swak의 외부 플러그인은 `swak-plugin-`으로 시작한다. 여기서는 스트림을 Fluentd로 전달하는 출력 플러그인을 설치해보겠다.
 
+### 플러그인 코드 받기
 먼저 Swak 소스 코드 디렉토리 아래 `plugins` 디렉토리로 이동하고
 
     cd swak/swak/plugins
 
-외부 플러그인을 `clone`하면 된다.
+외부 플러그인을 `clone`한다.
 
     git clone https://github.com/haje01/swak-plugin-fluentd.git fluentd
 
-마지막 인자로 `swak-plugin-`을 제외한 플러그인 이름 부분만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래에 `fluentd` 디렉토리가 추가되고, Swak 기동시에 자동으로 등록된다.
+마지막 인자로 `swak-plugin-`을 제외한 플러그인 이름 부분만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래 `fluentd` 디렉토리에 플러그인 코드가 받아진다.
+
+### 플러그인이 사용하는 의존 패키지 설치
+
+플러그인 디렉토리에 `requirements.txt`가 있다면 플러그인이 의존하는 패키지가 있다는 뜻이다. 다음과 같이 설치해주자.
+
+    pip install -r requirements.txt
+
+### 실행
+
+설치된 플러그인은 Swak 기동시에 자동으로 등록된다.
 
 # 배포를 위해 빌드하고 설치하기
 
