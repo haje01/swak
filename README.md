@@ -170,13 +170,14 @@ swak test test.swak.py -t 2  # 두 번째 테스크를 실행
 
 개발 및 테스트는 파이썬 개발 환경이 설치된 곳에서 인터프리팅을 이용하는 것이 좋지만, 실제 배포를 위해서는 실행 가능한 바이너리 형태가 편리하다. Swak는 PyInstaller를 통해 파이썬 패키지들을 바이너리 파일로 빌드한다.
 
-## PyInstaller
+## PyInstaller 설치
 
 [PyInstaller](http://www.pyinstaller.org) 홈페이지를 참고하여 배포 대상 OS에 맞는 버전의 PyInstaller를 설치하자.
 
 ## 빌드 설정 파일
 빌드할 때는 사용할 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 설정파일** 이 필요하다. 빌드 설정 파일은 `.yml`형식으로 다음과 같은 구조를 가진다.
 
+```yml
     # 빌드명. 생략가능(없으면 기본 이름 swak으로 빌드된다.)
     -name: [빌드명]
     # 사용할 외부 플러그인 리스트
@@ -184,19 +185,22 @@ swak test test.swak.py -t 2  # 두 번째 테스크를 실행
       - [참조할 외부 플러그인1]
       - [참조할 외부 플러그인2]
       ...
+```
 
 예를 들어 다음과 같은 빌드 설정파일 `myprj-build.yml`이 있다고 할 때,
 
+```yml
     - name: myprj
     - import:
       - swak-plugin-syslog
       - swak-plugin-fluentd
+```
 
 이를 이용하여 다음과 같이 실행하면
 
     swak-makebuild myprj-build.yml
 
-빌드 파일이 생성된다. (윈도우에서는 `myprj-build.bat`, 리눅스/OSX에서는 `myprj-build.sh`) 이를 실행해서 바이너리 파일을 만든다.
+**빌드 파일**이 생성된다. (윈도우에서는 `myprj-build.bat`, 리눅스/OSX에서는 `myprj-build.sh`) 이를 실행해서 바이너리 파일을 만든다.
 
     myprj-build.bat (또는 ./myprj-build.sh)
 
