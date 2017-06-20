@@ -15,18 +15,20 @@
 
 ## 플러그인 구조
 
-Swak은 기본 틀외 모든 기능들을 플러그인으로 구현한다. 기본 플러그인은 다음과 같은 것이 있다.
+Swak은 어플리케이션의 기본 틀외 모든 기능들을 플러그인으로 구현한다. 다음과 같은 기본 플러그인들이 있다.
 
-- [파일 Tailing](swak/plugins/filetail)
-- [출력 Failover](swak/plugins/failover)
-- Fluentd 출력
+- FileTail - 파일 변경사항을 입력으로 가져옴
+- Fluentd - Fluentd로 출력
+- failover - 출력 실패시 대체
 
-이외 아래와 같은 다양한 플러그인이 나올 수 있을 것이다.
+자세한 것은 [플러그인 페이지](swak/plugins/README.md)를 참고하자. 
+
+이외에 아래와 같은 다양한 외부 플러그인이 나올 수 있을 것이다.
 
 - DB Tailing
-- 시스템(윈도우 이벤트, syslog) 로그
+- 시스템(윈도우 이벤트, syslog) 로그 입력으로 가져오기
 - 프로세스/커넥션 모니터링
-- elasticsearch, logstash로 출력
+- Elasticsearch, Logstash로 출력
 
 # Swak 활용하기
 
@@ -149,12 +151,13 @@ swak test config.yml -t 2  # 두 번째 테스크를 실행
 
 필요한 플러그인을 GitHub에서 찾아 설치한다. Swak의 외부 플러그인은 `swak-plugin-`으로 시작한다. 여기서는 스트림을 Fluentd로 전달하는 출력 플러그인을 설치해보겠다.
 
+먼저 Swak 소스 코드 디렉토리 아래 `plugins` 디렉토리로 이동하고
+
+    cd swak/swak/plugins
+
+외부 플러그인을 `clone`하면 된다.
+
     git clone https://github.com/haje01/swak-plugin-fluentd.git
-
-폴더로 이동 후 다음과 같이 설치한다.
-
-    cd swak-plugin-fluentd
-    python setup.py install
 
 # 배포를 위해 빌드하고 설치하기
 
