@@ -157,7 +157,9 @@ swak test config.yml -t 2  # 두 번째 테스크를 실행
 
 외부 플러그인을 `clone`하면 된다.
 
-    git clone https://github.com/haje01/swak-plugin-fluentd.git
+    git clone https://github.com/haje01/swak-plugin-fluentd.git fluentd
+
+마지막 인자로 `swak-plugin-`을 제외한 플러그인 이름 부분만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래에 `fluentd` 디렉토리가 추가되고, Swak 기동시에 자동으로 등록된다.
 
 # 배포를 위해 빌드하고 설치하기
 
