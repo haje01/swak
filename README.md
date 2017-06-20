@@ -57,59 +57,61 @@ Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구�
 
 # Swak 활용하기
 
-## 샘플 레시피
+## 테스크 파일
 
-레시피(recipe)는 파이썬 구문으로 처리 흐름 할 일을 명시한다. 샘플 레시피를 통해 Swak의 사용법을 살펴보자. (레시피 파일의 확장자는 `.swak.py`로 한다.)
+테스크 파일은 YAML(`*.yml`) 형식으로 Swak이 할 일을 명시한다. 샘플 테스크 파일을 통해 Swak의 사용법을 살펴보자.
 
 입력과 출력 플러그인은 각각 `in` 및 `out` 패키지에서 참조한다.
 
 ### 더미 데이터를 표준 출력을 통해 출력
 
-인터랙티브 환경에서 아래와 같은 레시피(=코드)를 입력하여 테스트 할 수 있다.
-
-```python
+```yml
 # 테스크 선언
-task(
-     # 더미 데이터 생성
-     in.DummyData(type="people"),
-     # 표준 출력으로 스트림 보냄
-     out.Stdout(),
-     # 3초 후 다시 시작
-     sleep(3)
-)
+- task:
+  # 더미 데이터 생성
+  - in.DummyData:
+      type: people
+  # 표준 출력으로 스트림 보냄
+  - out.Stdout
+  # 3초 후 다시 시작
+  - sleep:
+      seconds: 3
 ```
 
-`task`함수의 인자로 순차적으로 처리할 흐름을 명시한다. `out.Stdout` 플러그인은 표준 출력으로 스트림을 보낸다.
+`task` 태그 아래에 순차적으로 처리할 일을 명시한다. `out.Stdout` 플러그인은 표준 출력으로 스트림을 보낸다.
 
 ### 특정 파일을 테일링하여 Fluentd로 전송
 
-다음은 파일 테일링 레시피의 예이다.
+다음은 파일 테일링 테스크 파일의 예이다.
 
-```python
+```yml
 # 테스크 선언
-task(
-      # 대상 파일 테일링
-      in.FileTailing("/var/log/mylog.txt"),
-      # 커스텀 포맷 파서
-      out.MyLogParser(),
-      # 5분 단위로 버퍼링
-      out.TimedBuffer("5M"),
-      # 실패 대응
-      failover(
-        # Fluentd 서버 1
-        out.Fluentd("192.168.0.1"),
-        # Fluentd 서버 2            
-        out.Fluentd("169.168.0.2"),
-        # 그래도 실패하면 파일에
-        last=out.File('/tmp/failed.txt'),
-        # ip값 기반으로 출력 선택
-        start_by="ip"
-      )
-)
+- task:
+  # 대상 파일 테일링
+  - in.FileTail:
+      file: /var/log/mylog.txt
+  # 커스텀 포맷 파서
+  - out.MyLogParser
+  # 5분 단위로 버퍼링
+  - out.TimedBuffer:
+      minutes: 5
+  # 실패 대응
+  - failover:
+    outputs:
+    # Fluentd 서버 1
+    - out.Fluentd:
+        ip: 192.168.0.1
+    # Fluentd 서버 2            
+    - out.Fluentd:
+        ip: 169.168.0.2
+    # 그래도 실패하면 파일에
+    lastfile: /tmp/failed.txt
+    # ip값 기반으로 출력 선택
+    start_by: ip
 ```
 
 
-`in.FileTailing`은 지정된 파일에서 추가된 내용을 스트림으로 보낸다.
+`in.FileTail`은 지정된 파일에서 추가된 내용을 스트림으로 보낸다.
 
 `out.TimedBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 시간이 되었을 때만 출력해 지나친 IO를 막아준다.
 
@@ -117,41 +119,44 @@ task(
 
 ### 로그DB를 테일링
 
-다음은 DB 테일링 레시피의 예이다.
+다음은 DB 테일링 테스크 파일의 예이다.
 
-```python
+```yml
 # 테스크 스레드 생성
-task(
-    in.MySQLTailing("127.0.0.1", 'logdb', 'logtbl'),
-    # 100라인 단위로 버퍼링
-    out.LinedBuffer(100),
-    # 외부 프로세스 실행
-    out.Exec(
-        "/usr/bin/r detect.r",
-    ),
-    # 표준 출력으로 스트림 보냄
-    out.Stdout()
+- task:
+  - in.MySQLTail:
+    ip: 127.0.0.1
+    db: logdb
+    table: logtbl
+  # 100라인 단위로 버퍼링
+  - out.LinedBuffer:
+    lines: 100
+  # 외부 프로세스 실행
+  - out.Exec:
+    cmd: "/usr/bin/r detect.r",
+  # 표준 출력으로 스트림 보냄
+  - out.Stdout
 )
 ```
 
-`in.MySQLTailing` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
+`in.MySQLTail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
 
 `out.LinedBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 라인(행) 되었을 때만 출력해 지나친 IO를 막아준다.
 
 `out.Exec` 플러그인은 데이터 스트림을 임시 파일로 저장한 후, 지정된 별도 프로세스에서 처리하게 하고, 결과를 다시 임시 파일로 받는다. 여기에서는 받은 결과를 표준 출력으로 보내고 있다.
     
-## 레시피 동작 테스트하기
+## 테스크 파일 동작 테스트하기
 
-다음과 같이 실행하면 `task`는 메인 스레드에서 실행된다. 로그를 표준 출력으로 볼 수 있으며, 중단점을 설정할 수 있어 디버깅에 용이하다.
-
-```
-swak test test.swak.py
-```
-
-테스트 모드에서는 하나의 테스크만 실행될 수 있다. 레시피 파일에 테스크가 하나 이상있다면, 실행할 테스크의 인덱스를 지정하자. (지정하지 않으면 첫 번째 테스크가 실행)
+다음과 같이 실행하면 `task`는 메인 스레드에서 실행된다. 로그를 표준 출력으로 볼 수 있으며, 코드에 중단점을 설정할 수 있어 디버깅에 용이하다.
 
 ```
-swak test test.swak.py -t 2  # 두 번째 테스크를 실행
+swak test task.yml
+```
+
+테스트 모드에서는 하나의 테스크만 실행될 수 있다. 설정파일 파일에 테스크가 하나 이상있다면, 실행할 테스크의 인덱스를 지정하자. (지정하지 않으면 첫 번째 테스크가 실행)
+
+```
+swak test task.yml -t 2  # 두 번째 테스크를 실행
 ```
 
 ## 외부 플러그인 설치
@@ -165,35 +170,38 @@ swak test test.swak.py -t 2  # 두 번째 테스크를 실행
     cd swak-plugin-fluentd
     python setup.py install
 
+# 기본 플러그인 소개
+
+## in.FileTail
 
 # 배포를 위해 빌드하기
 
-개발 및 테스트는 파이썬 개발 환경이 설치된 곳에서 인터프리팅을 이용하는 것이 좋지만, 실제 배포를 위해서는 실행 가능한 바이너리 형태가 편리하다. Swak는 PyInstaller를 통해 파이썬 패키지들을 바이너리 파일로 빌드한다.
+개발 및 테스트는 파이썬 개발 환경이 설치된 곳에서 인터프리터를 이용하는 것이 좋지만, 실제 배포를 위해서는 실행 가능한 형태가 편하다. Swak는 PyInstaller를 통해 파이썬 코드를 실행 파일로 빌드한다.
 
 ## PyInstaller 설치
 
 [PyInstaller](http://www.pyinstaller.org) 홈페이지를 참고하여 배포 대상 OS에 맞는 버전의 PyInstaller를 설치하자.
 
-## 빌드 설정 파일
-빌드할 때는 사용할 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 설정파일** 이 필요하다. 빌드 설정 파일은 `.yml`형식으로 다음과 같은 구조를 가진다.
+## 빌드 설정파일
+빌드할 때는 사용할 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 설정파일** 이 필요하다. 빌드 설정파일은 YAML(`*-build.yml`) 형식으로 다음과 같은 구조를 가진다.
 
 ```yml
-    # 빌드명. 생략가능(없으면 기본 이름 swak으로 빌드된다.)
-    -name: [빌드명]
-    # 사용할 외부 플러그인 리스트
-    -imports:
-      - [참조할 외부 플러그인1]
-      - [참조할 외부 플러그인2]
-      ...
+# 빌드명. 생략가능(없으면 기본 이름 swak으로 빌드된다.)
+-name: [빌드명]
+# 사용할 외부 플러그인 리스트
+-imports:
+  - [참조할 외부 플러그인1]
+  - [참조할 외부 플러그인2]
+  ...
 ```
 
 예를 들어 다음과 같은 빌드 설정파일 `myprj-build.yml`이 있다고 할 때,
 
 ```yml
-    - name: myprj
-    - import:
-      - swak-plugin-syslog
-      - swak-plugin-fluentd
+- name: myprj
+- import:
+  - swak-plugin-syslog
+  - swak-plugin-fluentd
 ```
 
 이를 이용하여 다음과 같이 실행하면
