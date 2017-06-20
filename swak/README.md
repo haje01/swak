@@ -8,12 +8,12 @@
 
 입력은 한 번만 나오고, 출력은 한 번 이상 연쇄될 수 있다.
 
-<img src="images/plugin_flow.png" width="550" />
+<img src="../images/plugin_flow.png" width="550" />
 
 ### 외부 프로세스 호출 흐름
 외부 실행파일이나 스크립트를 실행할 수 있다. 단, 그것들은 입력 파일명과 출력 파일명을 인자로 받아 실행하도록 구성되어야 한다.
 
-<img src="images/process_flow.png" width="700" />
+<img src="../images/process_flow.png" width="700" />
 
 ## 폴더 구조
     
