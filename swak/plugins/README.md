@@ -69,8 +69,10 @@
     # Fluentd 서버 2            
     - out.Fluentd:
         ip: 169.168.0.2
-    # 그래도 실패하면 파일에
-    lastfile: /tmp/failed.txt
+    # 그래도 실패하면
+    last:
+      out.File:
+        path: /tmp/failed.txt
     # ip값 기반으로 출력 선택
     start_by: ip
 ```
@@ -89,11 +91,10 @@
 
 #### start_by (옵션)
 
-등록된 출력 
+등록된 출력 선택 방식을 지정한다.
+
+- ip: 로컬 네트워크의 IP주소를 해싱
 
 #### last (옵션)
-등록된 모든 출력이 실패하면 지정된 출력으로 저장한다.
 
-    last:
-      out.File:
-        path: /tmp/failed.txt
+등록된 모든 출력이 실패하면 지정된 출력으로 저장한다.
