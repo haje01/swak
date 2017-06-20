@@ -21,7 +21,7 @@ Swak은 어플리케이션의 기본 틀외 모든 기능들을 플러그인으�
 - Fluentd - Fluentd로 출력
 - failover - 출력 실패시 대체
 
-자세한 것은 [플러그인 페이지](swak/plugins/README.md)를 참고하자. 
+자세한 것은 [기본 플러그인 소개](swak/plugins/README.md)를 참고하자. 
 
 이외에 아래와 같은 다양한 외부 플러그인이 나올 수 있을 것이다.
 
@@ -91,7 +91,9 @@ Swak은 어플리케이션의 기본 틀외 모든 기능들을 플러그인으�
     - out.Fluentd:
         ip: 169.168.0.2
     # 그래도 실패하면 파일에
-    lastfile: /tmp/failed.txt
+    last: 
+      out.File: 
+        path: /tmp/failed.txt
     # ip값 기반으로 출력 선택
     start_by: ip
 ```
@@ -192,11 +194,11 @@ swak test config.yml -t 2  # 두 번째 테스크를 실행
   - swak-plugin-fluentd
 ```
 
-이를 이용하여 다음과 같이 실행하면 빌드가 된다.
+다음과 같이 실행하면 빌드가 된다.
 
     swak-build myprj-build.yml
 
-정상적으로 빌드가 되면, `dist/` 폴더 아래 `swak-myprj` 실행 파일이 만들어진다. 이것을 배포하면 된다.
+정상적으로 빌드가 되면, `dist/` 폴더 아래 `swak-myprj` 실행 파일이 만들어진다. 이것을 배포하면 된다. 이렇게 하면 다양한 목적에 맞는 Swak 실행 파일을 구분해 관리하기 용이하다.
 
 빌드명이 없으면 기본 파일명 `swak`로 빌드된다. 이후 설명에서는 `swak`을 기준으로 하겠다.
 
