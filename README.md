@@ -52,8 +52,10 @@ Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구�
   # 더미 데이터 생성
   - in.DummyData:
       type: people
+
   # 표준 출력으로 스트림 보냄
   - out.Stdout
+
   # 1초 후 다시 시작
   - sleep:
       seconds: 1
@@ -71,11 +73,14 @@ Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구�
   # 대상 파일 테일링
   - in.FileTail:
       path: /var/log/mylog.txt
+
   # 커스텀 포맷 파서
   - out.MyLogParser
+
   # 5분 단위로 버퍼링
   - out.TimedBuffer:
       minutes: 5
+
   # 실패 대응
   - failover:
     outputs:
@@ -109,12 +114,15 @@ Swak은 기본 기능외 모든 추가 기능들을 플러그인 구조로 구�
     ip: 127.0.0.1
     db: logdb
     table: logtbl
+
   # 100라인 단위로 버퍼링
   - out.LinedBuffer:
     lines: 100
+
   # 외부 프로세스 실행
   - out.Exec:
     cmd: "/usr/bin/r detect.r",
+
   # 표준 출력으로 스트림 보냄
   - out.Stdout
 ```
@@ -164,6 +172,7 @@ swak test task.yml -t 2  # 두 번째 테스크를 실행
 ```yml
 # 빌드명. 생략가능(없으면 기본 이름 swak으로 빌드된다.)
 -name: [빌드명]
+
 # 사용할 외부 플러그인 리스트
 -plugins:
   - [참조할 외부 플러그인1]
