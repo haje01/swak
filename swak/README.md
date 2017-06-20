@@ -39,19 +39,34 @@
 
 - GitHub의 저장소(Repository) 명은 `swak-plugin-` 으로 시작한다.
 - 설치를 위한 `setup.py`를 제공해야 한다.
+- 정해진 규칙에 맞게 문서화 되어야 한다.
 - 버전 정보를 갖는다.
 
+### 문서화 규칙
+
+각 플러그인은 `README.md` 파일에 문서화를 한다. GitHub의 Markdown 형식에 맞게 다음과 같이 작성한다.
+
+- 처음에 H1(`#`)으로 `swak-plugin-NAME` 형식으로 플러그인의 이름 헤더가 온다.
+- 그 아래 플러그인에 대한 간단한 설명을 한다.
+- 그 아래 H2(`##`)로 `설정 예시` 헤더가 온다.
+- 그 아래 설정 파일의 간단한 예를 보여준다.
+- 그 아래 H2(`##`)로 `동작 방식` 헤더가 온다.
+- 그 아래 플러그인의 내부 동작에 관한 설명을 한다.
+- 그 아래 H2(`##`)로 `인자` 헤더가 온다.
+- 그 아래 H3(`###`)로 설정 파일의 인자에 대해 각각 설명한다.
+
 ## 샘플 플러그인
-간단한 샘플 플러그인(`foo`)을 예제로 하여 알아보자.
+각 행마다 행번호를 붙여주는 간단한 출력용 플러그인 `linenumber`을 예제로 알아보자.
 
-1. 먼저 GitHub에서 `swak-plugin-foo`라는 저장소를 만든다.
-2. 저장소를 로컬로 `clone`한다.
+1. 먼저 GitHub에서 `swak-plugin-linenumber`라는 빈 저장소를 만든다. (이때 원하는 라이센스를 선택하고 README.md 생성을 체크한다.)
+2. Swak의 `plugins` 폴더로 이동한다.
+3. 저장소를 `clone`한다.
 
-    `git clone https://github.com/GitHub계정/swak-plugin-foo.git`
+    `git clone https://github.com/GitHub계정/swak-plugin-linenumber.git linenumber`
 
-3. 폴더로 이동 후, 개발용으로 설치한다.
-
-    `python setup.py install -e .`
+4. `main.py` 파일을 만들고 플러그인 코드를 작성한다.
+5. 테스트용 설정 파일 `cfg-test.yml`을 작성한다.
+5. Swak의 기본 폴더로 돌아와 `python swak.runner swak/plugins/linenumber/cfg-test.yml`로 실행해본다.
 
 ## 개발용 실행
 
