@@ -4,6 +4,11 @@
 
 ## 설정 예시
 
+```yml
+- fakedata:
+  type: people
+```
+
 ## 동작 방식
 
 ## 인자들
