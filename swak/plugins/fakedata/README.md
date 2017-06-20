@@ -6,6 +6,7 @@
 
 ```yml
 - fakedata:
+  # 개인 정보 형식
   type: people
 ```
 

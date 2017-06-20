@@ -6,6 +6,7 @@
 
 ```yml
 - LinedBuffer:
+  # 100행이 쌓이면 출력
   lines: 100
 ```
 

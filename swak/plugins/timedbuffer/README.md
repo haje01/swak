@@ -6,6 +6,7 @@
 
 ```yml
 - TimedBuffer:
+  # 10분이 지나면 출력
   minutes: 10
 ```
 

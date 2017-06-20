@@ -6,7 +6,9 @@ Fluentd 서버로 출력한다.
 
 ```yml
 - fluentd:
+  # Fluentd 서버 IP
   ip: 127.0.0.1
+  # Fluentd 서버 포트
   port: 24224
 ```
 
