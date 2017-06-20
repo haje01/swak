@@ -170,7 +170,9 @@ swak test config.yml -t 2  # 두 번째 테스크를 실행
 
 플러그인 디렉토리에 `requirements.txt`가 있다면 플러그인이 의존하는 패키지가 있다는 뜻이다. 다음과 같이 설치해주자.
 
-    pip install -r requirements.txt
+```shell
+pip install -r requirements.txt
+```
 
 ### 실행
 
