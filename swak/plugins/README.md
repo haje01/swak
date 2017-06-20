@@ -6,7 +6,7 @@
 [in.FileTail](filetail/README.md)
 
 ## 출력 플러그인
-[out.Fluentd](fluent/README.md)
+[out.Fluentd](fluentd/README.md)
 
 ## 보통 플러그인
 [failover](failover/README.md)
