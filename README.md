@@ -158,13 +158,13 @@ swak test config.yml -t 2  # 두 번째 테스크를 실행
 ### 플러그인 코드 받기
 먼저 Swak 소스 코드 디렉토리 아래 `plugins` 디렉토리로 이동하고
 
-    cd swak/swak/plugins
+    cd swak/plugins
 
-외부 플러그인을 `clone`한다.
+사용할 외부 플러그인을 `clone`한다.
 
     git clone https://github.com/haje01/swak-plugin-fluentd.git fluentd
 
-마지막 인자로 `swak-plugin-`을 제외한 플러그인 이름 부분만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래 `fluentd` 디렉토리에 플러그인 코드가 받아진다.
+마지막 인자로 `swak-plugin-`을 제외한 플러그인 이름만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래 `fluentd` 디렉토리에 플러그인 코드가 받아진다.
 
 ### 플러그인이 사용하는 의존 패키지 설치
 
