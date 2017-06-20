@@ -1,6 +1,6 @@
-# in.FileTail
+# swak-plugin-filetail
 
-대상 파일에 새로 추가된 내용을 스트림에 넣는다.
+대상 파일에 새로 추가된 내용을 입력한다.
 
 ## 설정 예시
 ```yml

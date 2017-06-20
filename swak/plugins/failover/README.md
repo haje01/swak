@@ -1,4 +1,4 @@
-# failover
+# swak-plugin-failover
 
 `failover`는 출력 실패에 대응한다. 
 
