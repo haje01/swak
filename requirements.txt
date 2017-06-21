@@ -1,2 +1,5 @@
 daemonocle
 click
+coverage
+pytest
+pytest-cov
