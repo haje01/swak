@@ -3,3 +3,5 @@ click
 coverage
 pytest
 pytest-cov
+-e git://github.com/serverdensity/python-daemon.git#egg=python-daemon
+tox
