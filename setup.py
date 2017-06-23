@@ -14,6 +14,21 @@ setup(
     platforms=["any"],
     packages=['swak'],
     license=['MIT License'],
+    install_requires=[
+        'click',
+    ],
+    dependency_links=[
+        'git+http//github.com/serverdensity/python-daemon.git#egg=python_daemon',
+    ],
+    extras_require={
+        'dev': [
+            'pytest',
+            'pytest-cov',
+            'coverage',
+            'pyinstaller',
+            'tox',
+        ],
+    },
     keywords=['system'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
