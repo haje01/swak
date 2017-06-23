@@ -18,7 +18,7 @@ setup(
         'click',
     ],
     dependency_links=[
-        'git+http//github.com/serverdensity/python-daemon.git#egg=python_daemon',
+        'https://github.com/serverdensity/python-daemon/master#egg=python_daemon',
     ],
     extras_require={
         'dev': [
