@@ -4,23 +4,19 @@ import time
 import click
 from daemon import Daemon
 
+from swak.util import query_pid_dir
 
-BUILD_NAME = os.environ.get('SWAK_BNAME')
-BUILD_POSTFIX = "" if BUILD_NAME is None else "-{}".format(BUILD_NAME)
-PID_DIR = os.path.expanduser('~/Library/Application Support/Swak')
-PID_PATH = os.path.join(PID_DIR, 'swak{}.pid'.format(BUILD_POSTFIX))
+
+build_name = os.environ.get('SWAK_BNAME')
+build_postfix = "" if build_name is None else "-{}".format(build_name)
+pid_dir = query_pid_dir()
+pid_path = os.path.join(pid_dir, 'swak{}.pid'.format(build_postfix))
 
 
 class SwakDaemon(Daemon):
     def run(self):
         while True:
             time.sleep(4)
-
-
-def make_pid_dir():
-    if not os.path.isdir(PID_DIR):
-        os.mkdir(PID_DIR)
-        return True
 
 
 @click.group()
@@ -30,14 +26,13 @@ def cli():
 
 @cli.command()
 def start():
-    make_pid_dir()
-    daemon = SwakDaemon(PID_PATH)
+    daemon = SwakDaemon(pid_path)
     daemon.start()
 
 
 @cli.command()
 def stop():
-    daemon = SwakDaemon(PID_PATH)
+    daemon = SwakDaemon(pid_path)
     daemon.stop()
 
 
