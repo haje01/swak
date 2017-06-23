@@ -34,6 +34,10 @@ Swak은 어플리케이션의 기본 틀외 모든 기능들을 플러그인으�
 
 ## 설치
 
+> 윈도우에서 설치를 위해서는 사전에 [git 클라이언트](https://git-scm.com/download/win)를 받아서 설치하자.
+
+> 윈도우에서 파이썬 3.5를 사용할 때는 "ImportError: DLL load failed" 에러가 나오는 경우 [Microsoft Visual C++ 2010 Redistributable Package](https://www.microsoft.com/en-us/download/confirmation.aspx?id=5555)를 설치하자.
+
     git clone https://github.com/haje01/swak.git
     cd swak
     pip install -r requirements.txt

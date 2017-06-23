@@ -21,7 +21,7 @@ def query_pid_dir():
         if is_root:
             adir = '/Library/Application Support/Swak'
         else:
-            adir = '~/Library/Application Support/Swak'
+            adir = os.path.expanduser('~/Library/Application Support/Swak')
     elif 'Windows' in plt:
         raise NotImplemented()
     else:
