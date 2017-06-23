@@ -8,9 +8,9 @@ import win32serviceutil
 import click
 
 
-class ConmonService(win32serviceutil.ServiceFramework):
-    _svc_name_ = "conmon"
-    _svc_display_name_ = "Connection Monitoring Service"
+class SwakService(win32serviceutil.ServiceFramework):
+    _svc_name_ = "swak"
+    _svc_display_name_ = "Multi-purpose Agent System"
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
@@ -25,7 +25,7 @@ class ConmonService(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         servicemanager.LogInfoMsg("Service is starting.")
         rc = None
-        log_header()
+        # log_header()
         while rc != win32event.WAIT_OBJECT_0:
             try:
                 pass
@@ -33,7 +33,7 @@ class ConmonService(win32serviceutil.ServiceFramework):
                 logging.error("Service error: {}".format(e))
                 break
             rc = win32event.WaitForSingleObject(self.hWaitStop, 0)
-        log_footer()
+        # log_footer()
         servicemanager.LogInfoMsg("Service is finished.")
 
 
@@ -65,11 +65,11 @@ def test():
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         servicemanager.Initialize()
-        servicemanager.PrepareToHostSingle(ConmonService)
+        servicemanager.PrepareToHostSingle(SwakService)
         servicemanager.StartServiceCtrlDispatcher()
     else:
         cmd = sys.argv[1]
         if cmd == 'test':
             cli()
         else:
-            win32serviceutil.HandleCommandLine(ConmonService)
+            win32serviceutil.HandleCommandLine(SwakService)
