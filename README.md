@@ -9,7 +9,7 @@
 
 ## 무엇인가?
 
-- 멀티 OS(Windows, Linux, OSX)에서
+- 멀티 OS(Windows, Linux, OS X)에서
 - 서비스(데몬) 형태로
 - 내부 파이썬 코드를 실행하거나
 - 외부 프로세스를 실행히주는 
@@ -36,7 +36,8 @@ Swak은 어플리케이션의 기본 틀외 모든 기능들을 플러그인으�
 
     git clone https://github.com/haje01/swak.git
     cd swak
-    python setup.py install
+    pip install -r requirements.txt
+    pip intall .
 
 # Swak 활용 예
 
@@ -190,7 +191,7 @@ python -m swak.test config.yml -t 2  # 두 번째 테스크를 실행
 
 [PyInstaller](http://www.pyinstaller.org) 홈페이지를 참고하여 배포 대상 OS에 맞는 버전의 PyInstaller를 미리 설치하자.
 
-> PyEnv를 사용하는 경우 빌드시 동적 라이브러리를 찾지 못해 에러가 나올 수 있다. 이때는 `--enable-framework` 옵션으로 파이썬을 빌드하여 설치해야 한다. 자세한 것은 [이 글](https://github.com/pyenv/pyenv/issues/443)을 참고하자.
+> PyEnv를 사용하는 경우 빌드시 동적 라이브러리를 찾지 못해 에러가 나올 수 있다. 이때는 OS X의 경우 `--enable-framework` 옵션으로 파이썬을 빌드하여 설치해야 한다. 자세한 것은 [이 글](https://github.com/pyenv/pyenv/issues/443)을 참고하자. Linux의 경우 `--enable-shared` 옵션으로 빌드한다.
 
 ## 빌드 파일
 빌드할 때는 사용할 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 파일** 이 필요하다. 빌드 파일은 YAML(`*-build.yml`) 형식으로 다음과 같은 구조를 가진다.
@@ -239,7 +240,7 @@ python -m swak.test config.yml -t 2  # 두 번째 테스크를 실행
 
     swak stop
 
-### Unix 계열(Linux/OSX)
+### Unix 계열(Linux/OS X)
 
 다음과 같이 데몬을 시작하고
 
