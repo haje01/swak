@@ -1,6 +1,7 @@
 # Swak
 
 [![Travis Status](https://travis-ci.org/haje01/swak.svg?branch=master)](https://travis-ci.org/haje01/swak)
+[![AppVeyor Status](https://ci.appveyor.com/api/projects/status/1u1ku2s75ny38na1?svg=true)](https://ci.appveyor.com/project/haje01/swak)
 [![Codecov Status](https://codecov.io/gh/haje01/swak/branch/master/graph/badge.svg)](https://codecov.io/gh/haje01/swak)
 
 파이썬 기반 멀티 OS 에이전트 플랫폼. '스왴'으로 읽는다. 
