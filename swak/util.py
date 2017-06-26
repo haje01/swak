@@ -2,8 +2,6 @@ import os
 import sys
 from platform import platform
 
-import pywintypes
-
 
 def make_dir(adir):
     if not os.path.isdir(adir):
@@ -47,6 +45,8 @@ def query_pid_path(build_postfix=''):
 
 def get_winsvc_status(svcname):
     import win32serviceutil
+    import pywintypes
+
     try:
         ret = win32serviceutil.QueryServiceStatus(svcname)
     except pywintypes.error:
@@ -71,5 +71,3 @@ def get_exedir():
     else:
         bdir = os.path.dirname(os.path.abspath(__file__))
     return bdir
-
-
