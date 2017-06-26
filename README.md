@@ -2,6 +2,7 @@
 
 [![Travis Status](https://travis-ci.org/haje01/swak.svg?branch=master)](https://travis-ci.org/haje01/swak)
 [![Codecov Status](https://codecov.io/gh/haje01/swak/branch/master/graph/badge.svg)](https://codecov.io/gh/haje01/swak)
+
 파이썬 기반 멀티 OS 에이전트 플랫폼. '스왴'으로 읽는다. 
 
 이 페이지에서는 Swak 사용자를 위한 기본적인 내용을 설명한다. 더 자세한 내용은 아래 링크를 참고한다.
@@ -187,7 +188,7 @@ python -m swak.test config.yml -t 2  # 두 번째 테스크를 실행
 
 설치된 플러그인은 Swak 기동시에 자동으로 등록되고, 실행할 수 있다.
 
-# 빌드, 배포, 그리고 설치
+# 빌드 그리고 배포
 
 개발 및 테스트는 파이썬 개발 환경이 설치된 곳에서 인터프리터를 이용하는 것이 좋지만, 실제 배포를 위해서는 실행 가능한 형태가 편하다. Swak는 PyInstaller를 통해 파이썬 코드를 실행 파일로 빌드한다.
 
