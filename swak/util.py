@@ -2,7 +2,6 @@ import os
 import sys
 from platform import platform
 
-import win32serviceutil
 import pywintypes
 
 
@@ -47,6 +46,7 @@ def query_pid_path(build_postfix=''):
 
 
 def get_winsvc_status(svcname):
+    import win32serviceutil
     try:
         ret = win32serviceutil.QueryServiceStatus(svcname)
     except pywintypes.error:
