@@ -10,12 +10,13 @@ setup(
     author="JeongJu Kim",
     author_email='haje01@gmail.com',
     url="https://github.com/haje01/swak",
-    description="Multi-OS Monitoring Agent in Python",
+    description="Multi-purpose Monitoring Agent in Python",
     platforms=["any"],
     packages=['swak'],
     license=['MIT License'],
     install_requires=[
         'click',
+        'pyyaml',
     ],
     dependency_links=[
         'https://github.com/serverdensity/python-daemon/master#egg=python_daemon',

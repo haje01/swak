@@ -1,5 +1,9 @@
 import os
+import sys
 from platform import platform
+
+import win32serviceutil
+import pywintypes
 
 
 def make_dir(adir):
@@ -8,9 +12,9 @@ def make_dir(adir):
         return True
 
 
-def is_unix():
+def is_windows():
     plt = platform()
-    return ('Darwin' in plt) or ('Linux' in plt)
+    return 'Windows' in plt
 
 
 def query_pid_dir():
@@ -40,3 +44,32 @@ def query_pid_path(build_postfix=''):
     pid_dir = query_pid_dir()
     pid_path = os.path.join(pid_dir, 'swak{}.pid'.format(build_postfix))
     return pid_path
+
+
+def get_winsvc_status(svcname):
+    try:
+        ret = win32serviceutil.QueryServiceStatus(svcname)
+    except pywintypes.error:
+        return None
+    return ret
+
+
+def get_exedir():
+    """Get package dir with regard to executable environment.
+
+    Decide config directory with following rules:
+        1. If package has been freezed, used dir of freezed executable path,
+        2. Or use the dir of current module.
+
+    Then make full path by join directory & config file name.
+
+    Returns:
+        str: Absolute path to config file.
+    """
+    if getattr(sys, 'frozen', False):
+        bdir = os.path.dirname(sys.executable)
+    else:
+        bdir = os.path.dirname(os.path.abspath(__file__))
+    return bdir
+
+

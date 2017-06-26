@@ -8,9 +8,15 @@ import win32serviceutil
 import click
 
 
+from swak.config import select_and_parse
+
+
+cfg = select_and_parse()
+
+
 class SwakService(win32serviceutil.ServiceFramework):
-    _svc_name_ = "swak"
-    _svc_display_name_ = "Multi-purpose Agent System"
+    _svc_name_ = cfg['svc_name']
+    _svc_display_name_ = cfg['svc_dname']
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
