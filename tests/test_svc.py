@@ -1,24 +1,23 @@
 """Test Windows & Unix(Linux, OS X) service."""
 
 import os
-import sys
 from subprocess import Popen
 import tempfile
 import time
 
 import pytest
-import win32service
 
-from swak.util import is_windows, get_winsvc_status, get_exedir
+from swak.util import is_windows, get_winsvc_status
 from swak.config import select_and_parse
 
-PYTHON = sys.executable
-
 WSVC_CUR_STATE = 1
-WSVC_CMD_INSTALL = [PYTHON, '-m', 'swak.win_svc', 'install']
-WSVC_CMD_START = [PYTHON, '-m', 'swak.win_svc', 'start']
-WSVC_CMD_STOP = [PYTHON, '-m', 'swak.win_svc', 'stop']
-WSVC_CMD_REMOVE = [PYTHON, '-m', 'swak.win_svc', 'remove']
+WSVC_CMD_INSTALL = ['python', '-m', 'swak.win_svc', 'install']
+WSVC_CMD_START = ['python', '-m', 'swak.win_svc', 'start']
+WSVC_CMD_STOP = ['python', '-m', 'swak.win_svc', 'stop']
+WSVC_CMD_REMOVE = ['python', '-m', 'swak.win_svc', 'remove']
+
+USVC_CMD_START = ['python', '-m', 'swak.unix_svc', 'start']
+USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'stop']
 
 
 CFG = """
@@ -44,14 +43,23 @@ def test_cfg():
 
 
 @pytest.fixture(scope="function")
-def unix_svc():
-    assert 0 == call(['python', '-m', 'swak.unix_svc', 'start'])
+def unix_svc(test_cfg):
+    cenv = os.environ.copy()
+    cenv.update(dict(SWAK_CFG=test_cfg))
+
+    p = Popen(USVC_CMD_START, env=cenv)
+    assert p.returncode is None
+
     yield None
-    assert 0 == call(['python', '-m', 'swak.unix_svc', 'stop'])
+
+    p = Popen(USVC_CMD_STOP, env=cenv)
+    assert p.returncode is None
 
 
 @pytest.fixture(scope="function")
 def win_svc(test_cfg):
+    import win32service
+
     cenv = os.environ.copy()
     cenv.update(dict(SWAK_CFG=test_cfg))
     os.environ = cenv
@@ -84,7 +92,7 @@ def win_svc(test_cfg):
     p = Popen(WSVC_CMD_REMOVE, env=cenv)
     time.sleep(SVC_WAIT_SEC)
     assert p.returncode is None
-    assert None == is_winsvc_installed(svc_name)
+    assert None == get_winsvc_status(svc_name)
 
 
 @pytest.mark.skipif(is_windows(), reason="requires Unix OS")
