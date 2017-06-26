@@ -8,6 +8,11 @@ def make_dir(adir):
         return True
 
 
+def is_unix():
+    plt = platform()
+    return ('Darwin' in plt) or ('Linux' in plt)
+
+
 def query_pid_dir():
     is_root = os.geteuid() == 0
     plt = platform()
@@ -29,3 +34,9 @@ def query_pid_dir():
 
     make_dir(adir)
     return adir
+
+
+def query_pid_path(build_postfix=''):
+    pid_dir = query_pid_dir()
+    pid_path = os.path.join(pid_dir, 'swak{}.pid'.format(build_postfix))
+    return pid_path

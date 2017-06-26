@@ -4,13 +4,12 @@ import time
 import click
 from daemon import Daemon
 
-from swak.util import query_pid_dir
+from swak.util import query_pid_path
 
 
 build_name = os.environ.get('SWAK_BNAME')
 build_postfix = "" if build_name is None else "-{}".format(build_name)
-pid_dir = query_pid_dir()
-pid_path = os.path.join(pid_dir, 'swak{}.pid'.format(build_postfix))
+pid_path = query_pid_path(build_postfix)
 
 
 class SwakDaemon(Daemon):
