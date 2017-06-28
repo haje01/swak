@@ -4,12 +4,13 @@ import tempfile
 
 import pytest
 
-from swak.config import get_execfg_path, CFG_FNAME, _select, select_and_parse
-from swak.util import get_exedir
+from swak.config import get_home_cfgpath, CFG_FNAME, _select, select_and_parse
+from swak.util import get_home_dir
 
 
 CFG = """
-svcname: swak_test
+svc_name: swak-test
+svc_dname: "Multi-purpose Agent Platform (Test)"
 """
 
 
@@ -25,10 +26,9 @@ def test_cfg():
 
 
 def test_util_cfg(test_cfg):
-    cpath = get_execfg_path()
-    cpath = cpath.replace(get_exedir(), '')
+    cpath = get_home_cfgpath()
+    cpath = cpath.replace(get_home_dir(), '')
     assert CFG_FNAME == cpath.strip(os.sep)
-
 
     # select explicit cfg path
     assert '/path/to/expcfg' == _select('/path/to/expcfg')
@@ -43,17 +43,21 @@ def test_util_cfg(test_cfg):
 
     # select cfg path within exe dir if no explict / envvar path exists.
     del os.environ['SWAK_CFG']
-    path = os.path.join(get_exedir(), 'config.yml')
+    path = os.path.join(get_home_dir(), 'config.yml')
     with open(path, 'wt') as f:
         assert path == _select()
         pass
 
     # parse exe dir
-    path = os.path.join(get_exedir(), 'config.yml')
+    path = os.path.join(get_home_dir(), 'config.yml')
     with open(path, 'wt') as f:
         f.write(CFG)
 
     cfg = select_and_parse()
-    assert  'swak_test' == cfg['svcname']
+    assert 'swak-test' == cfg['svc_name']
+    # check default logger
+    assert 'logger' in cfg
+    # check resolved param
+    assert get_home_dir() in cfg['logger']['handlers']['file']['filename']
 
     os.unlink(path)

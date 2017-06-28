@@ -49,13 +49,12 @@ def cli():
 
 
 def log_header():
-    logging.critical("\t# =========== Start connection monitoring ===========")
+    logging.critical("========== Start service ==========")
     # cfg_path = get_cfg_path()
 
 
 def log_footer():
-    logging.critical("\t# =========== Finish connection monitoring "
-                     "===========")
+    logging.critical("========== Finish service ==========")
 
 
 def main():

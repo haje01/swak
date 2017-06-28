@@ -6,8 +6,9 @@ import tempfile
 import time
 
 import pytest
+import yaml
 
-from swak.util import is_windows, get_winsvc_status
+from swak.util import is_windows, get_winsvc_status, query_pid_path
 from swak.config import select_and_parse
 
 WSVC_CUR_STATE = 1
@@ -21,8 +22,8 @@ USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'stop']
 
 
 CFG = """
-svc_name: swak_test
-svc_dname: "Multi-OS Agent Platform (Test)"
+svc_name: swak-test
+svc_dname: "Multi-purpose Agent Platform (Test)"
 """
 
 SVC_WAIT_SEC = 5
@@ -30,9 +31,11 @@ SVC_WAIT_SEC = 5
 
 @pytest.fixture(scope="function")
 def test_cfg():
-    cfg_path = os.path.join(tempfile.gettempdir(), 'config.yml')
+    cfg_path = os.path.join(tempfile.gettempdir(), 'cfg-test.yml')
+    # delete previous cfg file
     if os.path.isfile(cfg_path):
         os.unlink(cfg_path)
+
     f = open(cfg_path, 'wt')
     f.write(CFG)
     f.close()
@@ -47,13 +50,25 @@ def unix_svc(test_cfg):
     cenv = os.environ.copy()
     cenv.update(dict(SWAK_CFG=test_cfg))
 
+    cfg = yaml.load(CFG)
+    svc_name = cfg['svc_name']
+    pid_path = query_pid_path(svc_name)
+
+    # remove previous pid
+    if os.path.isfile(pid_path):
+        Popen(USVC_CMD_STOP, env=cenv)
+
     p = Popen(USVC_CMD_START, env=cenv)
     assert p.returncode is None
+    time.sleep(2)
+    assert os.path.isfile(pid_path)
 
     yield None
 
     p = Popen(USVC_CMD_STOP, env=cenv)
     assert p.returncode is None
+    time.sleep(1)
+    assert not os.path.isfile(pid_path)
 
 
 @pytest.fixture(scope="function")
