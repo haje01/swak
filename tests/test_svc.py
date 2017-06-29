@@ -98,8 +98,7 @@ def win_svc(test_home):
         time.sleep(3)
 
     # build
-    # p = Popen(WSVC_CMD_BUILD, env=cenv)
-    p = Popen(['pyinstaller'], env=cenv)
+    p = Popen(WSVC_CMD_BUILD, env=cenv)
     assert p.returncode is None
 
     ## install

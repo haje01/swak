@@ -13,7 +13,8 @@ test_script:
     - echo %SWAK_HOME%
     - dir %APPVEYOR_BUILD_FOLDER%
     - echo %cd%
-    - "%PYTHON%\\python.exe -m tox"
+      # - "%PYTHON%\\python.exe -m tox"
     - dir C:\projects\swak
     - dir C:\projects\swak\dist
+    - pyinstaller
     
