@@ -13,16 +13,13 @@ import yaml
 from swak.util import is_windows, get_winsvc_status, query_pid_path
 from swak.config import select_and_parse
 
+pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
+                                " test is for build mode.")
+
 WSVC_CUR_STATE = 1
-WSVC_CMD_BUILD = ['python', '-m', 'PyInstaller', 'swak/win_svc.py', '--hidden-import=win32timezone', '--one-file']
-WSVC_CMD_INSTALL = ['dist\win_svc.exe', 'install']
-# WSVC_CMD_INSTALL = ['python', '-m', 'swak.win_svc', 'install']
 WSVC_CMD_START = ['dist\win_svc.exe', 'start']
-# WSVC_CMD_START = ['python', '-m', 'swak.win_svc', 'start']
 WSVC_CMD_STOP = ['dist\win_svc.exe', 'stop']
-# WSVC_CMD_STOP = ['python', '-m', 'swak.win_svc', 'stop']
 WSVC_CMD_REMOVE = ['dist\win_svc.exe', 'remove']
-# WSVC_CMD_REMOVE = ['python', '-m', 'swak.win_svc', 'remove']
 
 USVC_CMD_START = ['python', '-m', 'swak.unix_svc', 'start']
 USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'stop']
@@ -78,6 +75,8 @@ def unix_svc(test_home):
 
 
 @pytest.fixture(scope="function")
+@pytest.mark.skipif('APPVEYOR' in os.environ, reason="Can't run PyInstaller in"
+                    " AppVeyor")
 def win_svc(test_home):
     import win32service
 
@@ -96,10 +95,6 @@ def win_svc(test_home):
         time.sleep(3)
         assert p.returncode is None
         time.sleep(3)
-
-    # build
-    p = Popen(WSVC_CMD_BUILD, env=cenv)
-    assert p.returncode is None
 
     # install
     p = Popen(WSVC_CMD_INSTALL, env=cenv)

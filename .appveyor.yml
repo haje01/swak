@@ -9,5 +9,4 @@ install:
 build: false
 
 test_script:
-    - "%PYTHON%\\python.exe -m PyInstaller"
     - "%PYTHON%\\python.exe -m tox"
