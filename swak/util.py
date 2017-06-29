@@ -2,14 +2,22 @@ import os
 import sys
 from platform import platform
 import collections
+import errno
+
+
+PY2 = sys.version_info[0] == 2
 
 
 def make_dirs(adir):
     """Make directory if not exist."""
     try:
         os.makedirs(adir)
-    except FileExistsError:
-        pass
+    except OSError as err:
+        if err.errno != errno.EEXIST:
+            raise
+        else:
+            # directory already exists
+            pass
 
 
 def is_windows():

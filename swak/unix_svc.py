@@ -2,6 +2,7 @@ import os
 import time
 import logging
 from logging import config as logconfig
+import traceback
 
 import click
 from daemon import Daemon
@@ -51,4 +52,8 @@ def stop(ctx):
 
 
 if __name__ == '__main__':
-    cli(obj={})
+    try:
+        cli(obj={})
+    except Exception as e:
+        for l in traceback.format_exc().splitlines():
+            logging.error(l)

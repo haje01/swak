@@ -1,5 +1,6 @@
 import sys
 import logging
+import traceback
 
 import servicemanager
 import win32event
@@ -31,15 +32,16 @@ class SwakService(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         servicemanager.LogInfoMsg("Service is starting.")
         rc = None
-        # log_header()
+        log_header()
         while rc != win32event.WAIT_OBJECT_0:
             try:
                 pass
             except Exception as e:
-                logging.error("Service error: {}".format(e))
+                for l in traceback.format_exc().splitlines():
+                    logging.error(l)
                 break
             rc = win32event.WaitForSingleObject(self.hWaitStop, 0)
-        # log_footer()
+        log_footer()
         servicemanager.LogInfoMsg("Service is finished.")
 
 

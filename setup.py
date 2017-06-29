@@ -17,6 +17,7 @@ setup(
     install_requires=[
         'click',
         'pyyaml',
+        'future',
     ],
     dependency_links=[
         'https://github.com/serverdensity/python-daemon/master#egg=python_daemon',
