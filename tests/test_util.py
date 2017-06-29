@@ -9,8 +9,8 @@ from swak.util import get_home_dir
 
 
 CFG = """
-svc_name: swak-dev
-svc_dname: "Multi-purpose Agent Platform (Test)"
+svc_name: swak-test
+svc_dname: "Swak: Multi-Agent Service (Test)"
 """
 
 
@@ -49,7 +49,7 @@ def test_util_cfg(test_cfg):
     assert path == _select(None, False)
 
     cfg = select_and_parse()
-    assert 'swak-dev' == cfg['svc_name']
+    assert 'swak-test' == cfg['svc_name']
     # check default logger
     assert 'logger' in cfg
     # check resolved param

@@ -1,6 +1,7 @@
 import sys
 import logging
 import traceback
+from logging import config as logconfig
 
 import servicemanager
 import win32event
@@ -8,11 +9,15 @@ import win32service
 import win32serviceutil
 import click
 
-
 from swak.config import select_and_parse
+from swak.util import init_home_dirs
 
 
-cfg = select_and_parse()
+cfg = select_and_parse(None)
+# init required directories
+init_home_dirs(cfg)
+# init logger
+logconfig.dictConfig(cfg['logger'])
 
 
 class SwakService(win32serviceutil.ServiceFramework):
@@ -36,7 +41,7 @@ class SwakService(win32serviceutil.ServiceFramework):
         while rc != win32event.WAIT_OBJECT_0:
             try:
                 pass
-            except Exception as e:
+            except Exception:
                 for l in traceback.format_exc().splitlines():
                     logging.error(l)
                 break
@@ -46,8 +51,11 @@ class SwakService(win32serviceutil.ServiceFramework):
 
 
 @click.group()
-def cli():
-    pass
+@click.option('--config', type=click.Path(exists=True), help="Config file"
+              " path.")
+@click.pass_context
+def cli(ctx, config):
+    ctx.obj['config'] = config
 
 
 def log_header():
@@ -59,14 +67,11 @@ def log_footer():
     logging.critical("========== Finish service ==========")
 
 
-def main():
-    pass
-
-
 @cli.command()
-def test():
-    while True:
-        main()
+@click.pass_context
+def test(ctx):
+    config = ctx['config']
+    print(config)
 
 
 if __name__ == '__main__':

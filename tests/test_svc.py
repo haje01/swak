@@ -4,6 +4,8 @@ import os
 from subprocess import Popen
 import tempfile
 import time
+import logging
+import shutil
 
 import pytest
 import yaml
@@ -12,26 +14,30 @@ from swak.util import is_windows, get_winsvc_status, query_pid_path
 from swak.config import select_and_parse
 
 WSVC_CUR_STATE = 1
-WSVC_CMD_INSTALL = ['python', '-m', 'swak.win_svc', 'install']
-WSVC_CMD_START = ['python', '-m', 'swak.win_svc', 'start']
-WSVC_CMD_STOP = ['python', '-m', 'swak.win_svc', 'stop']
-WSVC_CMD_REMOVE = ['python', '-m', 'swak.win_svc', 'remove']
+WSVC_CMD_BUILD = ['pyinstaller', 'swak/win_svc.py', '--hidden-import=win32timezone', '--one-file']
+WSVC_CMD_INSTALL = ['dist\win_svc.exe', 'install']
+# WSVC_CMD_INSTALL = ['python', '-m', 'swak.win_svc', 'install']
+WSVC_CMD_START = ['dist\win_svc.exe', 'start']
+# WSVC_CMD_START = ['python', '-m', 'swak.win_svc', 'start']
+WSVC_CMD_STOP = ['dist\win_svc.exe', 'stop']
+# WSVC_CMD_STOP = ['python', '-m', 'swak.win_svc', 'stop']
+WSVC_CMD_REMOVE = ['dist\win_svc.exe', 'remove']
+# WSVC_CMD_REMOVE = ['python', '-m', 'swak.win_svc', 'remove']
 
 USVC_CMD_START = ['python', '-m', 'swak.unix_svc', 'start']
 USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'stop']
 
 
 CFG = """
-svc_name: swak-dev
-svc_dname: "Multi-purpose Agent Platform (Test)"
+svc_name: swak-test
+svc_dname: "Swak: Multi-Agent Service (Test)"
 """
-
-SVC_WAIT_SEC = 5
 
 
 @pytest.fixture(scope="function")
-def test_cfg():
-    cfg_path = os.path.join(tempfile.gettempdir(), 'cfg-test.yml')
+def test_home():
+    test_home = tempfile.gettempdir()
+    cfg_path = os.path.join(test_home, 'config.yml')
     # delete previous cfg file
     if os.path.isfile(cfg_path):
         os.unlink(cfg_path)
@@ -40,15 +46,15 @@ def test_cfg():
     f.write(CFG)
     f.close()
 
-    yield cfg_path
+    yield test_home
 
-    # os.unlink(cfg_path)
+    # shutil.rmtree(test_home)
 
 
 @pytest.fixture(scope="function")
 def unix_svc(test_cfg):
     cenv = os.environ.copy()
-    cenv.update(dict(SWAK_CFG=test_cfg))
+    cenv.update(dict(SWAK_HOME=test_home))
 
     cfg = yaml.load(CFG)
     svc_name = cfg['svc_name']
@@ -72,40 +78,56 @@ def unix_svc(test_cfg):
 
 
 @pytest.fixture(scope="function")
-def win_svc(test_cfg):
+def win_svc(test_home):
     import win32service
 
     cenv = os.environ.copy()
-    cenv.update(dict(SWAK_CFG=test_cfg))
+    cenv.update(dict(SWAK_HOME=test_home))
     os.environ = cenv
     cfg = select_and_parse()
     svc_name = cfg['svc_name']
 
     if get_winsvc_status(svc_name) is not None:
-        Popen(WSVC_CMD_REMOVE, env=cenv)
-        time.sleep(SVC_WAIT_SEC)
+        logging.critical("Found previously installed service. Remove it"
+                         " first.")
+        p = Popen(WSVC_CMD_STOP, env=cenv)
+        assert p.returncode is None
+        p = Popen(WSVC_CMD_REMOVE, env=cenv)
+        time.sleep(3)
+        assert p.returncode is None
+        time.sleep(3)
 
+    # build
+    p = Popen(WSVC_CMD_BUILD, env=cenv)
+    assert p.returncode is None
+
+    # install
     p = Popen(WSVC_CMD_INSTALL, env=cenv)
     assert p.returncode is None
-    time.sleep(SVC_WAIT_SEC)
+    time.sleep(3)
     ret = get_winsvc_status(svc_name)
+    assert ret is not None
     assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
 
+    # start
     p = Popen(WSVC_CMD_START, env=cenv)
     assert p.returncode is None
-    time.sleep(SVC_WAIT_SEC)
+    time.sleep(3)
     ret = get_winsvc_status(svc_name)
     assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
 
     yield None
 
+    # stop
     p = Popen(WSVC_CMD_STOP, env=cenv)
     assert p.returncode is None
-    time.sleep(SVC_WAIT_SEC)
+    time.sleep(3)
+    ret = get_winsvc_status(svc_name)
     assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
 
+    # remove
     p = Popen(WSVC_CMD_REMOVE, env=cenv)
-    time.sleep(SVC_WAIT_SEC)
+    time.sleep(3)
     assert p.returncode is None
     assert None == get_winsvc_status(svc_name)
 
