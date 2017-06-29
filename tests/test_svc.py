@@ -14,7 +14,7 @@ from swak.util import is_windows, get_winsvc_status, query_pid_path
 from swak.config import select_and_parse
 
 WSVC_CUR_STATE = 1
-WSVC_CMD_BUILD = ['pyinstaller', 'swak/win_svc.py', '--hidden-import=win32timezone', '--one-file']
+WSVC_CMD_BUILD = ['python', '-m', 'PyInstaller', 'swak/win_svc.py', '--hidden-import=win32timezone', '--one-file']
 WSVC_CMD_INSTALL = ['dist\win_svc.exe', 'install']
 # WSVC_CMD_INSTALL = ['python', '-m', 'swak.win_svc', 'install']
 WSVC_CMD_START = ['dist\win_svc.exe', 'start']
@@ -101,35 +101,35 @@ def win_svc(test_home):
     p = Popen(WSVC_CMD_BUILD, env=cenv)
     assert p.returncode is None
 
-    ## install
-    #p = Popen(WSVC_CMD_INSTALL, env=cenv)
-    #assert p.returncode is None
-    #time.sleep(3)
-    #ret = get_winsvc_status(svc_name)
-    #assert ret is not None
-    #assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
+    # install
+    p = Popen(WSVC_CMD_INSTALL, env=cenv)
+    assert p.returncode is None
+    time.sleep(3)
+    ret = get_winsvc_status(svc_name)
+    assert ret is not None
+    assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
 
-    ## start
-    #p = Popen(WSVC_CMD_START, env=cenv)
-    #assert p.returncode is None
-    #time.sleep(3)
-    #ret = get_winsvc_status(svc_name)
-    #assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
+    # start
+    p = Popen(WSVC_CMD_START, env=cenv)
+    assert p.returncode is None
+    time.sleep(3)
+    ret = get_winsvc_status(svc_name)
+    assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
 
-    #yield None
+    yield None
 
-    ## stop
-    #p = Popen(WSVC_CMD_STOP, env=cenv)
-    #assert p.returncode is None
-    #time.sleep(3)
-    #ret = get_winsvc_status(svc_name)
-    #assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
+    # stop
+    p = Popen(WSVC_CMD_STOP, env=cenv)
+    assert p.returncode is None
+    time.sleep(3)
+    ret = get_winsvc_status(svc_name)
+    assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
 
-    ## remove
-    #p = Popen(WSVC_CMD_REMOVE, env=cenv)
-    #time.sleep(3)
-    #assert p.returncode is None
-    #assert None == get_winsvc_status(svc_name)
+    # remove
+    p = Popen(WSVC_CMD_REMOVE, env=cenv)
+    time.sleep(3)
+    assert p.returncode is None
+    assert None == get_winsvc_status(svc_name)
 
 
 @pytest.mark.skipif(is_windows(), reason="requires Unix OS")
