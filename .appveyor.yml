@@ -11,6 +11,6 @@ build: false
 test_script:
     - set SWAK_HOME=%APPVEYOR_BUILD_FOLDER%\devhome
     - echo %SWAK_HOME%
-    - dir %SWAK_HOME%
+    - dir %APPVEYOR_BUILD_FOLDER%
     - "%PYTHON%\\python.exe -m tox"
     
