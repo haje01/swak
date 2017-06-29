@@ -4,6 +4,9 @@ python:
     - "3.5"
 install:
     - "pip install tox-travis"
+env:
+    global:
+        - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
 script:
     tox
     codecov
