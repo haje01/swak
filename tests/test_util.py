@@ -36,7 +36,7 @@ def test_util_cfg(test_cfg):
     # select envvar cfg path
     os.environ['SWAK_HOME'] = '/path/to/home'
     cpath = _select(None, False)
-    assert '/path/to/home/config.yml' == cpath
+    assert '/path/to/home/config.yml' == cpath.replace('\\', '/')
 
     # prefer explicit cfg path to envvar
     assert '/path/to/expcfg' == _select('/path/to/expcfg', False)
