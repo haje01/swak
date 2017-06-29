@@ -7,7 +7,6 @@ install:
     - "%PYTHON%\\python.exe -m pip install tox"
     - "%PYTHON%\\python.exe -m pip install codecov"
     - "%PYTHON%\\python.exe -m pip install pyinstaller"
-      # - "SET PATH=%PYTHON\\Scripts\\;%PATH%"
 
 build: false
 
@@ -16,4 +15,5 @@ test_script:
     - "%PYTHON%\\python.exe -m tox"
 
 after_test:
+    - set PATH="%PYTHON%\\Scripts\\;%PATH%"
     - codecov
