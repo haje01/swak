@@ -9,3 +9,4 @@ env:
         - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
 script:
     tox
+    codecov
