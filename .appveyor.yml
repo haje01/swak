@@ -11,7 +11,7 @@ install:
 build: false
 
 test_script:
-    - pyinstaller
+    - pyinstaller.exe
     - "%PYTHON%\\python.exe -m tox"
 
 after_test:
