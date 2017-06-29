@@ -15,5 +15,6 @@ test_script:
     - "%PYTHON%\\python.exe -m tox"
 
 after_test:
-    - set PATH="%PYTHON%\\Scripts\\;%PATH%"
+    - dir "%PYTHON%\\Scripts"
+    - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
     - codecov
