@@ -64,6 +64,11 @@ def _get_home_dir():
     return _get_exe_dir()
 
 
+def _home_cfg_exists():
+    path = os.path.join(_get_home_dir(), CFG_FNAME)
+    return os.path.isfile(path)
+
+
 def get_home_cfgpath():
     """Get config file path with regard to home directory.
 
@@ -85,7 +90,8 @@ def select_and_parse(_cfgpath=None):
 
     Config file selection rule:
         1. If explicit `_cfgpath` is given, use it.
-        2. If an environment variable(`SWAK_CFG`) exists for cfg, use it.
+        2. If an environment variable for home dir(`SWAK_HOME`) exists, infer
+            from it.
         3. If a cfg file exist in the executable's directory, use it.
         4. Error
 
@@ -124,15 +130,20 @@ def _exposure_to_envvars(cfg):
     os.environ['SWAK_HOME'] = swak_home
 
 
-def _select(_cfgpath=None):
+def _select(_cfgpath=None, check_exists=True):
     if _cfgpath is not None:
         cfgpath = _cfgpath
-        if not os.path.isfile(cfgpath):
-            raise Exception("File '{}' from parameter does not exist".format(cfgpath))
+        if check_exists and not os.path.isfile(cfgpath):
+            raise IOError("File '{}' from parameter does not exist".format(cfgpath))
     elif ENVVAR in os.environ:
         cfgpath = get_home_cfgpath()
-        if not os.path.isfile(cfgpath):
-            raise Exception("'config.yml' not exist in '{}'".format(_get_home_dir()))
+        if check_exists and not os.path.isfile(cfgpath):
+            raise IOError("'config.yml' not exist in SWAK_HOME")
+    elif _home_cfg_exists():
+        cfgpath = get_home_cfgpath()
+        if check_exists and not os.path.isfile(cfgpath):
+            raise IOError("'config.yml' not exist in '{}'".format(_get_home_dir()))
     else:
-        raise Exception("Config file does not exist!")
+        raise ValueError("Config file was not provided!")
+    logging.info("Selected config '{}'".format(cfgpath))
     return cfgpath

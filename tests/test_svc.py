@@ -22,7 +22,7 @@ USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'stop']
 
 
 CFG = """
-svc_name: swak-test
+svc_name: swak-dev
 svc_dname: "Multi-purpose Agent Platform (Test)"
 """
 
