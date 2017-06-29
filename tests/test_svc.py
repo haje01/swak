@@ -5,7 +5,6 @@ from subprocess import Popen
 import tempfile
 import time
 import logging
-import shutil
 
 import pytest
 import yaml
@@ -13,14 +12,19 @@ import yaml
 from swak.util import is_windows, get_winsvc_status, query_pid_path
 from swak.config import select_and_parse
 
-pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
-                                " test is for build mode.")
+# pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
+#                                " test is for build mode.")
 
 WSVC_CUR_STATE = 1
-WSVC_CMD_INSTALL = ['dist\win_svc.exe', 'install']
-WSVC_CMD_START = ['dist\win_svc.exe', 'start']
-WSVC_CMD_STOP = ['dist\win_svc.exe', 'stop']
-WSVC_CMD_REMOVE = ['dist\win_svc.exe', 'remove']
+WSVC_CMD_BUILD = ['pyinstaller.exe', 'swak/win_svc.py',
+                  '--hidden-import=win32timezone', '--onefile']
+WSVC_DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..',
+                             'dist')
+WSVC_EXE = os.path.join(WSVC_DIST_DIR, 'win_svc.exe')
+WSVC_CMD_INSTALL = [WSVC_EXE, 'install']
+WSVC_CMD_START = [WSVC_EXE, 'start']
+WSVC_CMD_STOP = [WSVC_EXE, 'stop']
+WSVC_CMD_REMOVE = [WSVC_EXE, 'remove']
 
 USVC_CMD_START = ['python', '-m', 'swak.unix_svc', 'start']
 USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'stop']
@@ -96,6 +100,10 @@ def win_svc(test_home):
         time.sleep(3)
         assert p.returncode is None
         time.sleep(3)
+
+    # build
+    p = Popen(WSVC_CMD_BUILD, env=cenv)
+    assert p.returncode is None
 
     # install
     p = Popen(WSVC_CMD_INSTALL, env=cenv)
