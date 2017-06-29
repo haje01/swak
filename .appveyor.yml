@@ -15,6 +15,5 @@ test_script:
     - echo %cd%
       # - "%PYTHON%\\python.exe -m tox"
     - dir C:\projects\swak
-    - dir C:\projects\swak\dist
     - pyinstaller
     
