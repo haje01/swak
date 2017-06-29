@@ -9,6 +9,5 @@ install:
 build: false
 
 test_script:
-    # - set SWAK_HOME=%APPVEYOR_BUILD_FOLDER%\devhome
-    # - echo %SWAK_HOME%
+    - "%PYTHON%\\python.exe -m PyInstaller"
     - "%PYTHON%\\python.exe -m tox"
