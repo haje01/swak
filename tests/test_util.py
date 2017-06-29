@@ -15,19 +15,26 @@ svc_dname: "Swak: Multi-Agent Service (Test)"
 
 
 @pytest.fixture(scope="function")
-def test_cfg():
-    tmp = tempfile.NamedTemporaryFile(mode='wt', delete=False)
-    tmp.write(CFG)
-    tmp.close()
+def test_home():
+    test_home = tempfile.gettempdir()
+    os.environ['SWAK_HOME'] = test_home
+    cfg_path = os.path.join(test_home, 'config.yml')
+    # delete previous cfg file
+    if os.path.isfile(cfg_path):
+        os.unlink(cfg_path)
 
-    yield tmp.name
+    f = open(cfg_path, 'wt')
+    f.write(CFG)
+    f.close()
 
-    os.unlink(tmp.name)
+    yield test_home
+
+    # shutil.rmtree(test_home)
 
 
-def test_util_cfg(test_cfg):
+def test_util_cfg(test_home):
     cpath = get_home_cfgpath()
-    cpath = cpath.replace(get_home_dir(), '')
+    cpath = cpath.replace(test_home, '')
     assert CFG_FNAME == cpath.strip(os.sep)
 
     # select explicit cfg path

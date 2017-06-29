@@ -17,6 +17,7 @@ pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
                                 " test is for build mode.")
 
 WSVC_CUR_STATE = 1
+WSVC_CMD_INSTALL = ['dist\win_svc.exe', 'install']
 WSVC_CMD_START = ['dist\win_svc.exe', 'start']
 WSVC_CMD_STOP = ['dist\win_svc.exe', 'stop']
 WSVC_CMD_REMOVE = ['dist\win_svc.exe', 'remove']
