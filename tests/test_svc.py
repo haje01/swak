@@ -100,6 +100,8 @@ def win_svc(test_home):
     # build
     p = Popen(WSVC_CMD_BUILD, env=cenv)
     assert p.returncode is None
+    logging.info(p.stdout)
+    logging.info(p.stderr)
 
     ## install
     #p = Popen(WSVC_CMD_INSTALL, env=cenv)

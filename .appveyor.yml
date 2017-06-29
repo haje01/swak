@@ -14,5 +14,6 @@ test_script:
     - dir %APPVEYOR_BUILD_FOLDER%
     - echo %cd%
     - "%PYTHON%\\python.exe -m tox"
-    - dir %cd%\dist
+    - dir C:\projects\swak
+    - dir C:\projects\swak\dist
     
