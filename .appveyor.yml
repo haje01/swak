@@ -5,8 +5,15 @@ environment:
 
 install:
     - "%PYTHON%\\python.exe -m pip install tox"
+    - "%PYTHON%\\python.exe -m pip install codecov"
+    - "SET PATH=%PYTHON\\Scripts\\;%PATH%"
 
 build: false
 
 test_script:
+    - pyinstaller
     - "%PYTHON%\\python.exe -m tox"
+
+after_test:
+    - "coverage combine ./"
+    - codecov
