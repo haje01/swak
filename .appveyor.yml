@@ -13,8 +13,8 @@ build: false
 
 test_script:
     - dir "%PYTHON%\\Scripts"
+    - pyinstaller.exe
     - "%PYTHON%\\python.exe -m tox"
 
 after_test:
-    - "coverage combine ./"
     - codecov
