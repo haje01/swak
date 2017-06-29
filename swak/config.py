@@ -7,7 +7,7 @@ from collections import Mapping
 import yaml
 
 
-ENVVAR = 'SWAK_CFG'
+ENVVAR = 'SWAK_HOME'
 CFG_FNAME = 'config.yml'
 DEFAULT_LOG_CFG = '''
 logger:
@@ -80,11 +80,6 @@ def get_home_cfgpath():
     return os.path.join(bdir, CFG_FNAME)
 
 
-def cfg_exist_in_home():
-    path = get_home_cfgpath()
-    return os.path.isfile(path)
-
-
 def select_and_parse(_cfgpath=None):
     """Select config file and parse it.
 
@@ -132,10 +127,12 @@ def _exposure_to_envvars(cfg):
 def _select(_cfgpath=None):
     if _cfgpath is not None:
         cfgpath = _cfgpath
+        if not os.path.isfile(cfgpath):
+            raise Exception("File '{}' from parameter does not exist".format(cfgpath))
     elif ENVVAR in os.environ:
-        cfgpath = os.environ[ENVVAR]
-    elif cfg_exist_in_home():
         cfgpath = get_home_cfgpath()
+        if not os.path.isfile(cfgpath):
+            raise Exception("'config.yml' not exist in '{}'".format(_get_home_dir()))
     else:
         raise Exception("Config file does not exist!")
     return cfgpath
