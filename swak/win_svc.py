@@ -10,12 +10,12 @@ import win32serviceutil
 import click
 
 from swak.config import select_and_parse
-from swak.util import init_home_dirs
+from swak.util import init_home
 
 
-cfg = select_and_parse(None)
+home, cfg = select_and_parse(None)
 # init required directories
-init_home_dirs(cfg)
+init_home(home, cfg)
 # init logger
 logconfig.dictConfig(cfg['logger'])
 

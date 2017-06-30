@@ -1,4 +1,3 @@
-import os
 import time
 import logging
 from logging import config as logconfig
@@ -7,8 +6,8 @@ import traceback
 import click
 from daemon import Daemon
 
-from swak.util import query_pid_path, init_home_dirs
-from swak.config import select_and_parse
+from swak.util import init_home
+from swak.config import select_and_parse, get_pid_path
 
 
 class SwakDaemon(Daemon):
@@ -18,19 +17,18 @@ class SwakDaemon(Daemon):
 
 
 @click.group()
-@click.option('--config', type=click.Path(exists=True), help="Config file"
-              " path.")
+@click.option('--home', type=click.Path(exists=True), help="Home directory.")
 @click.pass_context
-def cli(ctx, config):
-    cfg = select_and_parse(config)
+def cli(ctx, home):
+    # select home and parse its config
+    home, cfg = select_and_parse(home)
     # init required directories
-    init_home_dirs(cfg)
+    init_home(home, cfg)
     # init logger
     logconfig.dictConfig(cfg['logger'])
 
     # make pid_path
-    svc_name = cfg['svc_name']
-    pid_path = query_pid_path(svc_name)
+    pid_path = get_pid_path(home, cfg['svc_name'])
     ctx.obj['pid_path'] = pid_path
 
 
@@ -38,7 +36,6 @@ def cli(ctx, config):
 @click.pass_context
 def start(ctx):
     logging.critical("========== Start daemon ==========")
-    cfg = select_and_parse()
     daemon = SwakDaemon(ctx.obj['pid_path'])
     daemon.start()
 

@@ -7,10 +7,9 @@ import time
 import logging
 
 import pytest
-import yaml
 
-from swak.util import is_windows, get_winsvc_status, query_pid_path
-from swak.config import select_and_parse
+from swak.util import is_windows, get_winsvc_status
+from swak.config import select_and_parse, get_pid_path
 
 pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
                                 " test is for build mode.")
@@ -57,24 +56,23 @@ def unix_svc(test_home):
     cenv = os.environ.copy()
     cenv.update(dict(SWAK_HOME=test_home))
 
-    cfg = yaml.load(CFG)
-    svc_name = cfg['svc_name']
-    pid_path = query_pid_path(svc_name)
+    home, cfg = select_and_parse(test_home)
+    pid_path = get_pid_path(test_home, cfg['svc_name'])
 
-    # remove previous pid
+    # stop previous daemon
     if os.path.isfile(pid_path):
         Popen(USVC_CMD_STOP, env=cenv)
 
     p = Popen(USVC_CMD_START, env=cenv)
     assert p.returncode is None
-    time.sleep(2)
+    time.sleep(3)
     assert os.path.isfile(pid_path)
 
     yield None
 
     p = Popen(USVC_CMD_STOP, env=cenv)
     assert p.returncode is None
-    time.sleep(1)
+    time.sleep(3)
     assert not os.path.isfile(pid_path)
 
 
@@ -87,7 +85,7 @@ def win_svc(test_home):
     cenv = os.environ.copy()
     cenv.update(dict(SWAK_HOME=test_home))
     os.environ = cenv
-    cfg = select_and_parse()
+    home, cfg = select_and_parse(test_home)
     svc_name = cfg['svc_name']
 
     if get_winsvc_status(svc_name) is not None:
@@ -115,11 +113,11 @@ def win_svc(test_home):
     # start
     p = Popen(WSVC_CMD_START, env=cenv)
     assert p.returncode is None
-    time.sleep(3)
+    time.sleep(6)
     ret = get_winsvc_status(svc_name)
-    if 'APPVEYOR' not in os.environ:
+    # if 'APPVEYOR' not in os.environ:
         # TODO: Service does not start in AppVeyor.
-        assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
+    assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
 
     yield None
 

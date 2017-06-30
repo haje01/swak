@@ -25,34 +25,14 @@ def is_windows():
     return 'Windows' in plt
 
 
-def query_pid_dir():
-    adir = os.path.join(get_home_dir(), 'run')
-    #is_root = os.geteuid() == 0
-    #plt = platform()
-    #adir = None
-    #if 'Linux' in plt:
-        #if is_root:
-            #adir = '/var/run'
-        #else:
-            #adir = os.path.expanduser('~/.swak')
-    #elif 'Darwin' in plt:
-        #if is_root:
-            #adir = '/Library/Application Support/Swak'
-        #else:
-            #adir = os.path.expanduser('~/Library/Application Support/Swak')
-    #elif 'Windows' in plt:
-        #raise NotImplemented()
-    #else:
-        #raise Exception("Unidentified OS: {}".format(plt))
-
-    make_dirs(adir)
-    return adir
+def get_pid_dir(home):
+    return os.path.join(select_home(home), 'run')
 
 
-def query_pid_path(svc_name=None):
+def get_pid_path(home, svc_name):
+    """Get pid path with regards home and service name."""
     pid_name = 'swak.pid' if svc_name == None else '{}.pid'.format(svc_name)
-    pid_dir = query_pid_dir()
-    pid_path = os.path.join(pid_dir, pid_name)
+    pid_path = os.path.join(home, 'run', pid_name)
     return pid_path
 
 
@@ -65,44 +45,6 @@ def get_winsvc_status(svcname):
     except pywintypes.error:
         return None
     return ret
-
-
-def get_exe_dir():
-    """Get swak executable's directory.
-
-    Decide config directory with following rules:
-        1. If package has been freezed, used dir of freezed executable path,
-        2. Or use the dir of current module.
-
-    Then make full path by join directory & config file name.
-
-    Returns:
-        str: Absolute path to config file.
-    """
-    if getattr(sys, 'frozen', False):
-        bdir = os.path.dirname(sys.executable)
-    else:
-        bdir = os.path.dirname(os.path.abspath(__file__))
-    return bdir
-
-
-def get_home_dir():
-    """Get swak home directory.
-
-    Decide config directory with following rules:
-        1. If envvar `SWAK_HOME` exists, use it.
-        2. Or use executable's directory.
-
-    Then make full path by join directory & config file name.
-
-    Returns:
-        str: Absolute path to config file.
-    """
-    bdir = os.environ.get('SWAK_HOME')
-    if bdir is not None:
-        return bdir
-
-    return get_exe_dir()
 
 
 def update_dict(d, u):
@@ -127,15 +69,15 @@ def update_dict(d, u):
     return d
 
 
-def init_home_dirs(cfg):
+def init_home(home, cfg):
     """Initialized required directories for home.
 
     Check following paths and make directories if needed.
         - run/
         - log/ (in view of logger/handlers/file/filename of config)
     """
-    home = get_home_dir()
     make_dirs(os.path.join(home, 'run'))
+    make_dirs(os.path.join(home, 'logs'))
     if 'logger' in cfg:
         logger = cfg['logger']
         if 'handlers' in logger:

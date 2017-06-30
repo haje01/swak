@@ -48,29 +48,8 @@ def _update_dict(d, u):
     return d
 
 
-def _get_exe_dir():
-    if getattr(sys, 'frozen', False):
-        bdir = os.path.dirname(sys.executable)
-    else:
-        bdir = os.path.dirname(os.path.abspath(__file__))
-    return bdir
-
-
-def _get_home_dir():
-    bdir = os.environ.get('SWAK_HOME')
-    if bdir is not None:
-        return bdir
-    logging.info("No explicit SWAK_HOME, use exe directory as home.")
-    return _get_exe_dir()
-
-
-def _home_cfg_exists():
-    path = os.path.join(_get_home_dir(), CFG_FNAME)
-    return os.path.isfile(path)
-
-
-def get_home_cfgpath():
-    """Get config file path with regard to home directory.
+def get_exe_dir():
+    """Get swak executable's directory.
 
     Decide config directory with following rules:
         1. If package has been freezed, used dir of freezed executable path,
@@ -81,34 +60,33 @@ def get_home_cfgpath():
     Returns:
         str: Absolute path to config file.
     """
-    bdir = _get_home_dir()
-    return os.path.join(bdir, CFG_FNAME)
+    if getattr(sys, 'frozen', False):
+        bdir = os.path.dirname(sys.executable)
+    else:
+        bdir = os.path.dirname(os.path.abspath(__file__))
+    return bdir
 
 
-def select_and_parse(_cfgpath=None):
-    """Select config file and parse it.
 
-    Config file selection rule:
-        1. If explicit `_cfgpath` is given, use it.
-        2. If an environment variable for home dir(`SWAK_HOME`) exists, infer
-            from it.
-        3. If a cfg file exist in the executable's directory, use it.
-        4. Error
+def select_and_parse(_home=None):
+    """Get config path and parse its config.
 
-    To resolve environment variables in the file, this function takes
-    following procedures.
+    To resolve environment variables while parsing config file, this function
+    takes following procedures.
         1. Parsing config file without resolving EnvVars
         2. Exposure some of config vars to EnvVars
         3. Resolve EnvVars in the original config, then parse it.
 
     Args:
-        _cfgpath (str): Force config path
+        _home (str): Force home directory
 
     Returns:
+        str: Selected home directory
         dict: Parsed config dictionary
     """
-    logging.info("config.select_and_parse: _cfgpath {}".format(_cfgpath))
-    cfgpath = _select(_cfgpath)
+    logging.info("config.select_and_parse: _home {}".format(_home))
+    home = select_home(_home)
+    cfgpath = os.path.join(home, CFG_FNAME)
 
     with open(cfgpath, 'r') as f:
         raw = f.read()
@@ -120,30 +98,61 @@ def select_and_parse(_cfgpath=None):
         expanded_log = DEFAULT_LOG_CFG.format(**os.environ)
         lcfg = yaml.load(expanded_log)
         _update_dict(cfg, lcfg)
-        return cfg
+        return home, cfg
+
+
+def get_config_path(home=None, check_config=False):
+    """Select home directory and make config path with it.
+
+    Args:
+        home (str): Force home directory
+
+    Returns:
+        str: config file path in selected home
+    """
+    home = select_home(home, check_config)
+    return os.path.join(home, CFG_FNAME)
 
 
 def _exposure_to_envvars(cfg):
     os.environ['SWAK_SVC_NAME'] = cfg['svc_name']
     swak_home = os.environ['SWAK_HOME'] if 'SWAK_HOME' in os.environ else\
-        _get_exe_dir()
+        get_exe_dir()
     os.environ['SWAK_HOME'] = swak_home
 
 
-def _select(_cfgpath=None, check_exists=True):
-    if _cfgpath is not None:
-        cfgpath = _cfgpath
-        if check_exists and not os.path.isfile(cfgpath):
-            raise IOError("File '{}' from parameter does not exist".format(cfgpath))
+def select_home(_home=None, check_config=True):
+    """Select home directory and parse its config.
+
+    Home directory selection rule:
+        1. If explicit `_home` is given, use it.
+        2. If an environment variable for home dir(`SWAK_HOME`) exists, use it.
+        3. If the executable's directory has config file, use it.
+        4. Error
+    """
+    def config_file_exists(adir):
+        return os.path.isfile(os.path.join(adir, CFG_FNAME))
+
+    if _home is not None:
+        home = _home
+        if check_config and not config_file_exists(home):
+            raise IOError("Home directory '{}' from parameter does not have"
+                          " config file.".format(home))
     elif ENVVAR in os.environ:
-        cfgpath = get_home_cfgpath()
-        if check_exists and not os.path.isfile(cfgpath):
-            raise IOError("'config.yml' not exist in SWAK_HOME")
-    elif _home_cfg_exists():
-        cfgpath = get_home_cfgpath()
-        if check_exists and not os.path.isfile(cfgpath):
-            raise IOError("'config.yml' not exist in '{}'".format(_get_home_dir()))
+        home = os.environ.get('SWAK_HOME')
+        if check_config and not config_file_exists(home):
+            raise IOError("SWAK_HOME does not have config file.")
+    elif config_file_exists(get_exe_dir()):
+        home = get_exe_dir()
     else:
-        raise ValueError("Config file was not provided!")
-    logging.info("Selected config '{}'".format(cfgpath))
-    return cfgpath
+        raise ValueError("Home directory can't be decided!")
+
+    logging.info("Selected home '{}'".format(home))
+    return home
+
+
+def get_pid_path(home, svc_name):
+    """Get pid path with regards home and service name."""
+    pid_name = 'swak.pid' if svc_name == None else '{}.pid'.format(svc_name)
+    pid_path = os.path.join(home, 'run', pid_name)
+    return pid_path
