@@ -14,14 +14,10 @@ install:
 build: false
 
 test_script:
-<<<<<<< HEAD
-    - "%PYTHON%\\python.exe -m tox"
-
-after_test:
-    - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
     - coverage run --source swak -p -m pytest tests
     - build.bat
 
 after_test:
     - "%PYTHON%\\python -m pip install codecov"
     - coverage combine .
+    - codecov

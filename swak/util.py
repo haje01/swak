@@ -29,13 +29,6 @@ def get_pid_dir(home):
     return os.path.join(select_home(home), 'run')
 
 
-def get_pid_path(home, svc_name):
-    """Get pid path with regards home and service name."""
-    pid_name = 'swak.pid' if svc_name == None else '{}.pid'.format(svc_name)
-    pid_path = os.path.join(home, 'run', pid_name)
-    return pid_path
-
-
 def get_winsvc_status(svcname):
     import win32serviceutil
     import pywintypes
