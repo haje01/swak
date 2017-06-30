@@ -1,20 +1,25 @@
 environment:
+    global:
+        CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
+
     matrix:
         - PYTHON: "C:\\Python27"
+          PYTHON_ARCH: "32"
+
         - PYTHON: "C:\\Python35"
+          PYTHON_ARCH: "32"
 
 install:
-    - "%PYTHON%\\python.exe -m pip install tox"
-    - "%PYTHON%\\python.exe -m pip install codecov"
-    - "%PYTHON%\\python.exe -m pip install pyinstaller"
-    - "%PYTHON%\\python.exe -m pip install pytest"
+    - "%CMD_IN_ENV% pip install -r requiresments.txt"
+    - "%CMD_IN_ENV% pip install -r requiresments-dev.txt"
+    - "%CMD_IN_ENV% pip install codecov"
 
 build: false
 
 test_script:
-    - "%PYTHON%\\python.exe -m tox"
+    - "%CMD_IN_ENV% coverage run --source swak -m pytest tests"
     - build.bat
 
 after_test:
-    - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
+    # - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
     - codecov
