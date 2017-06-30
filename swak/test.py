@@ -12,6 +12,7 @@ from swak.version import VERSION
 def run(home, task, version):
     _run(home, task, version)
 
+
 def _run(home, task, version):
     if version:
         print("Swak version {}".format(VERSION))
