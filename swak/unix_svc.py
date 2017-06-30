@@ -8,6 +8,7 @@ from daemon import Daemon
 
 from swak.util import init_home
 from swak.config import select_and_parse, get_pid_path
+from swak.test import run as test_run
 
 
 class SwakDaemon(Daemon):
@@ -50,9 +51,11 @@ def stop(ctx):
 
 
 @cli.command(help="Test in no daemon mode.")
+@click.option('--task', type=int, help="Task number to test.")
 @click.pass_context
-def test(ctx):
-    print(ctx.obj['home'])
+def test(ctx, task):
+    home = ctx.obj['home']
+    test_run(home)
 
 
 if __name__ == '__main__':

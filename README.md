@@ -4,7 +4,7 @@
 [![AppVeyor Status](https://ci.appveyor.com/api/projects/status/1u1ku2s75ny38na1?svg=true)](https://ci.appveyor.com/project/haje01/swak)
 [![Codecov Status](https://codecov.io/gh/haje01/swak/branch/master/graph/badge.svg)](https://codecov.io/gh/haje01/swak)
 
-파이썬 기반 다중 OS/목적 에이전트 플랫폼. '스왴'으로 읽는다. 
+파이썬 기반 다목적 에이전트 플랫폼. '스왴'으로 읽는다. 
 
 이 페이지에서는 Swak 사용자를 위한 기본적인 내용을 설명한다. 더 자세한 내용은 아래 링크를 참고한다.
 
@@ -192,18 +192,26 @@ Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음�
 `out.Exec` 플러그인은 데이터 스트림을 임시 파일로 저장한 후, 지정된 별도 프로세스에서 처리하게 하고, 결과를 다시 임시 파일로 받는다. 여기에서는 받은 결과를 표준 출력으로 보내고 있다.
 
     
-## 스크립트로 설정 파일 테스트하기
+## 설정 파일 테스트하기
 
-다음과 같이 실행하면 설정 파일내 `task`는 메인 스레드에서 실행된다. 로그를 표준 출력으로 볼 수 있으며, 코드에 중단점을 설정할 수 있어 디버깅에 용이하다.
+커스텀한 설정 파일을 테스트하는 경우를 생각해보자. `my-swak-home`이라는 홈 디렉토리를 만들고, 그 안에 `config.yml`을 원하는 형식으로 편집한다.
+
+이제 아래와 같이 실행하면 설정 파일내 `task`는 메인 스레드에서 실행된다. 로그를 표준 출력으로 볼 수 있으며, 코드에 중단점을 설정할 수 있어 디버깅에 용이하다.
 
 ```
-python -m swak.test config.yml
+python -m swak.test --home my-swak-home
 ```
 
 테스트 모드에서는 하나의 테스크만 실행될 수 있다. 설정 파일에 테스크가 하나 이상있다면, 실행할 테스크의 번호를 지정하자. (지정하지 않으면 첫 번째 테스크가 실행)
 
 ```
-python -m swak.test config.yml -t 2  # 두 번째 테스크를 실행
+python -m swak.test --home my-swak-home --task 2  # 두 번째 테스크를 실행
+```
+
+`SWAK_HOME` 환경 파일을 설정해 두면, 매번 `--home` 옵션을 주지 않아도 된다.
+
+```
+python -m swak.test --task 2
 ```
 
 ## 외부 플러그인 설치
