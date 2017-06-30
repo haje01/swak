@@ -14,8 +14,8 @@ env:
         - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
 
 script:
-    - export SWAK_BUILD=TRUE
     - coverage run --source swak -p -m pytest tests
+    - ./build.sh
 
 after_success:
     - pip install codecov
