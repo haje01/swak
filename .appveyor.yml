@@ -11,6 +11,8 @@ install:
 build: false
 
 test_script:
+    - dir 
+    - mkdir "C:\\project\\swak\\dist"
     - "%PYTHON%\\python.exe -m tox"
 
 after_test:
