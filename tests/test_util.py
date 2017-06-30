@@ -4,8 +4,8 @@ import tempfile
 
 import pytest
 
-from swak.config import get_home_cfgpath, CFG_FNAME, _select, select_and_parse
-from swak.util import get_home_dir
+from swak.config import CFG_FNAME, select_home, select_and_parse,\
+    get_config_path, get_exe_dir
 
 
 CFG = """
@@ -33,33 +33,35 @@ def test_home():
 
 
 def test_util_cfg(test_home):
-    cpath = get_home_cfgpath()
-    cpath = cpath.replace(test_home, '')
-    assert CFG_FNAME == cpath.strip(os.sep)
+    home = select_home(test_home)
+    cpath = get_config_path()
+    assert CFG_FNAME in cpath.replace(home, '').strip(os.sep)
 
-    # select explicit cfg path
-    assert '/path/to/expcfg' == _select('/path/to/expcfg', False)
+    # select explicit home
+    assert '/path/to/expcfg' == select_home('/path/to/expcfg', False)
 
-    # select envvar cfg path
+    # select envvar home
     os.environ['SWAK_HOME'] = '/path/to/home'
-    cpath = _select(None, False)
-    assert '/path/to/home/config.yml' == cpath.replace('\\', '/')
+    home = select_home(None, False)
+    assert '/path/to/home' == home
 
-    # prefer explicit cfg path to envvar
-    assert '/path/to/expcfg' == _select('/path/to/expcfg', False)
+    # prefer explicit home to envvar
+    assert '/path/to/home2' == select_home('/path/to/home2', False)
 
-    # select cfg in exe dir if no explict / envvar path exists.
+    # select home as exe dir if no explict / envvar home exists.
     del os.environ['SWAK_HOME']
-    path = os.path.join(get_home_dir(), 'config.yml')
+    path = os.path.join(get_exe_dir(), 'config.yml')
     with open(path, 'wt') as f:
         f.write(CFG)
-    assert path == _select(None, False)
+    assert get_exe_dir() == select_home(None, False)
 
-    cfg = select_and_parse()
+    # test select and parse
+    home, cfg = select_and_parse()
+    assert get_exe_dir() == home
     assert 'swak-test' == cfg['svc_name']
     # check default logger
     assert 'logger' in cfg
-    # check resolved param
-    assert get_home_dir() in cfg['logger']['handlers']['file']['filename']
+    # check environment variable resolution
+    assert home in cfg['logger']['handlers']['file']['filename']
 
     os.unlink(path)
