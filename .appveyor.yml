@@ -15,8 +15,9 @@ install:
 build: false
 
 test_script:
-    - coverage run --source swak -m pytest tests
+    - coverage run --source swak -p -m pytest tests
     - build.bat
 
 after_test:
+    - coverage combine .
     - codecov

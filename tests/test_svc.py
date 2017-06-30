@@ -118,6 +118,7 @@ def win_svc(test_home):
     time.sleep(3)
     ret = get_winsvc_status(svc_name)
     if 'APPVEYOR' not in os.environ:
+        # TODO: Service does not start in AppVeyor.
         assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
 
     yield None
