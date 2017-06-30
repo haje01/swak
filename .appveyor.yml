@@ -11,10 +11,8 @@ install:
 build: false
 
 test_script:
-    - dir "%PYTHON%\\Scripts"
     - "%PYTHON%\\python.exe -m tox"
 
 after_test:
-    - dir "%PYTHON%\\Scripts"
     - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
     - codecov
