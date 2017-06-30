@@ -51,11 +51,8 @@ class SwakService(win32serviceutil.ServiceFramework):
 
 
 @click.group()
-@click.option('--config', type=click.Path(exists=True), help="Config file"
-              " path.")
-@click.pass_context
-def cli(ctx, config):
-    ctx.obj['config'] = config
+def test_cli():
+    pass
 
 
 def log_header():
@@ -67,11 +64,13 @@ def log_footer():
     logging.critical("========== Finish service ==========")
 
 
-@cli.command()
-@click.pass_context
-def test(ctx):
-    config = ctx['config']
-    print(config)
+@click.command()
+@click.option('--home', type=click.Path(exists=True), help="Home directory")
+def test(home):
+    print(home)
+
+
+test_cli.add_command(test)
 
 
 if __name__ == '__main__':
@@ -82,6 +81,6 @@ if __name__ == '__main__':
     else:
         cmd = sys.argv[1]
         if cmd == 'test':
-            cli()
+            test_cli(obj={})
         else:
             win32serviceutil.HandleCommandLine(SwakService)

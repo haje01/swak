@@ -27,6 +27,7 @@ def cli(ctx, home):
     # init logger
     logconfig.dictConfig(cfg['logger'])
 
+    ctx.obj['home'] = home
     # make pid_path
     pid_path = get_pid_path(home, cfg['svc_name'])
     ctx.obj['pid_path'] = pid_path
@@ -46,6 +47,12 @@ def stop(ctx):
     logging.critical("========== Stop daemon ==========")
     daemon = SwakDaemon(ctx.obj['pid_path'])
     daemon.stop()
+
+
+@cli.command()
+@click.pass_context
+def test(ctx):
+    print(ctx.obj['home'])
 
 
 if __name__ == '__main__':
