@@ -10,8 +10,8 @@ environment:
           PYTHON_ARCH: "32"
 
 install:
-    - "%CMD_IN_ENV% pip install -r requiresments.txt"
-    - "%CMD_IN_ENV% pip install -r requiresments-dev.txt"
+    - "%CMD_IN_ENV% pip install -r requirements.txt"
+    - "%CMD_IN_ENV% pip install -r requirements-dev.txt"
     - "%CMD_IN_ENV% pip install codecov"
 
 build: false
