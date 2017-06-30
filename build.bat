@@ -1,2 +1,4 @@
 pyinstaller swak/win_svc.py --hidden-import=win32timezone --onefile
-pytest --cov swak tests -k test_svc
+rem run service test only
+set SWAK_BUILD=TRUE
+coverage run --source swak -a -m pytest tests -k test_svc

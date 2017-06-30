@@ -1,11 +1,26 @@
 language: python
+
 python:
     - "2.7"
     - "3.5"
+
 install:
-    - "pip install tox-travis"
+    - pip install .
+    - pip install -r requirements.txt
+    - pip install -r requirements-dev.txt
+
 env:
     global:
         - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
+
 script:
-    tox
+    - export SWAK_BUILD=TRUE
+    - coverage run --source swak -p -m pytest tests
+
+after_success:
+    - pip install codecov
+    - coverage combine .
+    - codecov
+
+notifications:
+    email: false
