@@ -21,3 +21,8 @@ after_test:
     - "%PYTHON%\\python -m pip install codecov"
     - coverage combine .
     - codecov
+
+notifications:
+    - provider: Email
+      on_build_success: false
+      on_build_failure: false
