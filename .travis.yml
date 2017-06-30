@@ -15,7 +15,7 @@ env:
 
 script:
     - coverage run --source swak --parallel-mode --module pytest tests
-    - ./build.sh
+    - ./tools/build.sh
 
 after_success:
     - pip install codecov

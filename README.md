@@ -274,6 +274,8 @@ python -m swak.test config.yml -t 2  # 두 번째 테스크를 실행
 
 > 빌드명이 없으면 기본 파일명 `swak`로 빌드된다. 이후 설명에서는 `swak`을 기준으로 하겠다.
 
+> PyInstaller는 파이썬 3.x에서 실행 파일의 버전 정보 설정에 문제가 있다. 이 [페이지](https://github.com/pyinstaller/pyinstaller/issues/1347)를 참고하자.
+
 ## OS별 설치 및 관리
 
 ### 윈도우

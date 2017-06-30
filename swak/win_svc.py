@@ -64,7 +64,7 @@ def log_footer():
     logging.critical("========== Finish service ==========")
 
 
-@click.command()
+@click.command(help="Test in no service mode.")
 @click.option('--home', type=click.Path(exists=True), help="Home directory")
 def test(home):
     print(home)

@@ -49,7 +49,7 @@ def stop(ctx):
     daemon.stop()
 
 
-@cli.command()
+@cli.command(help="Test in no daemon mode.")
 @click.pass_context
 def test(ctx):
     print(ctx.obj['home'])
