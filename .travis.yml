@@ -1,13 +1,18 @@
 language: python
+
 python:
     - "2.7"
     - "3.5"
+
 install:
-    - pip install requirements.txt
-    - pip install requirements-dev.txt
+    - pip install .
+    - pip install -r requirements.txt
+    - pip install -r requirements-dev.txt
+
 env:
     global:
         - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
+
 script:
     - export SWAK_BUILD=TRUE
     - coverage run --source swak -p -m pytest tests
