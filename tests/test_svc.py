@@ -18,8 +18,7 @@ from swak.config import select_and_parse
 WSVC_CUR_STATE = 1
 WSVC_CMD_BUILD = ['pyinstaller.exe', 'swak/win_svc.py',
                   '--hidden-import=win32timezone', '--onefile']
-WSVC_DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..',
-                             'dist')
+WSVC_DIST_DIR = os.path.join(os.getcwd(), 'dist')
 WSVC_EXE = os.path.join(WSVC_DIST_DIR, 'win_svc.exe')
 WSVC_CMD_INSTALL = [WSVC_EXE, 'install']
 WSVC_CMD_START = [WSVC_EXE, 'start']
