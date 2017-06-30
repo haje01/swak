@@ -1,7 +1,4 @@
 environment:
-    global:
-        CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
-
     matrix:
         - PYTHON: "C:\\Python27"
           PYTHON_ARCH: "32"
@@ -10,16 +7,16 @@ environment:
           PYTHON_ARCH: "32"
 
 install:
-    - "%CMD_IN_ENV% pip install -r requirements.txt"
-    - "%CMD_IN_ENV% pip install -r requirements-dev.txt"
-    - "%CMD_IN_ENV% pip install codecov"
+    - "%PYTHON%\\python pip install -r requirements.txt"
+    - "%PYTHON%\\python pip install -r requirements-dev.txt"
+    - "%PYTHON%\\python pip install codecov"
+    - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
 
 build: false
 
 test_script:
-    - "%CMD_IN_ENV% coverage run --source swak -m pytest tests"
+    - coverage run --source swak -m pytest tests
     - build.bat
 
 after_test:
-    # - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
     - codecov
