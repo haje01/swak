@@ -11,7 +11,7 @@ import click
 
 from swak.config import select_and_parse
 from swak.util import init_home
-from swak.test import run as test_run
+from swak.test import _run as test_run
 
 
 home, cfg = select_and_parse(None)
@@ -67,7 +67,7 @@ def log_footer():
 
 @click.command(help="Test in no service mode.")
 @click.option('--home', type=click.Path(exists=True), help="Home directory")
-@click.option('--task', type=int, help="Task number to test.")
+@click.option('--task', type=int, default=1, show_default=True, help="Task number to test.")
 def test(home, task):
     test_run(home, task)
 
