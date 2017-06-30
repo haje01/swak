@@ -9,7 +9,6 @@ environment:
 install:
     - "%PYTHON%\\python -m pip install -r requirements.txt"
     - "%PYTHON%\\python -m pip install -r requirements-dev.txt"
-    - "%PYTHON%\\python -m pip install codecov"
     - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
 
 build: false
@@ -19,5 +18,6 @@ test_script:
     - build.bat
 
 after_test:
+    - "%PYTHON%\\python -m pip install codecov"
     - coverage combine .
     - codecov
