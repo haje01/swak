@@ -113,7 +113,7 @@ def win_svc(test_home):
     # start
     p = Popen(WSVC_CMD_START, env=cenv)
     assert p.returncode is None
-    time.sleep(6)
+    time.sleep(10)
     ret = get_winsvc_status(svc_name)
     # if 'APPVEYOR' not in os.environ:
         # TODO: Service does not start in AppVeyor.
