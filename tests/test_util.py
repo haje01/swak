@@ -6,6 +6,7 @@ import pytest
 
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
+from swak.util import init_home
 
 
 CFG = """
@@ -63,5 +64,9 @@ def test_util_cfg(test_home):
     assert 'logger' in cfg
     # check environment variable resolution
     assert home in cfg['logger']['handlers']['file']['filename']
+
+    # select home and parse config
+    home, cfg = select_and_parse(test_home)
+    init_home(home, cfg)
 
     os.unlink(path)

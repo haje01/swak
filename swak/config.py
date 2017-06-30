@@ -67,7 +67,6 @@ def get_exe_dir():
     return bdir
 
 
-
 def select_and_parse(_home=None):
     """Get config path and parse its config.
 
@@ -153,6 +152,6 @@ def select_home(_home=None, check_config=True):
 
 def get_pid_path(home, svc_name):
     """Get pid path with regards home and service name."""
-    pid_name = 'swak.pid' if svc_name == None else '{}.pid'.format(svc_name)
+    pid_name = 'swak.pid' if svc_name is None else '{}.pid'.format(svc_name)
     pid_path = os.path.join(home, 'run', pid_name)
     return pid_path
