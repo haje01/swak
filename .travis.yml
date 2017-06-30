@@ -14,7 +14,7 @@ env:
         - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
 
 script:
-    - coverage run --source swak -p -m pytest tests
+    - coverage run --source swak --parallel-mode --module pytest tests
     - ./build.sh
 
 after_success:

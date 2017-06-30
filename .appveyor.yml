@@ -14,7 +14,7 @@ install:
 build: false
 
 test_script:
-    - coverage run --source swak -p -m pytest tests
+    - coverage run --source swak --parallel-mode --module pytest tests
     - build.bat
 
 after_test:
@@ -24,5 +24,6 @@ after_test:
 
 notifications:
     - provider: Email
-      on_build_success: false
-      on_build_failure: false
+        on_build_success: false
+        on_build_failure: false
+        on_build_status_changed: true
