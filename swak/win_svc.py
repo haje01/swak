@@ -68,8 +68,9 @@ def log_footer():
 @click.command(help="Test in no service mode.")
 @click.option('--home', type=click.Path(exists=True), help="Home directory")
 @click.option('--task', type=int, default=1, show_default=True, help="Task number to test.")
-def test(home, task):
-    test_run(home, task)
+@click.option('--version', is_flag=True, help="Show Swak version.")
+def test(home, task, version):
+    test_run(home, task, version)
 
 
 test_cli.add_command(test)
