@@ -1,6 +1,13 @@
 #!/usr/bin/env python
+import os
+import re
 
-__version__ = '0.1.0'
+_version_re = re.compile(r'VERSION\s+=\s+(.*)')
+
+with open(os.path.join('swak', 'version.py'), 'rt') as f:
+    version = str(_version_re.search(f.read()).group(1))
+
+__version__ = version
 
 from distutils.core import setup
 
