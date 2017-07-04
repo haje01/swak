@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 import os
-import re
-
-_version_re = re.compile(r'VERSION\s+=\s+(.*)')
 
 with open(os.path.join('swak', 'version.py'), 'rt') as f:
-    version = str(_version_re.search(f.read()).group(1))
+    version = f.read().strip()
 
 __version__ = version
 
@@ -27,7 +24,8 @@ setup(
         'future',
     ],
     dependency_links=[
-        'https://github.com/serverdensity/python-daemon/master#egg=python_daemon',
+        'https://github.com/serverdensity/python-daemon/master#egg='
+        'python_daemon',
     ],
     extras_require={
         'dev': [

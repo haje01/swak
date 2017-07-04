@@ -25,10 +25,6 @@ def is_windows():
     return 'Windows' in plt
 
 
-def get_pid_dir(home):
-    return os.path.join(select_home(home), 'run')
-
-
 def get_winsvc_status(svcname):
     import win32serviceutil
     import pywintypes
@@ -81,3 +77,11 @@ def init_home(home, cfg):
                     fname = file['filename']
                     dname = os.path.dirname(fname)
                     make_dirs(dname)
+
+
+def get_version():
+    path = os.path.join(os.path.dirname(__file__), 'version.txt')
+
+    with open(path, 'rt') as f:
+        version = f.read().strip()
+    return version

@@ -6,9 +6,8 @@ import pytest
 
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
-from swak.util import init_home
+from swak.util import init_home, get_version
 from swak.test import _run as trun
-from swak.version import VERSION
 
 
 CFG = """
@@ -83,4 +82,4 @@ def test_util_testrun(capsys):
 
     trun(None, 1, True)
     out, err = capsys.readouterr()
-    assert 'Swak version {}'.format(VERSION) == out.strip()
+    assert 'Swak version {}'.format(get_version()) == out.strip()
