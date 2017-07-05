@@ -6,7 +6,8 @@ import pytest
 
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
-from swak.util import init_home, get_version
+from swak.util import init_home
+from swak.version import VERSION
 from swak.test import _run as trun
 
 
@@ -74,12 +75,21 @@ def test_util_cfg(test_home):
 
 
 def test_util_testrun(capsys):
+    # with explicit home
     trun('/path/to/home', 2, False)
     out, err = capsys.readouterr()
     outs = out.split('\n')
-    assert '/path/to/home' == outs[0]
+    assert '/path/to/home/config.yml' == outs[0]
     assert '2' == outs[1]
 
+    # without explicit home
+    trun(None, 1, False)
+    out, err = capsys.readouterr()
+    outs = out.split('\n')
+    assert '/Users/haje01/works/swak/devhome/config.yml' == outs[0]
+    assert '1' == outs[1]
+
+    # version
     trun(None, 1, True)
     out, err = capsys.readouterr()
-    assert 'Swak version {}'.format(get_version()) == out.strip()
+    assert 'Swak version {}'.format(VERSION) == out.strip()

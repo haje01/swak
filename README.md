@@ -124,34 +124,42 @@ Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음�
 ```yml
 # 테스크 선언
 - task:
-  # 대상 파일 테일링
-  - in.FileTail:
-      path: C:/myprj/logs/mylog.txt
-      pos_dir: C:/swak_temp/pos
-      encoding: cp949
+    # 대상 파일 테일링
+    - in.FileTail:
+        type: FileTail
+        path: C:/myprj/logs/mylog.txt
+        pos_dir: C:/swak_temp/pos
+        encoding: cp949
 
-  # 커스텀 포맷 파서
-  - out.MyLogParser
+    # 주석 라인 제거
+    # fil.Filter:
+      exclude: ^\s*#.*
 
-  # 5분 단위로 버퍼링
-  - out.TimedBuffer:
-      minutes: 5
+    # 커스텀 포맷 파서
+    - par.MyLogParser
 
-  # 출력 실패 대응
-  - failover:
-    outputs:
-    # Fluentd 서버 1
-    - out.Fluentd:
-        ip: 192.168.0.1
-    # Fluentd 서버 2            
-    - out.Fluentd:
-        ip: 169.168.0.2
-    # 그래도 실패하면 파일에
-    last: 
-      out.File: 
-        path: /tmp/failed.txt
-    # ip값 기반으로 출력 선택
-    start_by: ip
+    # 5분 단위로 버퍼링
+    - buf.TimeBuffer:
+        minutes: 5
+
+    # 출력 실패 대응
+    - out.Balancer:
+        outputs:
+          # Fluentd 서버 1
+          - out.Fluentd
+            ip: 192.168.0.1
+
+          # Fluentd 서버 2            
+          - out.Fluentd:
+            ip: 169.168.0.2
+
+        # 그래도 실패하면 파일에
+        last: 
+          out.File:
+            path: /tmp/failed.txt
+
+        # ip값 기반으로 출력 선택
+        start_by: ip
 ```
 
 
@@ -168,26 +176,26 @@ Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음�
 ```yml
 # 테스크 스레드 생성
 - task:
-  - in.MySQLTail:
-    ip: 127.0.0.1
-    db: logdb
-    table: logtbl
+    - in.MySQLTail:
+        ip: 127.0.0.1
+        db: logdb
+        table: logtbl
 
-  # 100라인 단위로 버퍼링
-  - out.LinedBuffer:
-    lines: 100
+    # 100라인 단위로 버퍼링
+    - buf.LineBuffer:
+        lines: 100
 
-  # 외부 프로세스 실행
-  - out.Exec:
-    cmd: "/usr/bin/r /etc/detect_abuse.r",
+    # 외부 프로세스 실행
+    - out.Exec:
+        cmd: "/usr/bin/r /etc/detect_abuse.r",
 
-  # 표준 출력으로 스트림 보냄
-  - out.Stdout
+    # 표준 출력으로 스트림 보냄
+    - out.Stdout
 ```
 
 `in.MySQLTail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
 
-`out.LinedBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 라인(행) 되었을 때만 출력해 지나친 IO를 막아준다.
+`out.LineBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 라인(행) 되었을 때만 출력해 지나친 IO를 막아준다.
 
 `out.Exec` 플러그인은 데이터 스트림을 임시 파일로 저장한 후, 지정된 별도 프로세스에서 처리하게 하고, 결과를 다시 임시 파일로 받는다. 여기에서는 받은 결과를 표준 출력으로 보내고 있다.
 
@@ -238,6 +246,14 @@ python -m swak.test --task 2
 ### 실행
 
 설치된 플러그인은 Swak 기동시에 자동으로 등록되고, 실행할 수 있다.
+
+
+## 외부 프로세스 호출
+
+### 외부 프로세스 호출 흐름
+외부 실행파일이나 스크립트를 실행할 수 있다. 단, 그것들은 입력 파일명과 출력 파일명을 인자로 받아 실행하도록 구성되어야 한다.
+
+<img src="../images/process_flow.png" width="700" />
 
 # 빌드 그리고 배포
 

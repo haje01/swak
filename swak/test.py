@@ -2,6 +2,9 @@ import os
 
 import click
 
+from swak.config import get_config_path
+from swak.version import VERSION
+
 
 @click.command()
 @click.option('--home', type=click.Path(exists=True), help="Home directory.")
@@ -14,13 +17,12 @@ def run(home, task, version):
 
 def _run(home, task, version):
     if version:
-        path = os.path.join(os.path.dirname(__file__), 'version.txt')
-        with open(path, 'rt') as f:
-            VERSION = f.read().strip()
         print("Swak version {}".format(VERSION))
         return
 
-    print(home)
+    epath = os.path.abspath(home) if home is not None else None
+    cfg_path = get_config_path(epath)
+    print(cfg_path)
     print(task)
 
 

@@ -79,9 +79,3 @@ def init_home(home, cfg):
                     make_dirs(dname)
 
 
-def get_version():
-    path = os.path.join(os.path.dirname(__file__), 'version.txt')
-
-    with open(path, 'rt') as f:
-        version = f.read().strip()
-    return version
