@@ -4,13 +4,13 @@
 
 ## 플러그인 기초
 
-플러그인은 크게 입력, 필터, 파서, 버퍼 그리고 출력 그리고 명령 플러그인의 네 가지로 나뉜다. 각 플러그인은 다음과 같은 패키지명 형식으로 시작한다.
+플러그인은 크게 입력, 파서, 버퍼, 출력 그리고 명령 플러그인의 다섯 가지로 나뉜다. 각 플러그인은 다음과 같은 패키지명 형식으로 시작한다.
 
 - 입력 플러그인: `in.`
-- 필터 플러그인: `fil.`
 - 파서 플러그인: `par.`
 - 버퍼 플러그인: `buf.`
 - 출력 플러그인: `out.`
+- 명령 플러그인: `cmd.`
 
 플러그인의 이름은 파이썬 클래스 이름 형식을 따른다. 기타 플러그인은
 
@@ -20,7 +20,7 @@
 
 입력은 한 번만 나오고, 출력은 한 번 이상 연쇄될 수 있다.
 
-<img src="../images/plugin_flow.png" width="550" />
+<img src="../images/plugin_flow.png" width="600" />
 
 ## 플러그인 클래스
 
@@ -106,7 +106,7 @@ class BaseInput(BasePlugin):
 
 ### BaseParser 클래스
 
-이것을 상속 받아 파서 클래스를 만든다.
+이것을 상속받아 파서 클래스를 만든다.
 
 ```python
 class BaseParser(BasePlugin):
@@ -121,9 +121,9 @@ class BaseParser(BasePlugin):
 
 Input에서 넘어온 텍스트의 파싱하여 레코드를 반환
 
-### BaseOutput 플러그인
+### BaseOutput 클래스
 
-이것을 상속 받아 출력 클래스를 만든다.
+이것을 상속받아 출력 클래스를 만든다.
 
 ```python
 class BaseOutput(Plugin):
@@ -137,6 +137,16 @@ class BaseOutput(Plugin):
 #### write (필수 구현)
 
 인자로 온 라인들을 출력.
+
+### BaseCommand 클래스
+
+이것을 상속받아 명령 클래스를 만든다.
+
+```python
+class BaseCommand(Plugin):
+    
+    def execute()
+```
 
 ## 파이썬 버전
 
