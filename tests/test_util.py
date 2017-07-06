@@ -19,6 +19,8 @@ svc_dname: "Swak: Multi-Agent Service (Test)"
 
 @pytest.fixture(scope="function")
 def test_home():
+    old_home = os.environ.get('SWAK_HOME')
+
     test_home = tempfile.gettempdir()
     os.environ['SWAK_HOME'] = test_home
     cfg_path = os.path.join(test_home, 'config.yml')
@@ -32,6 +34,7 @@ def test_home():
 
     yield test_home
 
+    os.environ['SWAK_HOME'] = old_home
     # shutil.rmtree(test_home)
 
 
@@ -74,7 +77,7 @@ def test_util_cfg(test_home):
     os.unlink(path)
 
 
-def test_util_testrun(capsys):
+def test_util_testrun(test_home, capsys):
     # with explicit home
     trun('/path/to/home', 2, False)
     out, err = capsys.readouterr()
@@ -86,7 +89,7 @@ def test_util_testrun(capsys):
     trun(None, 1, False)
     out, err = capsys.readouterr()
     outs = out.split('\n')
-    assert '/Users/haje01/works/swak/devhome/config.yml' == outs[0]
+    assert test_home in outs[0]
     assert '1' == outs[1]
 
     # version

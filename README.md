@@ -85,8 +85,27 @@ Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음�
 - 본인 만의 커스텀한 설정이 필요한 경우, `devhome/config.yml`을 수정하지 말고, 별도로 디렉토리를 만들고 거기에 `config.yml`을 저장한 후, 홈 디렉토리로 지정해준다. (`logs/`, `run/` 같은 하위 디렉토리는 자동으로 만들어진다.`)
 - 바이너리로 빌드되어 배포 될 때는, 일반적으로 실행 파일과 같은 폴더에 `config.yml`을 만들어 주면 된다. 
 
-
 # Swak 활용 예
+
+## Swak 커맨드 라인 명령
+
+Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
+
+### 설치된 플러그인 정보 보기
+
+    swak plugin --list
+
+### 특정 플러그인 도움말 보기
+
+    swak plugin in.FakeData --help
+
+### 특정 플러그인 설정 YAML로 출력하기
+
+    swak plugin in.SizeBuffer --max-chunk 1048576 --yaml --withdefault
+
+### 간단히 테스트하기
+
+    swak test -c 'in.FakeData --type people'
 
 ## 설정 파일
 
@@ -239,21 +258,13 @@ python -m swak.test --task 2
 
 ### 의존 패키지 설치
 
-플러그인 디렉토리에 `requirements.txt`가 있다면 플러그인이 의존하는 패키지가 있다는 뜻이다. 다음과 같이 설치해주자.
+플러그인 디렉토리에 `requirements.txt`가 있다면 플러그인이 의존하는 외부 패키지가 있다는 뜻이다. 다음과 같이 설치해주자.
 
     pip install -r requirements.txt
 
 ### 실행
 
 설치된 플러그인은 Swak 기동시에 자동으로 등록되고, 실행할 수 있다.
-
-
-## 외부 프로세스 호출
-
-### 외부 프로세스 호출 흐름
-외부 실행파일이나 스크립트를 실행할 수 있다. 단, 그것들은 입력 파일명과 출력 파일명을 인자로 받아 실행하도록 구성되어야 한다.
-
-<img src="../images/process_flow.png" width="700" />
 
 # 빌드 그리고 배포
 

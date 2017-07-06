@@ -1,12 +1,68 @@
+# Swak 개발자 문서
+
+여기에서는 Swak 자체 또는 Swak의 플러그인 개발자를 위한 내용을 설명한다.
+
+## 로그 설정
+
+설정 파일안의 `logger` 필드 를 이용해서, Swak의 로그에 대한 설정을 할 수있다. 기본 설정은 아래와 같다.
+
+```yml
+logger:
+    version: 1
+
+    formatters:
+        simpleFormater:
+            format: '%(asctime)s %(threadName)s [%(levelname)s] - %(message)s'
+            datefmt: '%Y-%m-%d %H:%M:%S'
+
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: simpleFormater
+            level: DEBUG
+            stream: ext://sys.stdout
+        file:
+            class : logging.handlers.RotatingFileHandler
+            formatter: simpleFormater
+            level: DEBUG
+            filename: '{SWAK_HOME}/logs/{SWAK_SVC_NAME}-log.txt'g
+            maxBytes: 10485760
+            backupCount: 10
+
+    root:
+        level: DEBUG
+        handlers: [console, file]
+```
+
+기본 로그 설정은 다음과 같은 뜻이다:
+
+- 로그의 필드 구분자는 탭(`\t\`) 이다.
+- 표준 출력과 파일 양쪽으로 로그를 남긴다.
+- 양족 다 로그 레벨은 `DEBUG`이다. 
+- 로그는 실행 파일이 있는 폴더 아래 `logs/`폴더에 남는다.
+- 파일은 100MiB 단위로 로테이션 하며, 최대 10개까지 남는다.
+
+만약, 이중에 일부 수정이 필요하다면 수정이 필요한 필드만 계층을 유지하고 기입하면 된다:
+
+```yml
+logger:
+    handlers:
+        file:
+            level: CRITICAL
+            filename: C:\logs\{SWAK_SVC_NAME}-log.txt
+```
+
+위와 같이 설정하면 다른 것들은 기본값 그대로 두고, 파일 로그 핸들러의 레벨, 저장 경로만 수정하게 된다.
+
 # Swak 플러그인 개발
 
-이 페이지에서는 Swak 플러그인 개발에 대해 설명한다.
+여기에서는 Swak 플러그인 개발에 대해 설명한다.
 
 아래와 같은 다양한 플러그인을 조합하여 개별 테스트를 정의한다.
 
 ## 플러그인 분류
 
-플러그인은 크게 입력, 파서, 변환, 버퍼, 출력 그리고 명령 플러그인의 여섯 가지로 나뉜다. 각 플러그인은 다음과 같은 패키지명 형식으로 시작한다.
+플러그인은 크게 입력, 파서, 변환, 버퍼, 출력 그리고 명령 플러그인의 여섯가지 타입으로 나뉜다. 각 타입별 플러그인은 다음과 같은 패키지명 형식으로 시작한다.
 
 - 입력 플러그인: `in.`
 - 파서 플러그인: `par.`
@@ -15,7 +71,7 @@
 - 출력 플러그인: `out.`
 - 명령 플러그인: `cmd.`
 
-플러그인의 이름은 파이썬 클래스 이름 형식을 따른다.
+이후의 플러그인의 이름은 클래스 이름 형식을 따른다.
 
 ### 입/출력 플러그인 처리 흐름
 
@@ -23,7 +79,7 @@
 
 - 입력: 데이터 소스에서 텍스트를 읽거나 생성하여 라인으로 변환
 - 파서: 라인을 파싱하여 Dictionary 형태의 레코드로 변환
-- 변환: 레코드의 특정 필드를 추가, 삭제, 변경
+- 변환: 레코드의 특정 필드를 추가, 삭제, 변경 (선택적)
 - 버퍼: 레코드를 일정한 크기 또는 시간을 청크로하여 버퍼링 (선택적)
 - 출력: 개별 레코드 또는 버퍼링된 청크를 출력 대상에 쓴다.
 
@@ -182,8 +238,14 @@ class BaseOutput(Plugin):
 ```python
 class BaseCommand(Plugin):
     
-    def execute()
+    def execute(self)
 ```
+
+다음과 같은 메소드를 갖고 있다.
+
+#### execute (필수 구현)
+
+명령이 수행할 코드.
 
 ## 파이썬 버전
 
@@ -198,62 +260,10 @@ Swak는 파이썬 2.7와 3.5를 지원한다.
 - 2.7만 지원하는 하나의 플러그인을 사용하려면, 사용자는 Swak을 파이썬 2.7로 빌드해야 한다.
 - 이는 다른 모든 플러그인도 2.7 기반으로 동작하게 된다는 뜻
 
-## 로그 설정
-
-설정 파일안의 `logger` 필드 를 이용해서, Swak의 로그에 대한 설정을 할 수있다. 기본 설정은 아래와 같다.
-
-```yml
-logger:
-    version: 1
-
-    formatters:
-        simpleFormater:
-            format: '%(asctime)s %(threadName)s [%(levelname)s] - %(message)s'
-            datefmt: '%Y-%m-%d %H:%M:%S'
-
-    handlers:
-        console:
-            class: logging.StreamHandler
-            formatter: simpleFormater
-            level: DEBUG
-            stream: ext://sys.stdout
-        file:
-            class : logging.handlers.RotatingFileHandler
-            formatter: simpleFormater
-            level: DEBUG
-            filename: '{SWAK_HOME}/logs/{SWAK_SVC_NAME}-log.txt'g
-            maxBytes: 10485760
-            backupCount: 10
-
-    root:
-        level: DEBUG
-        handlers: [console, file]
-```
-
-기본 로그 설정은 다음과 같은 뜻이다:
-
-- 로그의 필드 구분자는 탭(`\t\`) 이다.
-- 표준 출력과 파일 양쪽으로 로그를 남긴다.
-- 양족 다 로그 레벨은 `DEBUG`이다. 
-- 로그는 실행 파일이 있는 폴더 아래 `logs/`폴더에 남는다.
-- 파일은 100MiB 단위로 로테이션 하며, 최대 10개까지 남는다.
-
-만약, 이중에 일부 수정이 필요하다면 수정이 필요한 필드만 계층을 유지하고 기입하면 된다:
-
-```yml
-logger:
-    handlers:
-        file:
-            level: CRITICAL
-            filename: C:\logs\{SWAK_SVC_NAME}-log.txt
-```
-
-위와 같이 설정하면 다른 것들은 기본값 그대로 두고, 파일 로그 핸들러의 레벨, 저장 경로만 수정하게 된다.
-
 # Swak 플러그인 만들기
 여기에서는 플러그인 만드는 법을 살펴보겠다. Swak 플러그인은 플러그인 디렉토리(`swak/swak/plugins`)에 위치하며, Swak이 기동할 때 자동으로 로딩된다. 기본 플러그인은 플러그인 디렉토리에 Swak과 함께 배포된다. 외부 플러그인은 누구나 만들어서 플러그인 디렉토리에 추가하면 된다.
 
-## 외부 플러그인 규칙
+## 플러그인 규칙
 
 여기서 Swak의 플러그인 코드는 GitHub을 통해서 관리되는 것으로 가정하며, 다음과 같은 규칙을 따라야 한다.
 
@@ -267,13 +277,14 @@ logger:
 각 플러그인은 `README.md` 파일에 문서화를 해야한다. GitHub의 [Markdown 형식](https://guides.github.com/features/mastering-markdown/)에 맞게 다음과 같이 작성한다.
 
 - 처음에 H1(`#`)으로 `swak-plugin-NAME` 형식으로 플러그인의 이름 헤더가 온다.
-- 그 아래 플러그인에 대한 간단한 설명을 한다.
+    - 본문으로 플러그인에 대한 간단한 설명을 한다.
 - 그 아래 H2(`##`)로 `설정 예시` 헤더가 온다.
-- 그 아래 설정 파일의 간단한 예를 보여준다.
+    - 본문으로 설정 파일의 간단한 예를 보여준다.
 - 그 아래 H2(`##`)로 `동작 방식` 헤더가 온다.
-- 그 아래 플러그인의 내부 동작에 관한 설명을 한다.
+    - 본문으로 플러그인의 내부 동작에 관한 설명을 한다.
 - 그 아래 H2(`##`)로 `인자들` 헤더가 온다.
-- 그 아래 H3(`###`)로 설정 파일의 인자에 대해 각각 설명한다.
+    - 그 아래 각 인자에 대해 H3(`###`) 헤더가 온다.
+        - 본문으로 인자에 대해 설명한다.
 
 즉, 아래와 같은 구조를 같는다.
 
@@ -312,7 +323,13 @@ logger:
 
 4. `main.py` 파일을 만들고 플러그인 코드를 작성한다.
 5. 테스트용 설정 파일 `cfg-test.yml`을 작성한다.
-5. Swak의 기본 폴더로 돌아와 `python swak.runner swak/plugins/linenumber/cfg-test.yml`로 실행해본다.
+6. Swak의 기본 폴더로 돌아와 `python swak.runner swak/plugins/linenumber/cfg-test.yml`로 실행해본다.
 
 ## 개발용 실행
 
+## 외부 프로세스 호출
+
+### 외부 프로세스 호출 흐름
+외부 실행파일이나 스크립트를 실행할 수 있다. 단, 그것들은 입력 파일명과 출력 파일명을 인자로 받아 실행하도록 구성되어야 한다.
+
+<img src="../images/process_flow.png" width="700" />
