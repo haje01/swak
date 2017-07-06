@@ -34,7 +34,8 @@ def test_home():
 
     yield test_home
 
-    os.environ['SWAK_HOME'] = old_home
+    if old_home is not None:
+        os.environ['SWAK_HOME'] = old_home
     # shutil.rmtree(test_home)
 
 
