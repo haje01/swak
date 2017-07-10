@@ -5,9 +5,6 @@ import collections
 import errno
 
 
-PY2 = sys.version_info[0] == 2
-
-
 def make_dirs(adir):
     """Make directory if not exist."""
     try:
@@ -79,3 +76,21 @@ def init_home(home, cfg):
                     make_dirs(dname)
 
 
+def check_python_version():
+    """Check python version and return version info.
+
+    Returns:
+        int: 2 if Python version is 2.x
+             3 if >= 3.5
+             else raises.
+
+    Raises:
+        UnsupportedPython: If current python version is not supported.
+    """
+    major, minor = sys.version_info[0:2]
+    if major == 2:
+        return 2
+    if major == 3 and minor >= 5:
+        return 3
+    else:
+        raise UnsupportedPython("Python {} is not supported".format(version_info))

@@ -10,8 +10,11 @@ import win32serviceutil
 import click
 
 from swak.config import select_and_parse
-from swak.util import init_home
+from swak.util import init_home, check_python_version
 from swak.test import _run as test_run
+
+
+check_python_version()
 
 
 home, cfg = select_and_parse(None)
@@ -67,7 +70,8 @@ def log_footer():
 
 @click.command(help="Test in no service mode.")
 @click.option('--home', type=click.Path(exists=True), help="Home directory")
-@click.option('--task', type=int, default=1, show_default=True, help="Task number to test.")
+@click.option('--task', type=int, default=1, show_default=True, help="Task"
+              " number to test.")
 @click.option('--version', is_flag=True, help="Show Swak version.")
 def test(home, task, version):
     test_run(home, task, version)

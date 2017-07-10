@@ -8,6 +8,10 @@ __version__ = version
 
 from distutils.core import setup
 
+SCRIPTS = ['bin/swak']
+if os.name == 'nt':
+    SCRIPTS += ['bin/swak.bat']
+
 setup(
     name='swak',
     version=__version__,
@@ -17,6 +21,7 @@ setup(
     description="Multi-purpose Monitoring Agent in Python",
     platforms=["any"],
     packages=['swak'],
+    scripts=SCRIPTS,
     license=['MIT License'],
     install_requires=[
         'click',
