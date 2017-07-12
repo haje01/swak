@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 
 import click
+from tabulate import tabulate
 
 from swak.util import check_python_version
 from swak.plugin import enumerate_plugins, check_plugins_initpy
@@ -37,12 +38,15 @@ def list():
     mmap = swak.plugins.MODULE_MAP
     cnt = len(mmap)
     mnames = sorted(mmap.keys())
+    plugins = []
+    for mname in mnames:
+        desc = mmap[mname].main.help
+        info = [mname, desc]
+        plugins.append(info)
 
     print("Swak has {} plugin(s):".format(cnt))
-    print("------------------------------------------")
-    for mname in mnames:
-        print("{:13s} - {}".format(mname, mmap[mname].main.help))
-    print("------------------------------------------")
+    header = ['Plugin', 'Short description']
+    print(tabulate(plugins, headers=header, tablefmt='psql'))
 
 
 @cli.command(help="Show help message for a plugin.")

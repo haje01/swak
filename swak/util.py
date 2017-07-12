@@ -3,6 +3,9 @@ import sys
 from platform import platform
 import collections
 import errno
+import logging
+
+test_logger_inited = False
 
 
 def make_dirs(adir):
@@ -74,6 +77,21 @@ def init_home(home, cfg):
                     fname = file['filename']
                     dname = os.path.dirname(fname)
                     make_dirs(dname)
+
+
+def test_logconfig():
+    global test_logger_inited
+
+    if test_logger_inited:
+        return
+    test_logger_inited = True
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    ch = logger.handlers[0]
+    ch.setLevel(logging.DEBUG)
+    fmt = logging.Formatter('[%(filename)s:%(lineno)d] %(levelname)s - %(message)s')
+    ch.setFormatter(fmt)
 
 
 def check_python_version():

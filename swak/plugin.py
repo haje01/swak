@@ -3,12 +3,14 @@ import sys
 import glob
 from collections import namedtuple
 import hashlib
+import logging
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 
 
 PREFIX = ['in_', 'par_', 'tr_', 'buf_', 'out_', 'cmd_']
+CHKSUM_FNAME = '_CHECKSUM_.txt'
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'desc',
                                        'module'])
@@ -208,6 +210,8 @@ def load_module(name, path):
     Returns:
         module: Imported module.
     """
+    logging.debug("load module: {} from {}".format(name, path))
+
     major, minor = sys.version_info[0:2]
     if major == 2:
         import imp
@@ -275,10 +279,19 @@ def remove_plugins_initpy():
     path = get_plugins_initpy_path()
     if os.path.isfile(path):
         os.unlink(path)
+        logging.debug("removed plugin/__init__.py")
+    else:
+        logging.debug("plugin/__init__.py does not exist.")
+
+
+def get_plugins_chksum_path():
+    return os.path.join(get_plugins_dir(), CHKSUM_FNAME)
 
 
 def check_plugins_initpy(plugin_infos):
     """Create plugins/__init__.py file if plugins checksum has been changed.
+
+    Checksum is serialized to a dedicated file.
 
     Args:
         plugin_infos: Generator of PluginInfo
@@ -290,14 +303,27 @@ def check_plugins_initpy(plugin_infos):
     create = False
     path = get_plugins_initpy_path()
     chksum = calc_plugins_hash(plugin_infos)
+    cpath = get_plugins_chksum_path()
     if not os.path.isfile(path):
+        logging.debug("plugin/__init__.py does not exist.")
         create = True
     else:
-        mod = load_module('__init__.py', path)
-        create = mod.CHECKSUM != chksum
+        if not os.path.isfile(cpath):
+            create = True
+        else:
+            with open(cpath, 'rt') as f:
+                ochksum = f.read().strip()
+            logging.debug("plugins old chksum {}, new chksum"
+                          " {}".format(ochksum, chksum))
+            create = ochksum != chksum
 
     if create:
+        logging.debug("writing plugins/__init__.py - chksum {}".format(chksum))
         with open(path, 'wt') as f:
             dump_plugins_import(f, chksum)
+
+        logging.debug("writing plugins/_CHECKSUM_.txt")
+        with open(cpath, 'wt') as f:
+            f.write('{}\n'.format(chksum))
 
     return create, chksum

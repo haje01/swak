@@ -41,9 +41,6 @@ class Pipeline(object):
             raise RuntimeError("You can not step a pipeline without start it"
                                " first.")
 
-        for plugin in self.plugins:
-            print(plugin)
-
     def stop(self):
         """Stop pipeline.
 

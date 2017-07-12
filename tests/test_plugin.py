@@ -7,6 +7,10 @@ from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,
     calc_plugins_hash, remove_plugins_initpy, check_plugins_initpy,\
     get_plugins_initpy_path
 from swak.main import parse_test_commands
+from swak.util import test_logconfig
+
+
+test_logconfig()
 
 
 def plugin_filter(_dir):
@@ -23,7 +27,7 @@ def test_plugin_cmd(capfd):
     cmd = ['swak', 'list']
     call(cmd)
     out, err = capfd.readouterr()
-    assert 'Swak has {} plugin(s)'.format(1) in out
+    assert 'Swak has 2 plugin(s)' in out
 
     # after first command, plugins/__init__.py should exist.
     assert os.path.isfile(get_plugins_initpy_path())
@@ -45,9 +49,6 @@ def test_plugin_util():
 
     plugin_infos = list(enumerate_plugins(None, plugin_filter))
     assert len(plugin_infos) > 0
-
-    for pi in plugin_infos:
-        print(pi)
 
     ret = list(parse_test_commands('in.Counter --fields 3 | out.Stdout'))
     assert len(ret) == 2
@@ -84,6 +85,8 @@ def test_plugin_initpy():
     # test plugin checksum
     h = calc_plugins_hash(enumerate_plugins(None, plugin_filter1))
     assert '9d4feaa6af4dd11e31572d6c1896d8b2' == h
+    h = calc_plugins_hash(enumerate_plugins(None, plugin_filter))
+    assert '7ed9a23f52202cd70253890a591bb96a'
 
     # test plugins/__init__.py creation
     remove_plugins_initpy()

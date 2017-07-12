@@ -2,3 +2,4 @@ click
 -e git://github.com/serverdensity/python-daemon.git#egg=python-daemon
 pyyaml
 future
+tabulate
