@@ -91,21 +91,21 @@ Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음�
 
 Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 
-### 설치된 플러그인 정보 보기
+### 설치된 플러그인 리스트 보기
 
-    swak plugin --list
+    swak list
 
-### 특정 플러그인 도움말 보기
+### 특정 플러그인의 도움말 보기
 
-    swak plugin in.FakeData --help
+    swak desc in.FakeData
 
-### 특정 플러그인 설정 YAML로 출력하기
+### 특정 플러그인 설정을 YAML로 출력하기
 
-    swak plugin in.SizeBuffer --max-chunk 1048576 --yaml --withdefault
+    swak yaml in.SizeBuffer --max-chunk 1048576 --yaml --with-default
 
 ### 간단히 테스트하기
 
-    swak test -c 'in.FakeData --type people'
+    swak run 'in.FakeData --type people | out.Stdout'
 
 ## 설정 파일
 
@@ -256,6 +256,19 @@ python -m swak.test --task 2
 
 마지막 인자로 `swak-plugin-`을 제외한 플러그인 이름만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래 `fluentd` 디렉토리에 플러그인 코드가 받아진다.
 
+다음과 같이 확인할 수 있다.
+
+```
+$ swak list
+Swak has 1 plugin(s):
+------------------------------------
+in.Counter   - Emit incremental number.
+out.Fluentd  - Output to Fluentd.
+------------------------------------
+```
+
+플러그인에 따라 의존 패키지 설치가 필요할 수 있다. 자세한 것은 해당 플러그인 `README.md` 를 참고하자.
+
 ### 의존 패키지 설치
 
 플러그인 디렉토리에 `requirements.txt`가 있다면 플러그인이 의존하는 외부 패키지가 있다는 뜻이다. 다음과 같이 설치해주자.
@@ -278,36 +291,23 @@ python -m swak.test --task 2
 
 > 윈도우에서 파이썬 3.5를 사용할 때 "ImportError: DLL load failed" 에러가 나오는 경우 [Microsoft Visual C++ 2010 Redistributable Package](https://www.microsoft.com/en-us/download/confirmation.aspx?id=5555)를 설치하자.
 
-## 빌드 파일
-빌드할 때는 사용할 외부 플러그인만 포함하여 빌드하는 것이 좋다. 이를 위해서 **빌드 파일** 이 필요하다. 빌드 파일은 YAML(`*-build.yml`) 형식으로 다음과 같은 구조를 가진다.
+## 빌드
 
-```yml
-# 빌드명. 생략가능(없으면 기본 이름 swak으로 빌드된다. 하나 이상의 빌드가 필요한 경우 사용한다.)
--name: [빌드명]
+윈도우에서는 다음과 같이 빌드한다.
 
-# 사용할 외부 플러그인 리스트
--plugins:
-  - [참조할 외부 플러그인1]
-  - [참조할 외부 플러그인2]
-  ...
+```
+cd swak
+tools\build.bat
 ```
 
-예를 들어 다음과 같은 빌드 설정파일 `myprj-build.yml`이 있다고 할 때,
+Linux/macOS에서는 다음과 같이 빌드한다.
 
-```yml
-- name: myprj
-- plugins:
-  - swak-plugin-syslog
-  - swak-plugin-fluentd
+```
+cd swak
+./tools/build.sh
 ```
 
-아래와 같이 실행하면 빌드가 된다.
-
-    swak-build myprj-build.yml
-
-정상적으로 빌드가 되면, `dist/` 폴더 아래 `swak-myprj` 실행 파일이 만들어진다. 이것을 배포하면 된다. 필요에 따라 목적에 맞는 Swak 실행 파일을 만들어 관리하자.
-
-> 빌드명이 없으면 기본 파일명 `swak`로 빌드된다. 이후 설명에서는 `swak`을 기준으로 하겠다.
+정상적으로 빌드가 되면, `dist/` 폴더 아래 `swakd.exe` (윈도우) 또는 `swakd` (Linux/macOS) 실행 파일이 만들어진다. 이것을 배포하면 된다.
 
 > PyInstaller는 파이썬 3.x에서 실행 파일의 버전 정보 설정에 문제가 있다. 이 [페이지](https://github.com/pyinstaller/pyinstaller/issues/1347)를 참고하자.
 
@@ -317,32 +317,32 @@ python -m swak.test --task 2
 
 실행 파일이 있는 폴더로 이동해, 다음과 같이 하면 윈도우 리부팅 시에도 서비스가 자동으로 시작하도록 서비스 설치가 된다.
 
-    swak --startup=auto install
+    swakd.exe --startup=auto install
 
 다음과 같이 서비스를 시작하고
 
-    swak start
+    swakd.exe start
 
 다음과 같이 서비스를 종료한다.
 
-    swak stop
+    swakd.exe stop
 
 ### Unix 계열(Linux/macOS)
 
 다음과 같이 데몬을 시작하고
 
-    swak start
+    swakd start
 
 다음과 같이 데몬을 종료한다.
 
-    swak stop
+    swakd stop
 
 ### 실행 파일로 설정 파일 테스트
 
 개발/빌드 머신에서 잘 되다가 설치시 장비에서 문제가 발생하거나, 현장에서 설정 파일을 변경해야 하는 경우가 있다. 빌드된 실행 파일로 테스트는 다음과 같이 한다.
 
-    swak test config.yml
+    swakd test -c config.yml
 
 테스트 모드에서는 하나의 테스크만 실행될 수 있다. 설정 파일에 테스크가 하나 이상있다면, 실행할 테스크의 번호를 지정하자. (지정하지 않으면 첫 번째 테스크가 실행)
 
-    swak test config.yml -t 2  # 두 번째 테스크를 실행
+    swakd test config.yml -t 2  # 두 번째 테스크를 실행

@@ -83,7 +83,7 @@ def _create_plugin_from_cmd(plugin_infos, cmd):
     elm = cmd.split()
     c = elm[0]
     for pi in plugin_infos:
-        if pi.name == c:
+        if pi.pname == c:
             sys.argv = elm
             plugin = pi.module.main(standalone_mode=False)
             return plugin

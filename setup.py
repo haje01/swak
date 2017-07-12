@@ -20,7 +20,7 @@ setup(
     url="https://github.com/haje01/swak",
     description="Multi-purpose Monitoring Agent in Python",
     platforms=["any"],
-    packages=['swak'],
+    packages=['swak', 'swak/plugins'],
     scripts=SCRIPTS,
     license=['MIT License'],
     install_requires=[

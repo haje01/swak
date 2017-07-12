@@ -20,13 +20,10 @@ def parse_test_commands(cmd):
 
 def execute_test_cmd(plugins, args):
     pname = args[0]
-    pargs = args[1:]
     for pi in plugins:
         if pi.name == pname:
             sys.argv = [pi.name, '--help']
-            import pdb; pdb.set_trace()  # XXX BREAKPOINT
             plugin = pi.main()
-            pass
 
 
 @click.group()
@@ -49,8 +46,8 @@ def list():
 def desc(plugin):
     found = False
     for pi in enumerate_plugins():
-        if pi.name == plugin:
-            sys.argv = [pi.name, '--help']
+        if pi.pname == plugin:
+            sys.argv = [pi.pname, '--help']
             pi.module.main()
             found = True
             break
@@ -63,4 +60,5 @@ def desc(plugin):
 def run(commands):
     plugins = list(enumerate_plugins())
     for tcmd in parse_test_commands(commands):
+        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         execute_test_cmd(plugins, tcmd)
