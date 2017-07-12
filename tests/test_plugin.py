@@ -3,8 +3,9 @@ from subprocess import call
 from io import StringIO
 
 from swak.config import get_exe_dir
-from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugin_import,\
-    calc_plugin_hash, remove_plugin_initpy, check_plugin_initpy
+from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,\
+    calc_plugins_hash, remove_plugins_initpy, check_plugins_initpy,\
+    get_plugins_initpy_path
 from swak.main import parse_test_commands
 
 
@@ -17,10 +18,15 @@ def plugin_filter1(_dir):
 
 
 def test_plugin_cmd(capfd):
+    remove_plugins_initpy()
+
     cmd = ['swak', 'list']
     call(cmd)
     out, err = capfd.readouterr()
     assert 'Swak has {} plugin(s)'.format(1) in out
+
+    # after first command, plugins/__init__.py should exist.
+    assert os.path.isfile(get_plugins_initpy_path())
 
     cmd = ['swak', 'desc', 'in.Counter']
     call(cmd)
@@ -69,30 +75,30 @@ MODULE_MAP = {
 """
 
     sbuf = StringIO()
-    dump_plugin_import(sbuf)
+    dump_plugins_import(sbuf)
     assert dump == sbuf.getvalue()
     sbuf.close()
 
 
 def test_plugin_initpy():
     # test plugin checksum
-    h = calc_plugin_hash(enumerate_plugins(None, plugin_filter1))
+    h = calc_plugins_hash(enumerate_plugins(None, plugin_filter1))
     assert '9d4feaa6af4dd11e31572d6c1896d8b2' == h
 
     # test plugins/__init__.py creation
-    remove_plugin_initpy()
+    remove_plugins_initpy()
 
     # enumerate 1 plugin and __init__.py has been created.
-    created, chksum1 = check_plugin_initpy(enumerate_plugins(None,
+    created, chksum1 = check_plugins_initpy(enumerate_plugins(None,
                                                              plugin_filter1))
     assert created
 
     # enumerate 1 plugin again and __init__.py hasn't been created.
-    created, _ = check_plugin_initpy(enumerate_plugins(None, plugin_filter1))
+    created, _ = check_plugins_initpy(enumerate_plugins(None, plugin_filter1))
     assert not created
 
     # enumerate 2 plugin and __init__.py has been created.
-    created, chksum = check_plugin_initpy(enumerate_plugins(None,
+    created, chksum = check_plugins_initpy(enumerate_plugins(None,
                                                             plugin_filter))
     assert created
     assert chksum != chksum1

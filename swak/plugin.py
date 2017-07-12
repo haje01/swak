@@ -115,6 +115,7 @@ BASE_CLASS_MAP = {
 
 
 def get_plugins_dir(_home=None):
+    """Returns plugins/ directory path."""
     edir = get_exe_dir()
     return os.path.join(edir, 'plugins')
 
@@ -221,7 +222,7 @@ def load_module(name, path):
         raise UnsupportedPython()
 
 
-def dump_plugin_import(io, chksum=None):
+def dump_plugins_import(io, chksum=None):
     """Enumerate all plugins and dump import code to io.
 
     Args:
@@ -238,7 +239,7 @@ def dump_plugin_import(io, chksum=None):
         plugins.append((pi.pname, fname))
 
     if chksum is None:
-        chksum = calc_plugin_hash(enumerate_plugins())
+        chksum = calc_plugins_hash(enumerate_plugins())
     io.write(u'\nCHECKSUM = \'{}\'\n'.format(chksum))
 
     io.write(u'\nMODULE_MAP = {\n')
@@ -247,7 +248,7 @@ def dump_plugin_import(io, chksum=None):
     io.write(u'}\n')
 
 
-def calc_plugin_hash(plugin_infos):
+def calc_plugins_hash(plugin_infos):
     """Make plugins hash.
 
     Hash value is made by md5 algorithm with plugin module names.
@@ -264,18 +265,19 @@ def calc_plugin_hash(plugin_infos):
     return m.hexdigest()
 
 
-def _plugins_initpy_path():
-    return os.path.join(get_exe_dir(), 'plugins', '__init__.py')
+def get_plugins_initpy_path():
+    """Return path of plugins/__init__.py."""
+    return os.path.join(get_plugins_dir(), '__init__.py')
 
 
-def remove_plugin_initpy():
+def remove_plugins_initpy():
     """Remove plugins/__init__.py file."""
-    path = _plugins_initpy_path()
+    path = get_plugins_initpy_path()
     if os.path.isfile(path):
         os.unlink(path)
 
 
-def check_plugin_initpy(plugin_infos):
+def check_plugins_initpy(plugin_infos):
     """Create plugins/__init__.py file if plugins checksum has been changed.
 
     Args:
@@ -286,8 +288,8 @@ def check_plugin_initpy(plugin_infos):
         str: Plugins checksum
     """
     create = False
-    path = _plugins_initpy_path()
-    chksum = calc_plugin_hash(plugin_infos)
+    path = get_plugins_initpy_path()
+    chksum = calc_plugins_hash(plugin_infos)
     if not os.path.isfile(path):
         create = True
     else:
@@ -296,6 +298,6 @@ def check_plugin_initpy(plugin_infos):
 
     if create:
         with open(path, 'wt') as f:
-            dump_plugin_import(f, chksum)
+            dump_plugins_import(f, chksum)
 
     return create, chksum

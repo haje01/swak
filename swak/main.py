@@ -5,10 +5,12 @@ import sys
 import click
 
 from swak.util import check_python_version
-from swak.plugin import enumerate_plugins
-
+from swak.plugin import enumerate_plugins, check_plugins_initpy
 
 check_python_version()
+check_plugins_initpy(enumerate_plugins())
+
+import swak.plugins
 
 
 def parse_test_commands(cmd):
@@ -22,8 +24,7 @@ def execute_test_cmd(plugins, args):
     pname = args[0]
     for pi in plugins:
         if pi.name == pname:
-            sys.argv = [pi.name, '--help']
-            plugin = pi.main()
+            pass
 
 
 @click.group()
@@ -33,11 +34,14 @@ def cli():
 
 @cli.command(help="List installed plugins.")
 def list():
-    cnt = 1
+    mmap = swak.plugins.MODULE_MAP
+    cnt = len(mmap)
+    mnames = sorted(mmap.keys())
+
     print("Swak has {} plugin(s):".format(cnt))
     print("------------------------------------------")
-    for pi in enumerate_plugins():
-        print("{:13s} - {}".format(pi.name, pi.desc))
+    for mname in mnames:
+        print("{:13s} - {}".format(mname, mmap[mname].main.help))
     print("------------------------------------------")
 
 
@@ -45,20 +49,17 @@ def list():
 @click.argument('plugin')
 def desc(plugin):
     found = False
-    for pi in enumerate_plugins():
-        if pi.pname == plugin:
-            sys.argv = [pi.pname, '--help']
-            pi.module.main()
-            found = True
-            break
-    if not found:
+    mmap = swak.plugins.MODULE_MAP
+    if plugin in mmap:
+        sys.argv = [plugin, '--help']
+        mmap[plugin].main()
+    else:
         print("Can not find plugin '{}'".format(plugin), file=sys.stderr)
 
 
 @cli.command(help="Run test commands.")
 @click.argument('commands')
 def run(commands):
-    plugins = list(enumerate_plugins())
+    mmap = swak.plugins.MODULE_MAP
     for tcmd in parse_test_commands(commands):
-        import pdb; pdb.set_trace()  # XXX BREAKPOINT
         execute_test_cmd(plugins, tcmd)
