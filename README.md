@@ -83,7 +83,7 @@ Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음�
 
 - 개발을 위해 소스를 받은 경우는 소스 디렉토리 내의  `devhome`의 절대 경로를 스크립트 파일의 인자, 또는 환경 변수로 지정한다. 그러면 그 안의 개발용 `config.yml` 파일을 참고하여 실행된다.
 - 본인 만의 커스텀한 설정이 필요한 경우, `devhome/config.yml`을 수정하지 말고, 별도로 디렉토리를 만들고 거기에 `config.yml`을 저장한 후, 홈 디렉토리로 지정해준다. (`logs/`, `run/` 같은 하위 디렉토리는 자동으로 만들어진다.`)
-- 바이너리로 빌드되어 배포 될 때는, 일반적으로 실행 파일과 같은 폴더에 `config.yml`을 만들어 주면 된다. 
+- 바이너리로 빌드되어 배포 될 때는, 일반적으로 실행 파일과 같은 디렉토리에 `config.yml`을 만들어 주면 된다. 
 
 # Swak 활용 예
 
@@ -116,77 +116,62 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 ### 가짜 데이터를 표준 출력을 통해 출력
 
 ```yml
-# 테스크 선언
-- task:
-  # 가짜 데이터 생성
-  - in.FakeData:
-      type: people
+# 입력
+inputs:
+  foo:  # 태그
+    # 가짜 데이터 생성
+    - in.fakedata:
+        type: people
 
-  # 표준 출력으로 스트림 보냄
-  - out.Stdout
-
-  # 1초 후 다시 시작
-  - cmd.Sleep:
-      seconds: 1
+# 출력
+outputs:
+  foo: # 태그
+    # 표준 출력으로 스트림 보냄
+    - out.stdout
 ```
 
 위의 스크립트는 다음과 같은 식으로 진행된다:
 
-1. `FakeData` 플러그인을 통해 가짜 데이터를 생성하고 
-2. `out.Stdout` 플러그인은 표준 출력으로 스트림을 보낸다.
-3. 1초 쉬었다가 다시 처음부터 재개한다.
+1. `foo` 는 데이터 스트림의 태그이다. 태그가 같은 것들끼리 연결되어 처리된다.
+2. `in.fakedata` 플러그인을 통해 가짜 데이터를 생성하고 
+3. `out.stdout` 플러그인은 표준 출력으로 스트림을 보낸다.
 
 ### 특정 파일을 테일링하여 Fluentd로 전송
 
 다음은 파일 테일링 설정 파일의 예이다.
 
 ```yml
-# 테스크 선언
-- task:
-    # 대상 파일 테일링
-    - in.FileTail:
-        type: FileTail
-        path: C:/myprj/logs/mylog.txt
-        pos_dir: C:/swak_temp/pos
-        encoding: cp949
+# 입력
+inputs:
+  foo:  # 데이터 스트림 태그
+    # 주석행을 제거하며 대상 파일 테일링
+    - in.filetail --path C:/myprj/logs/mylog.txt --posdir C:/swak_temp/pos --encoding: cp949 --exclude ^\S*#.*
 
-    # 주석 라인 제거
-    # fil.Filter:
-      exclude: ^\s*#.*
-
+# 파서
+parsers:
+  foo:
     # 커스텀 포맷 파서
-    - par.MyLogParser
+    par.mylog
 
+# 버퍼
+buffers:
+  foo:
     # 5분 단위로 버퍼링
-    - buf.TimeBuffer:
-        minutes: 5
+    - buf.file time --min 5
 
-    # 출력 실패 대응
-    - cmd.Failover:
-        outputs:
-          # Fluentd 서버 1
-          - out.Fluentd
-            ip: 192.168.0.1
-
-          # Fluentd 서버 2            
-          - out.Fluentd:
-            ip: 169.168.0.2
-
-        # 그래도 실패하면 파일에
-        last: 
-          out.File:
-            path: /tmp/failed.txt
-
-        # ip값 기반으로 출력 선택
-        start_by: ip
+# 출력
+outputs:
+  foo:
+    # Fluentd
+    - out.Fluentd --server 192.168.0.1 --server: 169.168.0.2 --last /tmp/failed.txt --start_by: ip
 ```
 
 
-`in.FileTail`은 지정된 파일에서 추가된 내용을 스트림으로 보낸다.
+`in.filetail`은 지정된 파일에서 추가된 내용을 스트림으로 보낸다.
 
-`out.TimedBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 시간이 되었을 때만 출력해 지나친 IO를 막아준다.
+`out.timebuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 시간이 되었을 때만 출력해 지나친 IO를 막아준다.
 
-`failover` 함수는 인자 리스트 중 하나로 출력을 한다, 에러가 발생하면 다른 리스트로 시도한다. 시작 출력은 `start_by`로 지정하는 값에 의존하여 결정된다. 모든 출력이 실패하면 `last`로 지정된 출력으로 스트림을 보낸다. `out.Fluentd` 플러그인은 스트림을 지정된 Fluentd 서버로 보낸다.
+`out.fluentd` 플러그인은 스트림을 지정된 Fluentd 서버로 보낸다. 이때 하나 이상의 서버를 받고, 에러가 발생하면 다른 리스트로 시도한다. 시작 출력은 `start_by`로 지정하는 값에 의존하여 결정된다. 모든 출력이 실패하면 `last`로 지정된 출력으로 스트림을 보낸다.
 
 ### 로그 DB를 테일링
 
@@ -194,51 +179,45 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 
 ```yml
 # 테스크 스레드 생성
-- task:
-    - in.MySQLTail:
-        ip: 127.0.0.1
-        db: logdb
-        table: logtbl
+inputs:
+  foo:
+    - in.mysqltail --ip 127.0.0.1 --db logdb --table logtbl
 
-    # 100라인 단위로 버퍼링
-    - buf.LineBuffer:
-        lines: 100
+buffers:
+  foo:
+    - buf.file size --lines 100
 
+outputs:
+  foo:
     # 외부 프로세스 실행
-    - out.Exec:
-        cmd: "/usr/bin/r /etc/detect_abuse.r",
+    - out.exec --cmd "/usr/bin/r /etc/detect_abuse.r" --tag foo.detected
 
-    # 표준 출력으로 스트림 보냄
-    - out.Stdout
+  foo.detected:
+    # 실행 결과를 표준 출력
+    - out.stdout
 ```
 
-`in.MySQLTail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
+`in.mysqltail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
 
-`out.LineBuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 라인(행) 되었을 때만 출력해 지나친 IO를 막아준다.
+`out.file size`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 라인(행) 수가 되었을 때 출력해 지나친 IO 사용을 막아준다.
 
-`out.Exec` 플러그인은 데이터 스트림을 임시 파일로 저장한 후, 지정된 별도 프로세스에서 처리하게 하고, 결과를 다시 임시 파일로 받는다. 여기에서는 받은 결과를 표준 출력으로 보내고 있다.
+`out.exec` 플러그인은 데이터 스트림을 임시 파일로 저장한 후, 지정된 별도 프로세스에서 처리하게 하고, 결과를 다시 임시 파일로 받는다. 여기에서는 받은 결과를 표준 출력으로 보내고 있다.
 
     
 ## 설정 파일 테스트하기
 
 커스텀한 설정 파일을 테스트하는 경우를 생각해보자. `my-swak-home`이라는 홈 디렉토리를 만들고, 그 안에 `config.yml`을 원하는 형식으로 편집한다.
 
-이제 아래와 같이 실행하면 설정 파일내 `task`는 메인 스레드에서 실행된다.(이를 테스트 모드라 하겠다.) 로그를 표준 출력으로 볼 수 있으며, 코드에 중단점을 설정할 수 있어 디버깅에 용이하다.
+그 디렉토리로 들어가 아래와 같이 실행하면, 플러그인들은 메인 스레드에서 실행된다.(이를 테스트 모드라 하겠다.) 로그를 표준 출력으로 볼 수 있으며, 코드에 중단점을 설정할 수 있어 디버깅에 용이하다.
 
 ```
-python -m swak.test --home my-swak-home
+swak test
 ```
 
-테스트 모드에서는 하나의 테스크만 실행될 수 있다. 설정 파일에 테스크가 하나 이상있다면, 실행할 테스크의 번호를 지정하자. (지정하지 않으면 첫 번째 테스크가 실행)
+테스트 모드에서는 하나의 데이터 스트림에 대해서만 실행할 수 있다. 설정 파일에 데이터 스트림이 여럿있다면, 실행할 데이터 스트림의 태그를 지정하자. (지정하지 않으면 최초로 등장하는 데이터 스트림이 선택)
 
 ```
-python -m swak.test --home my-swak-home --task 2  # 두 번째 테스크를 실행
-```
-
-`SWAK_HOME` 환경 파일을 설정해 두면, 매번 `--home` 옵션을 주지 않아도 된다.
-
-```
-python -m swak.test --task 2
+swak test --tag foo  # foo 데이터 스트림에 대해 테스트
 ```
 
 ## 외부 플러그인 설치
@@ -260,18 +239,19 @@ python -m swak.test --task 2
 
 ```
 $ swak list
-Swak has 1 plugin(s):
-------------------------------------
-in.Counter   - Emit incremental number.
-out.Fluentd  - Output to Fluentd.
-------------------------------------
++------------+----------------------------+
+| Plugin     | Description                |
+|------------+----------------------------|
+| in.Counter | Emit incremental number.   |
+| out.Stdout | Output to standard output. |
++------------+----------------------------+
 ```
 
-플러그인에 따라 의존 패키지 설치가 필요할 수 있다. 자세한 것은 해당 플러그인 `README.md` 를 참고하자.
+플러그인에 따라 의존 패키지 설치가 필요할 수 있다.(자세한 것은 해당 플러그인 `README.md` 를 참고하자.)
 
 ### 의존 패키지 설치
 
-플러그인 디렉토리에 `requirements.txt`가 있다면 플러그인이 의존하는 외부 패키지가 있다는 뜻이다. 다음과 같이 설치해주자.
+플러그인 디렉토리에 `requirements.txt`가 있다면 플러그인이 의존하는 외부 패키지가 있다는 뜻이다. 해당 디렉토리로 이동 후 다음과 같이 설치해주자.
 
     pip install -r requirements.txt
 
@@ -287,7 +267,7 @@ out.Fluentd  - Output to Fluentd.
 
 [PyInstaller](http://www.pyinstaller.org) 홈페이지를 참고하여 배포 대상 OS에 맞는 버전의 PyInstaller를 미리 설치하자.
 
-> PyEnv를 사용하는 경우 빌드시 동적 라이브러리를 찾지 못해 에러가 나올 수 있다. 이때는 macOS의 경우 `--enable-framework` 옵션으로 파이썬을 빌드하여 설치해야 한다. 자세한 것은 [이 글](https://github.com/pyenv/pyenv/issues/443)을 참고하자. Linux의 경우 `--enable-shared` 옵션으로 빌드한다.
+> PyEnv를 사용하는 경우 빌드시 동적 라이브러리를 찾지 못해 에러가 나올 수 있다. 이때는 macOS의 경우 `--enable-framework` 옵션으로 파이썬을 빌드하여 설치해야 한다. 자세한 것은 [이 글](https://github.com/pyenv/pyenv/issues/443)을 참고하자. 리눅스의 경우 `--enable-shared` 옵션으로 빌드한다.
 
 > 윈도우에서 파이썬 3.5를 사용할 때 "ImportError: DLL load failed" 에러가 나오는 경우 [Microsoft Visual C++ 2010 Redistributable Package](https://www.microsoft.com/en-us/download/confirmation.aspx?id=5555)를 설치하자.
 
@@ -300,14 +280,14 @@ cd swak
 tools\build.bat
 ```
 
-Linux/macOS에서는 다음과 같이 빌드한다.
+리눅스/macOS에서는 다음과 같이 빌드한다.
 
 ```
 cd swak
 ./tools/build.sh
 ```
 
-정상적으로 빌드가 되면, `dist/` 폴더 아래 `swakd.exe` (윈도우) 또는 `swakd` (Linux/macOS) 실행 파일이 만들어진다. 이것을 배포하면 된다.
+정상적으로 빌드가 되면, `dist/` 디렉토리 아래 `swakd.exe` (윈도우) 또는 `swakd` (리눅스/macOS) 실행 파일이 만들어진다. 이것을 배포하면 된다.
 
 > PyInstaller는 파이썬 3.x에서 실행 파일의 버전 정보 설정에 문제가 있다. 이 [페이지](https://github.com/pyinstaller/pyinstaller/issues/1347)를 참고하자.
 
@@ -315,7 +295,7 @@ cd swak
 
 ### 윈도우
 
-실행 파일이 있는 폴더로 이동해, 다음과 같이 하면 윈도우 리부팅 시에도 서비스가 자동으로 시작하도록 서비스 설치가 된다.
+실행 파일이 있는 디렉토리로 이동해, 다음과 같이 하면 윈도우 리부팅 시에도 서비스가 자동으로 시작하도록 서비스 설치가 된다.
 
     swakd.exe --startup=auto install
 

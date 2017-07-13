@@ -42,6 +42,16 @@ def test_plugin_cmd(capfd):
     out, err = capfd.readouterr()
     assert "Can not find" in err
 
+    cmd = ['swak', 'yaml', 'in.Counter', '--max', '3', '--field', '2']
+    call(cmd)
+    out, err = capfd.readouterr()
+    yaml = """\
+in.Counter:
+    max: 3
+    field: 2
+"""
+    assert yaml == out
+
 
 def test_plugin_util():
     path = os.path.join(get_exe_dir(), 'plugins')
@@ -93,7 +103,7 @@ def test_plugin_initpy():
 
     # enumerate 1 plugin and __init__.py has been created.
     created, chksum1 = check_plugins_initpy(enumerate_plugins(None,
-                                                             plugin_filter1))
+                                                              plugin_filter1))
     assert created
 
     # enumerate 1 plugin again and __init__.py hasn't been created.
