@@ -11,7 +11,6 @@ from swak.exception import UnsupportedPython
 
 PREFIX = ['in_', 'par_', 'tr_', 'buf_', 'out_', 'cmd_']
 CHKSUM_FNAME = '_CHECKSUM_.txt'
-YAML_INDENT = "  "
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'desc',
                                        'module'])
@@ -181,7 +180,7 @@ def validate_plugin_info(adir):
             mod = load_module(fname, pypath)
             pclass = _infer_plugin_class(mod, pr, fname)
             prefix = pr.replace('_', '.')
-            pname = '{}{}'.format(prefix, pclass.__name__)
+            pname = '{}{}'.format(prefix, pclass.__name__.lower())
             dname = os.path.basename(adir)
             return PluginInfo(fname, pname, dname, mod.main.help, mod)
 
@@ -328,20 +327,3 @@ def check_plugins_initpy(plugin_infos):
             f.write('{}\n'.format(chksum))
 
     return create, chksum
-
-
-def yaml_from_plugin_main(io, plugin, main, indent=0):
-    """Get YAML from click command and envvar and write to io.
-
-    Args:
-        io (IOBase): an IO instance where result is written to.
-        plugin (str):  Prefixed plugin name.
-        main (click.core.Command): Plugin main function to refer arguments &
-            options.
-    """
-    def write(indent, msg):
-        tab = "  " * indent
-        io.write("{}{}".format(tab, msg))
-
-    tab = "  " * indent
-    write(indent, "{}:\n".format(plugin))

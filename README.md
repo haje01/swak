@@ -111,7 +111,7 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 
 설정 파일은 YAML(`*.yml`) 형식으로 Swak이 할 일을 명시한다. 샘플 설정 파일을 통해 Swak의 사용법을 살펴보자.
 
-입력과 출력 플러그인은 각각 `in` 및 `out` 로 시작한다. `task` 태그 아래에 순차적으로 처리할 일을 명시한다. 
+입력과 출력 플러그인은 각각 `inputs` 및 `outputs` 섹션의 데이터 스트림 태그 아래에 위치한다.
 
 ### 가짜 데이터를 표준 출력을 통해 출력
 
@@ -163,7 +163,7 @@ buffers:
 outputs:
   foo:
     # Fluentd
-    - out.Fluentd --server 192.168.0.1 --server: 169.168.0.2 --last /tmp/failed.txt --start_by: ip
+    - out.fluentd --server 192.168.0.1 --server: 169.168.0.2 --last /tmp/failed.txt --start_by: ip
 ```
 
 
@@ -178,7 +178,6 @@ outputs:
 다음은 DB 테일링 설정 파일의 예이다.
 
 ```yml
-# 테스크 스레드 생성
 inputs:
   foo:
     - in.mysqltail --ip 127.0.0.1 --db logdb --table logtbl
@@ -242,8 +241,8 @@ $ swak list
 +------------+----------------------------+
 | Plugin     | Description                |
 |------------+----------------------------|
-| in.Counter | Emit incremental number.   |
-| out.Stdout | Output to standard output. |
+| in.counter | Emit incremental number.   |
+| out.stdout | Output to standard output. |
 +------------+----------------------------+
 ```
 
@@ -316,13 +315,3 @@ cd swak
 다음과 같이 데몬을 종료한다.
 
     swakd stop
-
-### 실행 파일로 설정 파일 테스트
-
-개발/빌드 머신에서 잘 되다가 설치시 장비에서 문제가 발생하거나, 현장에서 설정 파일을 변경해야 하는 경우가 있다. 빌드된 실행 파일로 테스트는 다음과 같이 한다.
-
-    swakd test -c config.yml
-
-테스트 모드에서는 하나의 테스크만 실행될 수 있다. 설정 파일에 테스크가 하나 이상있다면, 실행할 테스크의 번호를 지정하자. (지정하지 않으면 첫 번째 테스크가 실행)
-
-    swakd test config.yml -t 2  # 두 번째 테스크를 실행

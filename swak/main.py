@@ -7,8 +7,7 @@ import click
 from tabulate import tabulate
 
 from swak.util import check_python_version
-from swak.plugin import enumerate_plugins, check_plugins_initpy,\
-    yaml_from_plugin_main
+from swak.plugin import enumerate_plugins, check_plugins_initpy
 
 check_python_version()
 check_plugins_initpy(enumerate_plugins())
@@ -69,17 +68,3 @@ def run(commands):
     mmap = swak.plugins.MODULE_MAP
     for tcmd in parse_test_commands(commands):
         execute_test_cmd(plugins, tcmd)
-
-
-@cli.command(help="Dump given config as YAML for a plugin")
-@click.argument('plugin')
-@click.option('--with-default', show_default=True, is_flag=True, help="Dump default values.")
-def yaml(plugin, with_default):
-    mmap = swak.plugins.MODULE_MAP
-    if plugin in mmap:
-        main = mmap[plugin].main
-        io = StringIO()
-        yaml_from_plugin_main(io, plugin, main)
-        print(io.getvalue())
-    else:
-        print("Can not find plugin '{}'".format(plugin), file=sys.stderr)
