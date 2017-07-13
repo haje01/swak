@@ -32,7 +32,7 @@ def test_plugin_cmd(capfd):
     # after first command, plugins/__init__.py should exist.
     assert os.path.isfile(get_plugins_initpy_path())
 
-    cmd = ['swak', 'desc', 'in.Counter']
+    cmd = ['swak', 'desc', 'in.counter']
     call(cmd)
     out, err = capfd.readouterr()
     assert "Emit incremental number" in out
@@ -42,16 +42,6 @@ def test_plugin_cmd(capfd):
     out, err = capfd.readouterr()
     assert "Can not find" in err
 
-    cmd = ['swak', 'yaml', 'in.Counter', '--max', '3', '--field', '2']
-    call(cmd)
-    out, err = capfd.readouterr()
-    yaml = """\
-in.Counter:
-    max: 3
-    field: 2
-"""
-    assert yaml == out
-
 
 def test_plugin_util():
     path = os.path.join(get_exe_dir(), 'plugins')
@@ -60,12 +50,12 @@ def test_plugin_util():
     plugin_infos = list(enumerate_plugins(None, plugin_filter))
     assert len(plugin_infos) > 0
 
-    ret = list(parse_test_commands('in.Counter --fields 3 | out.Stdout'))
+    ret = list(parse_test_commands('in.counter --fields 3 | out.stdout'))
     assert len(ret) == 2
-    assert ret[0][0] == 'in.Counter'
+    assert ret[0][0] == 'in.counter'
     assert ret[0][1] == '--fields'
     assert ret[0][2] == '3'
-    assert ret[1][0] == 'out.Stdout'
+    assert ret[1][0] == 'out.stdout'
 
 
 def test_plugin_dump():
@@ -80,8 +70,8 @@ from swak.plugins.stdout import out_stdout
 CHECKSUM = '7ed9a23f52202cd70253890a591bb96a'
 
 MODULE_MAP = {
-    'in.Counter': in_counter,
-    'out.Stdout': out_stdout,
+    'in.counter': in_counter,
+    'out.stdout': out_stdout,
 }
 """
 

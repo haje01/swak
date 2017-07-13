@@ -4,6 +4,7 @@ import logging
 
 
 from swak.plugin import BaseInput
+import swak.plugins
 
 
 cmd_ptrn = re.compile(r'\S*(?P<cmd>((in\.|par\.|tr\.|buf\.|out\.|cmd\.)\S+)'
@@ -76,17 +77,18 @@ def _parse_cmds(cmds):
             logging.error("Irregular command: '{}'".format(cmds))
 
 
-def _create_plugin_from_cmd(plugin_infos, cmd):
+def _create_plugin_from_cmd(cmd):
     elm = cmd.split()
-    c = elm[0]
-    for pi in plugin_infos:
-        if pi.pname == c:
+    name = elm[0]
+    mmap = swak.plugins.MODULE_MAP
+    for pname in mmap.keys():
+        if name == pname:
             sys.argv = elm
-            plugin = pi.module.main(standalone_mode=False)
+            plugin = mmap[name].main(standalone_mode=False)
             return plugin
 
 
-def build_pipeline_from_cmds(plugin_infos, cmds):
+def build_pipeline_from_cmds(cmds):
     """Build pipeline from command string.
 
     Build pipeline from parsed command.
@@ -96,7 +98,7 @@ def build_pipeline_from_cmds(plugin_infos, cmds):
     """
     plugins = []
     for cmd in _parse_cmds(cmds):
-        plugin = _create_plugin_from_cmd(plugin_infos, cmd)
+        plugin = _create_plugin_from_cmd(cmd)
         plugins.append(plugin)
 
     return Pipeline(plugins)

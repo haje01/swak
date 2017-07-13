@@ -99,10 +99,6 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 
     swak desc in.FakeData
 
-### 특정 플러그인 설정을 YAML로 출력하기
-
-    swak yaml in.SizeBuffer --max-chunk 1048576 --yaml --with-default
-
 ### 간단히 테스트하기
 
     swak run 'in.FakeData --type people | out.Stdout'
@@ -111,6 +107,7 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 
 설정 파일은 YAML(`*.yml`) 형식으로 Swak이 할 일을 명시한다. 샘플 설정 파일을 통해 Swak의 사용법을 살펴보자.
 
+설정 파일내에 플러그인  플러그인 들은 플러그인 타입별로 각각의 섹션 아래에 선언된다. 예를 들어
 입력과 출력 플러그인은 각각 `inputs` 및 `outputs` 섹션의 데이터 스트림 태그 아래에 위치한다.
 
 ### 미니멀한 설정 파일의 예
@@ -118,16 +115,10 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 가짜 데이터를 표준 출력을 통해 출력하는 간단한 예이다. `in.fakedata` -> `out.stdout` 순서, 즉 등장 순으로 처리된다.
 
 ```yml
-# 입력
-inputs:
-  foo:  # 태그
+streams:
+  foo:  # 데이터 스트림 태그
     # 가짜 데이터 생성
-    - in.fakedata:
-        type: people
-
-# 출력
-outputs:
-  foo: # 태그
+    - in.fakedata -type people
     # 표준 출력으로 스트림 보냄
     - out.stdout
 ```
@@ -141,30 +132,17 @@ outputs:
 
 ### 좀 더 복잡한 예
 
-다음은 특정 파일을 테일링하여 Fluentd로 전송하는 설정 파일의 예이다. 조금 복잡하지만, `in.filetail` -> `par.mylog` -> `buf.file` -> `out.fluentd` 식으로 순서대로 처리된다.
+다음은 특정 파일을 테일링하여 Fluentd로 전송하는 설정 파일의 예이다. 조금 복잡하지만 순서대로 처리된다.
 
 ```yml
-# 입력
-inputs:
+streams:
   foo:  # 데이터 스트림 태그
     # 주석행을 제거하며 대상 파일 테일링
-    - in.filetail --path C:/myprj/logs/mylog.txt --posdir C:/swak_temp/pos --encoding: cp949 --exclude ^\S*#.*
-
-# 파서
-parsers:
-  foo:
+    - in.filetail -path C:/myprj/logs/mylog.txt -posdir C:/swak_temp/pos -encoding: cp949 --exclude ^\S*#.*
     # 커스텀 포맷 파서
-    par.mylog
-
-# 버퍼
-buffers:
-  foo:
+    - par.mylog
     # 5분 단위로 버퍼링
     - buf.file time --min 5
-
-# 출력
-outputs:
-  foo:
     # Fluentd
     - out.fluentd --server 192.168.0.1 --server: 169.168.0.2 --last /tmp/failed.txt --start_by: ip
 ```
@@ -178,37 +156,30 @@ outputs:
 
 ### 처리 순서가 순환적인 예
 
-데이터 스트림은 `inputs` 섹션의 입력 플러그인에서 시작하여 `outputs` 섹션의 출력 플러그인에서 종료된다. 그러나 섹션의 플러그인이 꼭 등장하는 순서대로 시작되는 것이 아니다. 태그의 지정을 통해 순환적으로 처리될 수 있다. 아래의 예를 살펴보자.
+플러그인이 꼭 등장하는 순서대로 시작되는 것은 아니다. 태그의 지정을 통해 순환적으로 처리될 수 있다. 아래의 예를 살펴보자.
 
 ```yml
-inputs:
+streams:
   foo:
     - in.mysqltail --ip 127.0.0.1 --db logdb --table logtbl
+    - buf.file size --lines 100 --tag foo.buffered
 
-transforms:
   foo.buffered:
     # 외부 프로세스 실행 후 새로운 태그로 리디렉트
     - tr.exec --cmd "/usr/bin/r /etc/detect_abuse.r"
-
-buffers:
-  foo:
-    - buf.file size --lines 100 --tag foo.buffered
-
-outputs:
-  foo.buffered:
-    # 실행 결과를 표준 출력
     - out.stdout
 ```
 
-이 경우는 `in.mysqltail` -> `buf.file` -> `tr.exec` -> `out.stdout` 순으로 처리된다.
+이 경우는 `foo` 스트림에서 `in.mysqltail` -> `buf.file` 처리 후 `foo.buffered` 스트림에서 `tr.exec` -> `out.stdout` 순으로 처리된다.
 
-먼저 `in.mysqltail` 플러그인이 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
+먼저 `in.mysqltail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
 
-`buf.file size`는 스트림의 내용을 파일 버퍼에 쌓아두다가, 지정한 라인(행) 수가 되었을 때 전달해 지나친 IO 사용을 막아준다. 전달시에는 새로운 태그를 지정하여 `tr.exec`로 보낸다.
+`buf.file size`는 스트림의 내용을 파일 버퍼에 쌓아두다가, 지정한 라인(행) 수가 되었을 때 전달해 지나친 IO 사용을 막아준다. 전달시에는 새로운 스트림 `foo.buffered`로 보낸다.
 
-`tr.exec` 플러그인은 버퍼링된 청크를 받고, 지정된 별도 프로세스에서 처리한 후, 그 결과를 임시 파일로 받는다. 같은 태그에 관해서는 등장 순서대로 처리되기에, 받은 결과는 `out.stdout` 으로 보내진다.
+거기에서 `tr.exec` 플러그인은 버퍼링된 청크를 받고, 지정된 별도 프로세스에서 처리한 후, 그 결과를 임시 파일로 받는다. 같은 태그에 관해서는 등장 순서대로 처리되기에, 받은 결과는 `out.stdout` 으로 보내진다.
 
-    
+> 각 스트림은 입력 플러그인이 있다면 등장 순서대로 시작되고, 없다면 매칭되는 데이터가 있을 때 시작된다.
+
 ## 설정 파일 테스트하기
 
 커스텀한 설정 파일을 테스트하는 경우를 생각해보자. `my-swak-home`이라는 홈 디렉토리를 만들고, 그 안에 `config.yml`을 원하는 형식으로 편집한다.
