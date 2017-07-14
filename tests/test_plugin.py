@@ -6,7 +6,6 @@ from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,\
     calc_plugins_hash, remove_plugins_initpy, check_plugins_initpy,\
     get_plugins_initpy_path
-from swak.main import parse_test_commands
 from swak.util import test_logconfig
 
 
@@ -29,7 +28,7 @@ def test_plugin_cmd(capfd):
     out, err = capfd.readouterr()
     assert 'Swak has 2 plugin(s)' in out
 
-    # after first command, plugins/__init__.py should exist.
+    # after first command, plugins/__init__.py shall exist.
     assert os.path.isfile(get_plugins_initpy_path())
 
     cmd = ['swak', 'desc', 'in.counter']
@@ -50,13 +49,6 @@ def test_plugin_util():
     plugin_infos = list(enumerate_plugins(None, plugin_filter))
     assert len(plugin_infos) > 0
 
-    ret = list(parse_test_commands('in.counter --fields 3 | out.stdout'))
-    assert len(ret) == 2
-    assert ret[0][0] == 'in.counter'
-    assert ret[0][1] == '--fields'
-    assert ret[0][2] == '3'
-    assert ret[1][0] == 'out.stdout'
-
 
 def test_plugin_dump():
     dump = """\
@@ -66,8 +58,6 @@ from __future__ import absolute_import
 
 from swak.plugins.counter import in_counter
 from swak.plugins.stdout import out_stdout
-
-CHECKSUM = '7ed9a23f52202cd70253890a591bb96a'
 
 MODULE_MAP = {
     'in.counter': in_counter,

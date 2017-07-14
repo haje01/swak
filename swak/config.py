@@ -1,4 +1,5 @@
-"""Select config file and parse."""
+"""Select config file and parse.
+"""
 import os
 import sys
 import logging

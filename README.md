@@ -97,11 +97,11 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 
 ### 특정 플러그인의 도움말 보기
 
-    swak desc in.FakeData
+    swak desc in.fakedata
 
 ### 간단히 테스트하기
 
-    swak run 'in.FakeData --type people | out.Stdout'
+    swak run 'in.fakedata --type people | out.Stdout'
 
 ## 설정 파일
 
@@ -124,11 +124,11 @@ streams:
 ```
 
 위의 스크립트는 다음과 같은 식으로 이해하면 된다.
-1. `inputs`에서는 데이터 스트림 별 입력을 선언한다.
-2. `foo` 는 데이터 스트림의 태그로, 데이터 스트림을 칭할 때 사용된다.
-3. `in.fakedata` 플러그인을 통해 가짜 데이터를 생성하고 `foo` 데이터 스트림으로 보낸다.
-4. `outputs`에서는 데이터 스트림 별 출력을 선언한다.
-5. `out.stdout` 플러그인은 표준 출력으로 스트림을 보낸다.
+- `inputs`에서는 데이터 스트림 별 입력을 선언한다.
+- `foo` 는 데이터 스트림의 태그로, 데이터 스트림을 칭할 때 사용된다.
+- `in.fakedata` 플러그인을 통해 가짜 데이터를 생성하고 `foo` 데이터 스트림으로 보낸다.
+- `outputs`에서는 데이터 스트림 별 출력을 선언한다.
+- `out.stdout` 플러그인은 표준 출력으로 스트림을 보낸다.
 
 ### 좀 더 복잡한 예
 
@@ -143,7 +143,7 @@ streams:
     - par.mylog
     # 5분 단위로 버퍼링
     - buf.file time --min 5
-    # Fluentd
+    # Fluentd 전송
     - out.fluentd --server 192.168.0.1 --server: 169.168.0.2 --last /tmp/failed.txt --start_by: ip
 ```
 
@@ -160,17 +160,16 @@ streams:
 
 ```yml
 streams:
-  foo:
-    - in.mysqltail --ip 127.0.0.1 --db logdb --table logtbl
-    - buf.file size --lines 100 --tag foo.buffered
-
-  foo.buffered:
-    # 외부 프로세스 실행 후 새로운 태그로 리디렉트
+  detect:
     - tr.exec --cmd "/usr/bin/r /etc/detect_abuse.r"
     - out.stdout
+
+  collect:
+    - in.mysqltail --ip 127.0.0.1 --db logdb --table logtbl
+    - buf.file size --lines 100 --tag detect
 ```
 
-이 경우는 `foo` 스트림에서 `in.mysqltail` -> `buf.file` 처리 후 `foo.buffered` 스트림에서 `tr.exec` -> `out.stdout` 순으로 처리된다.
+이 경우는 먼저 `collect` 스트림에서 `in.mysqltail` -> `buf.file` 처리 후 `detect` 스트림에서 `tr.exec` -> `out.stdout` 순으로 처리된다.
 
 먼저 `in.mysqltail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
 

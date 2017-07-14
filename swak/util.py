@@ -5,8 +5,12 @@ import collections
 import errno
 import logging
 
+from swak.exception import UnsupportedPython
+
 test_logger_inited = False
 
+LOG_FMT = logging.Formatter('%(levelname)s [%(filename)s:%(lineno)d]'
+                            ' %(message)s')
 
 def make_dirs(adir):
     """Make directory if not exist."""
@@ -79,6 +83,15 @@ def init_home(home, cfg):
                     make_dirs(dname)
 
 
+def query_stream_log_handler(logger):
+    if len(logger.handlers):
+        ch = logger.handlers[0]
+    else:
+        ch = logging.StreamHandler()
+        logger.addHandler(ch)
+    return ch
+
+
 def test_logconfig():
     global test_logger_inited
 
@@ -88,10 +101,9 @@ def test_logconfig():
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    ch = logger.handlers[0]
+    ch = query_stream_log_handler(logger)
     ch.setLevel(logging.DEBUG)
-    fmt = logging.Formatter('[%(filename)s:%(lineno)d] %(levelname)s - %(message)s')
-    ch.setFormatter(fmt)
+    ch.setFormatter(LOG_FMT)
 
 
 def check_python_version():
@@ -105,10 +117,31 @@ def check_python_version():
     Raises:
         UnsupportedPython: If current python version is not supported.
     """
-    major, minor = sys.version_info[0:2]
+    vi = sys.version_info
+    major, minor = vi[0:2]
     if major == 2:
         return 2
     if major == 3 and minor >= 5:
         return 3
     else:
-        raise UnsupportedPython("Python {} is not supported".format(version_info))
+        raise UnsupportedPython("Python {} is not supported".format(vi))
+
+
+def log_level_from_verbosity(verbosity):
+    if verbosity == 0:
+        return 40
+    elif verbosity == 1:
+        return 30
+    elif verbosity == 2:
+        return 20
+    elif verbosity >= 3:
+        return 10
+
+
+def set_log_verbosity(verbosity):
+    level = log_level_from_verbosity(verbosity)
+    logger = logging.getLogger()
+    logger.setLevel(level)
+    handler = query_stream_log_handler(logger)
+    handler.setLevel(level)
+    handler.setFormatter(LOG_FMT)

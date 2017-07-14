@@ -242,10 +242,6 @@ def dump_plugins_import(io, chksum=None):
         io.write(u'from swak.plugins.{} import {}\n'.format(pi.dname, fname))
         plugins.append((pi.pname, fname))
 
-    if chksum is None:
-        chksum = calc_plugins_hash(enumerate_plugins())
-    io.write(u'\nCHECKSUM = \'{}\'\n'.format(chksum))
-
     io.write(u'\nMODULE_MAP = {\n')
     for pl in plugins:
         io.write(u"    '{}': {},\n".format(pl[0], pl[1]))
@@ -300,6 +296,7 @@ def check_plugins_initpy(plugin_infos):
         bool: Where file has been created.
         str: Plugins checksum
     """
+    logging.debug("check_plugins_initpy")
     create = False
     path = get_plugins_initpy_path()
     chksum = calc_plugins_hash(plugin_infos)
