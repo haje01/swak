@@ -19,6 +19,8 @@ script:
     - ./tools/build.sh
 
 after_success:
+    - echo $SWAK_EXE_DIR
+    - ls -alh $SWAK_EXE_DIR
     - pip install codecov
     - coverage combine .
     - codecov
