@@ -15,12 +15,12 @@ env:
         - SWAK_EXE_DIR=$TRAVIS_BUILD_DIR/swak
 
 script:
+    - echo $SWAK_EXE_DIR
+    - ls -alh $SWAK_EXE_DIR
     - coverage run --source swak --module pytest tests
     - ./tools/build.sh
 
 after_success:
-    - echo $SWAK_EXE_DIR
-    - ls -alh $SWAK_EXE_DIR
     - pip install codecov
     - coverage combine .
     - codecov
