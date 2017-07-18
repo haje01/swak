@@ -16,7 +16,8 @@ env:
 
 script:
     - echo $SWAK_EXE_DIR
-    - ls -alh $SWAK_EXE_DIR
+    - ls -alh $SWAK_EXE_DIR/*
+    - cat $SWAK_EXE_DIR/__init__.py
     - coverage run --source swak --module pytest tests
     - ./tools/build.sh
 
