@@ -81,6 +81,7 @@ def prepare_cli(ctx):
     path = get_plugins_initpy_path()
     print('-----------')
     print(path)
+    import os
     print(os.path.isfile(path))
     print('-----------')
     import swak.plugins
