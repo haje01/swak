@@ -137,7 +137,7 @@ def enumerate_plugins(_home=None, _filter=None):
     """
     pdir = get_plugins_dir(_home)
     if not os.path.isdir(pdir):
-        raise ValueError("Directory '{}' is not exist.".format(pdir))
+        raise ValueError("Plugin directory '{}' is not exist.".format(pdir))
 
     for _dir in os.listdir(pdir):
         if _dir.startswith('_'):

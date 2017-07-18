@@ -12,6 +12,7 @@ install:
 env:
     global:
         - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
+        - SWAK_EXE_DIR=$TRAVIS_BUILD_DIR/swak
 
 script:
     - coverage run --source swak --parallel-mode --module pytest tests
