@@ -11,8 +11,8 @@ import pytest
 from swak.util import is_windows, get_winsvc_status
 from swak.config import select_and_parse, get_pid_path
 
-pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
-                                " test is for build mode.")
+# pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
+#                                " test is for build mode.")
 
 WSVC_CUR_STATE = 1
 WSVC_CMD_BUILD = ['pyinstaller.exe', 'swak/win_svc.py',
