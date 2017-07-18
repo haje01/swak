@@ -315,11 +315,11 @@ def check_plugins_initpy(plugin_infos):
             create = ochksum != chksum
 
     if create:
-        logging.debug("writing {} - chksum {}".format(path, chksum))
+        logging.debug("writing {}".format(path))
         with open(path, 'wt') as f:
             dump_plugins_import(f, chksum)
 
-        logging.debug("writing {}".format(cpath))
+        logging.debug("writing {} - {}".format(cpath, chksum))
         with open(cpath, 'wt') as f:
             f.write('{}\n'.format(chksum))
 
