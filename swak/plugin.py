@@ -234,12 +234,15 @@ def dump_plugins_import(io, chksum=None):
         chksum (str): Explicitly given checksum.
     """
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
-    io.write(u'from __future__ import absolute_import\n\n')
+    io.write(u'from swak.plugin import load_module\n\n')
 
     plugins = []
     for pi in enumerate_plugins():
         fname = os.path.splitext(pi.fname)[0]
-        io.write(u'from swak.plugins.{} import {}\n'.format(pi.dname, fname))
+        path = os.path.join(get_plugins_dir(), pi.dname, pi.fname)
+        io.write(u"{} = load_module('swak.plugins.{}', '{}')\n".format(fname,
+                                                                       pi.dname,
+                                                                       path))
         plugins.append((pi.pname, fname))
 
     io.write(u'\nMODULE_MAP = {\n')

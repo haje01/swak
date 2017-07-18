@@ -57,10 +57,10 @@ def test_plugin_dump():
     dump = """\
 # WARNING: Auto-generated code. Do not edit.
 
-from __future__ import absolute_import
+from swak.plugin import load_module
 
-from swak.plugins.counter import in_counter
-from swak.plugins.stdout import out_stdout
+in_counter = load_module('swak.plugins.counter', '/plugins/counter/in_counter.py')
+out_stdout = load_module('swak.plugins.stdout', '/plugins/stdout/out_stdout.py')
 
 MODULE_MAP = {
     'in.counter': in_counter,
@@ -70,7 +70,7 @@ MODULE_MAP = {
 
     sbuf = StringIO()
     dump_plugins_import(sbuf)
-    assert dump == sbuf.getvalue()
+    assert dump == sbuf.getvalue().replace(get_exe_dir(), '')
     sbuf.close()
 
 
