@@ -1,6 +1,5 @@
 """Swak core.
 """
-import swak.plugins
 
 
 def parse_test_cmds(cmd):

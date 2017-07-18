@@ -54,7 +54,8 @@ def get_exe_dir():
 
     Decide config directory with following rules:
         1. If package has been freezed, used dir of freezed executable path,
-        2. Or use the dir of current module.
+        2. If explit `SWAK_EXE_DIR` exists in envvar, use it.
+        3. Use the dir of current module.
 
     Then make full path by join directory & config file name.
 
@@ -63,6 +64,8 @@ def get_exe_dir():
     """
     if getattr(sys, 'frozen', False):
         bdir = os.path.dirname(sys.executable)
+    elif 'SWAK_EXE_DIR' in os.environ:
+        return os.environ['SWAK_EXE_DIR']
     else:
         bdir = os.path.dirname(os.path.abspath(__file__))
     return bdir
@@ -84,7 +87,7 @@ def select_and_parse(_home=None):
         str: Selected home directory
         dict: Parsed config dictionary
     """
-    logging.info("config.select_and_parse: _home {}".format(_home))
+    logging.info("select_and_parse: _home {}".format(_home))
     home = select_home(_home)
     cfgpath = os.path.join(home, CFG_FNAME)
 

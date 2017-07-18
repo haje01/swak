@@ -275,9 +275,9 @@ def remove_plugins_initpy():
     path = get_plugins_initpy_path()
     if os.path.isfile(path):
         os.unlink(path)
-        logging.debug("removed plugin/__init__.py")
+        logging.debug("removed {}".format(path))
     else:
-        logging.debug("plugin/__init__.py does not exist.")
+        logging.debug("{} does not exist.".format(path))
 
 
 def get_plugins_chksum_path():
@@ -302,7 +302,7 @@ def check_plugins_initpy(plugin_infos):
     chksum = calc_plugins_hash(plugin_infos)
     cpath = get_plugins_chksum_path()
     if not os.path.isfile(path):
-        logging.debug("plugin/__init__.py does not exist.")
+        logging.debug("{} does not exist.".format(path))
         create = True
     else:
         if not os.path.isfile(cpath):
@@ -315,11 +315,11 @@ def check_plugins_initpy(plugin_infos):
             create = ochksum != chksum
 
     if create:
-        logging.debug("writing plugins/__init__.py - chksum {}".format(chksum))
+        logging.debug("writing {} - chksum {}".format(path, chksum))
         with open(path, 'wt') as f:
             dump_plugins_import(f, chksum)
 
-        logging.debug("writing plugins/_CHECKSUM_.txt")
+        logging.debug("writing {}".format(cpath))
         with open(cpath, 'wt') as f:
             f.write('{}\n'.format(chksum))
 

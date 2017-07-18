@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import os
 from subprocess import call
 from io import StringIO
@@ -23,7 +25,7 @@ def plugin_filter1(_dir):
 def test_plugin_cmd(capfd):
     remove_plugins_initpy()
 
-    cmd = ['swak', 'list']
+    cmd = ['swak', '-vvv', 'list']
     call(cmd)
     out, err = capfd.readouterr()
     assert 'Swak has 2 plugin(s)' in out
@@ -36,7 +38,7 @@ def test_plugin_cmd(capfd):
     out, err = capfd.readouterr()
     assert "Emit incremental number" in out
 
-    cmd = ['swak', 'desc', 'in.NotExist']
+    cmd = ['swak', 'desc', 'in.notexist']
     call(cmd)
     out, err = capfd.readouterr()
     assert "Can not find" in err

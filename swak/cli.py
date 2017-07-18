@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import sys
+import logging
 
 import click
 from tabulate import tabulate
@@ -74,11 +75,9 @@ def prepare_cli(ctx):
         module: plugins/__init__.py module
     """
     verbosity = ctx.obj['verbosity']
-    if verbosity > 0:
-        set_log_verbosity(verbosity)
+    set_log_verbosity(verbosity)
 
     check_plugins_initpy(enumerate_plugins())
     path = get_plugins_initpy_path()
-    plugins = load_module("swak.plugins", path)
-
-    return plugins
+    import swak.plugins
+    return swak.plugins

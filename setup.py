@@ -3,6 +3,7 @@ import os
 
 with open(os.path.join('swak', 'version.py'), 'rt') as f:
     version = f.read().strip()
+    version = version.split('=')[1].strip('"')
 
 __version__ = version
 
@@ -12,6 +13,25 @@ SCRIPTS = ['bin/swak']
 if os.name == 'nt':
     SCRIPTS += ['bin/swak.bat']
 
+
+def package_dirs(directory):
+    dirs = []
+    for adir in os.listdir(directory):
+        path = os.path.join(directory, adir)
+        if os.path.isfile(path):
+            continue
+        if '__pycache__' in path:
+            continue
+        initpy = os.path.join(path, '__init__.py')
+        if not os.path.isfile(initpy):
+            continue
+        dirs.append(path)
+    return dirs
+
+
+plugin_dirs = package_dirs('swak/plugins')
+plugins = [adir.replace(os.path.sep, '.') for adir in plugin_dirs]
+
 setup(
     name='swak',
     version=__version__,
@@ -20,13 +40,14 @@ setup(
     url="https://github.com/haje01/swak",
     description="Multi-purpose Monitoring Agent in Python",
     platforms=["any"],
-    packages=['swak', 'swak/plugins'],
+    packages=['swak', 'swak.plugins'] + plugins,
     scripts=SCRIPTS,
     license=['MIT License'],
     install_requires=[
         'click',
         'pyyaml',
         'future',
+        'tabulate',
     ],
     dependency_links=[
         'https://github.com/serverdensity/python-daemon/master#egg='

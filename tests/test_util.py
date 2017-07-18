@@ -1,4 +1,6 @@
 """Test util & config functions."""
+from __future__ import absolute_import
+
 import os
 import tempfile
 
@@ -8,7 +10,6 @@ from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
 from swak.util import init_home
 from swak.version import VERSION
-from swak.test import _run as trun
 
 
 CFG = """
@@ -76,24 +77,3 @@ def test_util_cfg(test_home):
     init_home(home, cfg)
 
     os.unlink(path)
-
-
-def test_util_testrun(test_home, capsys):
-    # with explicit home
-    trun('/path/to/home', 2, False)
-    out, err = capsys.readouterr()
-    outs = out.split('\n')
-    assert '/path/to/home/config.yml' == outs[0]
-    assert '2' == outs[1]
-
-    # without explicit home
-    trun(None, 1, False)
-    out, err = capsys.readouterr()
-    outs = out.split('\n')
-    assert test_home in outs[0]
-    assert '1' == outs[1]
-
-    # version
-    trun(None, 1, True)
-    out, err = capsys.readouterr()
-    assert 'Swak version {}'.format(VERSION) == out.strip()

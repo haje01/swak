@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import pytest
 
 from swak.core import parse_test_cmds, run_test_cmds
