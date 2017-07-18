@@ -28,6 +28,7 @@ def test_plugin_cmd(capfd):
     cmd = ['swak', '-vvv', 'list']
     call(cmd)
     out, err = capfd.readouterr()
+    assert '' == err
     assert 'Swak has 2 plugin(s)' in out
 
     # after first command, plugins/__init__.py shall exist.
