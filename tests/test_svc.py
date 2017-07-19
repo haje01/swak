@@ -1,7 +1,7 @@
 """Test Windows & Unix(Linux, OS X) service."""
 
 import os
-from subprocess import Popen
+from subprocess import Popen, call
 import tempfile
 import time
 import logging
@@ -18,7 +18,7 @@ WSVC_CUR_STATE = 1
 WSVC_CMD_BUILD = ['pyinstaller.exe', 'swak/win_svc.py',
                   '--hidden-import=win32timezone', '--onefile']
 WSVC_DIST_DIR = os.path.join(os.getcwd(), 'dist')
-WSVC_EXE = os.path.join(WSVC_DIST_DIR, 'swak.exe')
+WSVC_EXE = os.path.join(WSVC_DIST_DIR, 'swaksvc.exe')
 WSVC_CMD_INSTALL = [WSVC_EXE, 'install']
 WSVC_CMD_START = [WSVC_EXE, 'start']
 WSVC_CMD_STOP = [WSVC_EXE, 'stop']
@@ -141,5 +141,8 @@ def test_svc_unix(unix_svc):
 
 
 @pytest.mark.skipif(not is_windows(), reason="requires Windows OS")
-def test_svc_windows(win_svc):
-    pass
+def test_svc_windows(win_svc, capfd):
+    cmd = [r'dist\swaksvc.exe', 'cli', 'list']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert 'Swak has 2' in out

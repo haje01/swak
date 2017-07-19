@@ -7,10 +7,10 @@ import servicemanager
 import win32event
 import win32service
 import win32serviceutil
-import click
 
 from swak.config import select_and_parse
 from swak.util import init_home, check_python_version
+from swak.cli import main
 
 
 check_python_version()
@@ -53,11 +53,6 @@ class SwakService(win32serviceutil.ServiceFramework):
         servicemanager.LogInfoMsg("Service is finished.")
 
 
-@click.group()
-def test_cli():
-    pass
-
-
 def log_header():
     logging.critical("========== Start service ==========")
     # cfg_path = get_cfg_path()
@@ -76,9 +71,6 @@ def log_footer():
     #test_run(home, task, version)
 
 
-test_cli.add_command(test)
-
-
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         servicemanager.Initialize()
@@ -86,7 +78,8 @@ if __name__ == '__main__':
         servicemanager.StartServiceCtrlDispatcher()
     else:
         cmd = sys.argv[1]
-        if cmd == 'test':
-            test_cli(obj={})
+
+        if cmd == 'cli':
+            main(obj={}, args=sys.argv[2:])
         else:
             win32serviceutil.HandleCommandLine(SwakService)
