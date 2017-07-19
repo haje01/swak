@@ -302,6 +302,7 @@ def check_plugins_initpy(plugin_infos):
     logging.debug("check_plugins_initpy")
     create = False
     path = get_plugins_initpy_path()
+    logging.debug("plugin initpy path: {}".format(path))
     chksum = calc_plugins_hash(plugin_infos)
     cpath = get_plugins_chksum_path()
     if not os.path.isfile(path):

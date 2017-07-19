@@ -8,6 +8,7 @@ from daemon import Daemon
 
 from swak.util import init_home, check_python_version
 from swak.config import select_and_parse, get_pid_path
+from swak.cli import main
 
 
 check_python_version()
@@ -19,10 +20,10 @@ class SwakDaemon(Daemon):
             time.sleep(4)
 
 
-@click.group()
+@main.group(help="Unix daemon commands.")
 @click.option('--home', type=click.Path(exists=True), help="Home directory.")
 @click.pass_context
-def cli(ctx, home):
+def daemon(ctx, home):
     # select home and parse its config
     home, cfg = select_and_parse(home)
     # init required directories
@@ -36,7 +37,7 @@ def cli(ctx, home):
     ctx.obj['pid_path'] = pid_path
 
 
-@cli.command(help="Start daemon.")
+@daemon.command(help="Start daemon.")
 @click.pass_context
 def start(ctx):
     logging.critical("========== Start daemon ==========")
@@ -44,7 +45,7 @@ def start(ctx):
     daemon.start()
 
 
-@cli.command(help="Stop daemon.")
+@daemon.command(help="Stop daemon.")
 @click.pass_context
 def stop(ctx):
     logging.critical("========== Stop daemon ==========")
@@ -64,7 +65,7 @@ def stop(ctx):
 
 if __name__ == '__main__':
     try:
-        cli(obj={})
+        main(obj={})
     except Exception as e:
         for l in traceback.format_exc().splitlines():
             logging.error(l)
