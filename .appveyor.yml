@@ -7,6 +7,7 @@ environment:
           PYTHON_ARCH: "32"
 
 install:
+    - "%PYTHON%\\python -m pip install ."
     - "%PYTHON%\\python -m pip install -r requirements.txt"
     - "%PYTHON%\\python -m pip install -r requirements-dev.txt"
     - "set PATH=%PYTHON%\\Scripts\\;%PATH%"

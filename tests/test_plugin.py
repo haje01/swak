@@ -66,7 +66,7 @@ MODULE_MAP = {
     'in.counter': in_counter,
     'out.stdout': out_stdout,
 }
-"""
+""".replace('/', os.path.sep)
 
     sbuf = StringIO()
     dump_plugins_import(sbuf)

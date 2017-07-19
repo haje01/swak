@@ -15,8 +15,6 @@ env:
         - SWAK_EXE_DIR=$TRAVIS_BUILD_DIR/swak
 
 script:
-    - ls -alh $SWAK_EXE_DIR/*
-    - python -c "from swak.plugin import get_plugins_initpy_path; print(get_plugins_initpy_path())"
     - coverage run --source swak --module pytest tests -s
     - ./tools/build.sh
 
