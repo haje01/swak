@@ -77,6 +77,10 @@ def prepare_cli(ctx):
     verbosity = ctx.obj['verbosity']
     set_log_verbosity(verbosity)
 
+    if getattr(sys, 'frozen', False):
+        import swak.plugins
+        return swak.plugins
+
     check_plugins_initpy(enumerate_plugins())
     path = get_plugins_initpy_path()
     return load_module('swak.plugins', path)
