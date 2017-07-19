@@ -15,6 +15,7 @@ install:
 build: false
 
 test_script:
+    - swak list
     - coverage run --source swak --parallel-mode --module pytest tests
     - "tools\\build.bat"
 
