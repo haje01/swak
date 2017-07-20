@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import logging
 import traceback
@@ -7,13 +8,42 @@ import servicemanager
 import win32event
 import win32service
 import win32serviceutil
+import click
 
 from swak.config import select_and_parse
 from swak.util import init_home, check_python_version
 from swak.cli import main
-
+from swak.version import VERSION
 
 check_python_version()
+
+
+def prog_name():
+    if getattr(sys, 'frozen', False):
+        return "swaksvc.exe"
+    else:
+        return "win_svc.py"
+
+
+def show_usage():
+    print("Swak version {}".format(VERSION))
+    print("================== Swak Commands  ==================")
+    ctx = click.Context(main, info_name="{} cli".format(prog_name()))
+    print(ctx.get_help())
+    print()
+    sys.argv = [prog_name()]
+    print("================= Service Commands =================")
+    win32serviceutil.HandleCommandLine(None)
+
+
+# Handle help / cli command beforehand (No need to parse config)
+if len(sys.argv) > 2:
+    cmd = sys.argv[1]
+    if cmd == 'help':
+        show_usage()
+    elif cmd == 'cli':
+        main(obj={}, prog_name="{} cli".format(prog_name()), args=sys.argv[2:])
+        sys.exit()
 
 
 home, cfg = select_and_parse(None)
@@ -38,6 +68,7 @@ class SwakService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
     def SvcDoRun(self):
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         servicemanager.LogInfoMsg("Service is starting.")
         rc = None
         log_header()
@@ -54,21 +85,12 @@ class SwakService(win32serviceutil.ServiceFramework):
 
 
 def log_header():
-    logging.critical("========== Start service ==========")
+    logging.critical("=============== Start service ===============")
     # cfg_path = get_cfg_path()
 
 
 def log_footer():
-    logging.critical("========== Finish service ==========")
-
-
-#@click.command(help="Test in no service mode.")
-#@click.option('--home', type=click.Path(exists=True), help="Home directory")
-#@click.option('--task', type=int, default=1, show_default=True, help="Task"
-              #" number to test.")
-#@click.option('--version', is_flag=True, help="Show Swak version.")
-#def test(home, task, version):
-    #test_run(home, task, version)
+    logging.critical("=============== Finish service ===============")
 
 
 if __name__ == '__main__':
@@ -77,9 +99,4 @@ if __name__ == '__main__':
         servicemanager.PrepareToHostSingle(SwakService)
         servicemanager.StartServiceCtrlDispatcher()
     else:
-        cmd = sys.argv[1]
-
-        if cmd == 'cli':
-            main(obj={}, args=sys.argv[2:])
-        else:
-            win32serviceutil.HandleCommandLine(SwakService)
+        win32serviceutil.HandleCommandLine(SwakService)

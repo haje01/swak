@@ -239,10 +239,11 @@ def dump_plugins_import(io, chksum=None):
     plugins = []
     for pi in enumerate_plugins():
         fname = os.path.splitext(pi.fname)[0]
-        path = os.path.join(get_plugins_dir(), pi.dname, pi.fname)
-        io.write(u"{} = load_module('swak.plugins.{}', r'{}')\n".format(fname,
-                                                                        pi.dname,
-                                                                        path))
+        io.write(u"from swak.plugins.{} import {}\n".format(pi.dname, fname))
+        # path = os.path.join(get_plugins_dir(), pi.dname, pi.fname)
+        # io.write(u"{} = load_module('swak.plugins.{}', r'{}')\n".format(fname,
+        #                                                                pi.dname,
+        #                                                                path))
         plugins.append((pi.pname, fname))
 
     io.write(u'\nMODULE_MAP = {\n')

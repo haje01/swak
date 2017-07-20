@@ -136,16 +136,20 @@ def select_home(_home=None, check_config=True):
     def config_file_exists(adir):
         return os.path.isfile(os.path.join(adir, CFG_FNAME))
 
+    logging.debug("select_home")
     if _home is not None:
+        logging.debug("  explicit home {}".format(_home))
         home = _home
         if check_config and not config_file_exists(home):
             raise IOError("Home directory '{}' from parameter does not have"
                           " config file.".format(home))
     elif ENVVAR in os.environ:
         home = os.environ.get('SWAK_HOME')
+        logging.debug("  envvar home {}".format(home))
         if check_config and not config_file_exists(home):
             raise IOError("SWAK_HOME does not have config file.")
     elif config_file_exists(get_exe_dir()):
+        logging.debug("  exedir {} has config".format(get_exe_dir()))
         home = get_exe_dir()
     else:
         raise ValueError("Home directory can't be decided!")

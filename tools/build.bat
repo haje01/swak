@@ -1,4 +1,7 @@
 echo off
+if exist dist\swaksvc.exe (
+    dist\swaksvc.exe stop
+)
 for /F "tokens=* USEBACKQ" %%F IN (`type swak\version.py`) DO (
 set ver=%%F
 )
