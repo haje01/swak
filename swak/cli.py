@@ -80,5 +80,7 @@ def prepare_cli(ctx):
     if not getattr(sys, 'frozen', False):
         check_plugins_initpy(enumerate_plugins())
 
+    sys.path.insert(0, os.path.join(get_exe_dir(), 'swak') )
+    logging.debug(sys.path)
     import swak.plugins
     return swak.plugins
