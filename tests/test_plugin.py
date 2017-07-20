@@ -25,7 +25,7 @@ def plugin_filter1(_dir):
 def test_plugin_cmd(capfd):
     remove_plugins_initpy()
 
-    cmd = ['swak', '-vvv', 'list']
+    cmd = ['swak', '-vv', 'list']
     call(cmd)
     out, err = capfd.readouterr()
     print(err)

@@ -131,10 +131,8 @@ def log_level_from_verbosity(verbosity):
     if verbosity == 0:
         return 40
     elif verbosity == 1:
-        return 30
-    elif verbosity == 2:
         return 20
-    elif verbosity >= 3:
+    elif verbosity >= 2:
         return 10
 
 
