@@ -234,7 +234,6 @@ def dump_plugins_import(io, chksum=None):
         chksum (str): Explicitly given checksum.
     """
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
-    io.write(u'from swak.plugin import load_module\n\n')
 
     plugins = []
     for pi in enumerate_plugins():

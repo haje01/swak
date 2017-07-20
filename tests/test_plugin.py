@@ -57,10 +57,8 @@ def test_plugin_dump():
     dump = """\
 # WARNING: Auto-generated code. Do not edit.
 
-from swak.plugin import load_module
-
-in_counter = load_module('swak.plugins.counter', r'/plugins/counter/in_counter.py')
-out_stdout = load_module('swak.plugins.stdout', r'/plugins/stdout/out_stdout.py')
+from swak.plugins.counter import in_counter
+from swak.plugins.stdout import out_stdout
 
 MODULE_MAP = {
     'in.counter': in_counter,

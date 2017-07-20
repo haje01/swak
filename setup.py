@@ -50,8 +50,7 @@ setup(
         'tabulate',
     ],
     dependency_links=[
-        'https://github.com/serverdensity/python-daemon/master#egg='
-        'python_daemon',
+        'http://github.com/serverdensity/python-daemon/master#egg=python_daemon',
     ],
     extras_require={
         'dev': [

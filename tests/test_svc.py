@@ -65,14 +65,14 @@ def unix_svc(test_home, capfd):
 
     p = Popen(USVC_CMD_START, env=cenv)
     assert p.returncode is None
-    time.sleep(2)
+    time.sleep(3)
     assert os.path.isfile(pid_path)
 
     yield None
 
     p = Popen(USVC_CMD_STOP, env=cenv)
     assert p.returncode is None
-    time.sleep(2)
+    time.sleep(3)
     assert not os.path.isfile(pid_path)
 
 
