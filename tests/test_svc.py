@@ -24,8 +24,8 @@ WSVC_CMD_START = [WSVC_EXE, 'start']
 WSVC_CMD_STOP = [WSVC_EXE, 'stop']
 WSVC_CMD_REMOVE = [WSVC_EXE, 'remove']
 
-USVC_CMD_START = ['python', '-m', 'swak.unix_svc', 'start']
-USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'stop']
+USVC_CMD_START = ['python', '-m', 'swak.unix_svc', 'daemon', 'start']
+USVC_CMD_STOP = ['python', '-m', 'swak.unix_svc', 'daemon', 'stop']
 
 
 CFG = """
@@ -52,7 +52,7 @@ def test_home():
 
 
 @pytest.fixture(scope="function")
-def unix_svc(test_home):
+def unix_svc(test_home, capfd):
     cenv = os.environ.copy()
     cenv.update(dict(SWAK_HOME=test_home))
 
@@ -65,14 +65,14 @@ def unix_svc(test_home):
 
     p = Popen(USVC_CMD_START, env=cenv)
     assert p.returncode is None
-    time.sleep(3)
+    time.sleep(2)
     assert os.path.isfile(pid_path)
 
     yield None
 
     p = Popen(USVC_CMD_STOP, env=cenv)
     assert p.returncode is None
-    time.sleep(3)
+    time.sleep(2)
     assert not os.path.isfile(pid_path)
 
 
