@@ -4,13 +4,14 @@
 from __future__ import print_function
 
 import sys
+import logging
 
 import click
 from tabulate import tabulate
 
 from swak.util import check_python_version, set_log_verbosity
 from swak.plugin import enumerate_plugins, check_plugins_initpy,\
-    get_plugins_initpy_path, load_module
+    get_plugins_initpy_path
 from swak.core import parse_and_run_test_cmds
 
 check_python_version()
@@ -68,7 +69,7 @@ def prepare_cli(ctx):
     """Prepare cli command execution.
 
     - set log level by verbosity
-    - load plugins/__init__.py module
+    - import plugins by load plugins/__init__.py module
 
     Returns:
         module: plugins/__init__.py module
@@ -76,10 +77,8 @@ def prepare_cli(ctx):
     verbosity = ctx.obj['verbosity']
     set_log_verbosity(verbosity)
 
-    if getattr(sys, 'frozen', False):
-        import swak.plugins
-        return swak.plugins
+    if not getattr(sys, 'frozen', False):
+        check_plugins_initpy(enumerate_plugins())
 
-    check_plugins_initpy(enumerate_plugins())
-    path = get_plugins_initpy_path()
-    return load_module('swak.plugins', path)
+    import swak.plugins
+    return swak.plugins
