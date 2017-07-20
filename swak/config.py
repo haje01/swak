@@ -54,7 +54,7 @@ def get_exe_dir():
 
     Decide config directory with following rules:
         1. If package has been freezed, used dir of freezed executable path,
-        2. If explit `SWAK_EXE_DIR` exists in envvar, use it.
+        2. If explicit `SWAK_EXE_DIR` exists in envvar, use it.
         3. Use the dir of current module.
 
     Then make full path by join directory & config file name.
