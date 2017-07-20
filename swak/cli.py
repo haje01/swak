@@ -12,7 +12,7 @@ from tabulate import tabulate
 
 from swak.util import check_python_version, set_log_verbosity
 from swak.plugin import enumerate_plugins, check_plugins_initpy,\
-    get_plugins_initpy_path
+    get_plugins_initpy_path, get_exe_dir
 from swak.core import parse_and_run_test_cmds
 
 check_python_version()
