@@ -8,7 +8,7 @@ from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,\
     calc_plugins_hash, remove_plugins_initpy, check_plugins_initpy,\
     get_plugins_initpy_path
-from swak.util import test_logconfig
+from swak.util import test_logconfig, check_python_version
 
 
 test_logconfig()
@@ -22,6 +22,8 @@ def plugin_filter1(_dir):
     return _dir in ['counter']
 
 
+@pytest.mark.skipif('TRAVIS' in os.environ and check_python_version() == 2,
+                    reason="Can't import swak.plugins in Travis Python 2.7")
 def test_plugin_cmd(capfd):
     remove_plugins_initpy()
 
