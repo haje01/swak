@@ -33,6 +33,8 @@ svc_name: swak-test
 svc_dname: "Swak: Multi-Agent Service (Test)"
 """
 
+SLEEP_TIME = 5  # Enough sleep time is necessary when vm is slow.
+
 
 @pytest.fixture(scope="function")
 def test_home():
@@ -105,7 +107,7 @@ def win_svc(test_home):
     # install
     p = Popen(WSVC_CMD_INSTALL, env=cenv)
     assert p.returncode is None
-    time.sleep(3)
+    time.sleep(SLEEP_TIME)
     ret = get_winsvc_status(svc_name)
     assert ret is not None
     assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
@@ -114,7 +116,7 @@ def win_svc(test_home):
     p = Popen(WSVC_CMD_START, env=cenv)
     assert p.returncode is None
     if 'APPVEYOR' not in os.environ:
-        time.sleep(3)
+        time.sleep(SLEEP_TIME)
         ret = get_winsvc_status(svc_name)
         # TODO: Service does not start in AppVeyor.
         assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
@@ -124,13 +126,13 @@ def win_svc(test_home):
     # stop
     p = Popen(WSVC_CMD_STOP, env=cenv)
     assert p.returncode is None
-    time.sleep(3)
+    time.sleep(SLEEP_TIME)
     ret = get_winsvc_status(svc_name)
     assert win32service.SERVICE_STOPPED == ret[WSVC_CUR_STATE]
 
     # remove
     p = Popen(WSVC_CMD_REMOVE, env=cenv)
-    time.sleep(3)
+    time.sleep(SLEEP_TIME)
     assert p.returncode is None
     assert None == get_winsvc_status(svc_name)
 

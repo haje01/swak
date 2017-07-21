@@ -8,9 +8,11 @@ import pytest
 
 from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,\
-    calc_plugins_hash, get_plugins_initpy_path
-from swak.util import test_logconfig, check_python_version
+    calc_plugins_hash, get_plugins_initpy_path, remove_plugins_initpy,\
+    check_plugins_initpy
+from swak.util import test_logconfig
 
+SWAK_CMD = 'swak.bat' if os.name == 'nt' else 'swak'
 
 test_logconfig()
 
@@ -24,7 +26,7 @@ def plugin_filter1(_dir):
 
 
 def test_plugin_cmd(capfd):
-    cmd = ['swak', '-vv', 'list']
+    cmd = [SWAK_CMD, '-vv', 'list']
     call(cmd)
     out, err = capfd.readouterr()
     print(err)
@@ -33,12 +35,12 @@ def test_plugin_cmd(capfd):
     # after first command, plugins/__init__.py shall exist.
     assert os.path.isfile(get_plugins_initpy_path())
 
-    cmd = ['swak', 'desc', 'in.counter']
+    cmd = [SWAK_CMD, 'desc', 'in.counter']
     call(cmd)
     out, err = capfd.readouterr()
     assert "Emit incremental number" in out
 
-    cmd = ['swak', 'desc', 'in.notexist']
+    cmd = [SWAK_CMD, 'desc', 'in.notexist']
     call(cmd)
     out, err = capfd.readouterr()
     assert "Can not find" in err
@@ -94,6 +96,6 @@ def test_plugin_initpy():
 
     # enumerate 2 plugin and __init__.py has been created.
     created, chksum = check_plugins_initpy(enumerate_plugins(None,
-                                                            plugin_filter))
+                                                             plugin_filter))
     assert created
     assert chksum != chksum1
