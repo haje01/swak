@@ -28,6 +28,8 @@ if not getattr(sys, 'frozen', False):
     @main.command(help="Search and update plugin information.")
     @click.pass_context
     def refresh(ctx):
+        verbosity = ctx.obj['verbosity']
+        set_log_verbosity(verbosity)
         check_plugins_initpy(enumerate_plugins())
 
 
