@@ -17,7 +17,7 @@ env:
         - SWAK_EXE_DIR=$TRAVIS_BUILD_DIR/swak
 
 script:
-    swak -vv refresh
+    - swak -vv refresh
     - tox
     #- coverage run --source swak --module pytest tests -s
     #- ./tools/build.sh
