@@ -11,8 +11,8 @@ import pytest
 from swak.util import is_windows, get_winsvc_status
 from swak.config import select_and_parse, get_pid_path
 
-# pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
-#                                " test is for build mode.")
+pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ , reason="This"
+                                " test is for build mode.")
 
 WSVC_CUR_STATE = 1
 WSVC_CMD_BUILD = ['pyinstaller.exe', 'swak/win_svc.py',
@@ -79,8 +79,6 @@ def unix_svc(test_home, capfd):
 
 
 @pytest.fixture(scope="function")
-@pytest.mark.skipif('APPVEYOR' in os.environ, reason="Can't run PyInstaller in"
-                    " AppVeyor")
 def win_svc(test_home):
     import win32service
 
@@ -115,11 +113,10 @@ def win_svc(test_home):
     # start
     p = Popen(WSVC_CMD_START, env=cenv)
     assert p.returncode is None
-    if 'APPVEYOR' not in os.environ:
-        time.sleep(SLEEP_TIME)
-        ret = get_winsvc_status(svc_name)
-        # TODO: Service does not start in AppVeyor.
-        assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
+    time.sleep(SLEEP_TIME)
+    ret = get_winsvc_status(svc_name)
+    # TODO: Service does not start in AppVeyor.
+    assert win32service.SERVICE_RUNNING == ret[WSVC_CUR_STATE]
 
     yield None
 
