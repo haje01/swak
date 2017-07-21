@@ -84,6 +84,7 @@ def prepare_cli(ctx):
 
     logging.debug(sys.path)
     logging.debug(os.getcwd())
+    from subprocess import check_output
     logging.debug(check_output(['ls', '-alh', 'swak']))
     import swak.plugins
     return swak.plugins
