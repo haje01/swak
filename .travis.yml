@@ -15,7 +15,6 @@ env:
     global:
         - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
         - SWAK_EXE_DIR=$TRAVIS_BUILD_DIR/swak
-        - TRAVIS=true
 
 script:
     - tox
