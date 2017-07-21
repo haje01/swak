@@ -16,7 +16,7 @@ build: false
 
 test_script:
     - set SWAK_EXE_DIR=%APPVEYOR_BUILD_FOLDER%\swak
-    - swak list
+    - swak refresh
     - coverage run --source swak --parallel-mode --module pytest tests
     - "tools\\build.bat"
 
