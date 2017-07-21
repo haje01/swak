@@ -4,7 +4,6 @@ import logging
 from collections import namedtuple
 
 from swak.plugin import BaseInput
-import swak.plugins
 
 PluginObj = namedtuple('PluginObj', ['mod', 'obj'])
 
@@ -96,6 +95,8 @@ def _parse_cmds(cmds):
 
 
 def _create_plugin_from_cmd(cmd):
+    import swak.plugins  # prevent dependency
+
     elm = cmd.split()
     name = elm[0]
     mmap = swak.plugins.MODULE_MAP
