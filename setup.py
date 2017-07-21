@@ -14,10 +14,12 @@ if os.name == 'nt':
     SCRIPTS += ['bin/swak.bat']
 
 
-def package_dirs(directory):
+def package_dirs(_base_dir):
+    cwd = os.getcwd()
+    base_dir = os.path.join(cwd, _base_dir)
     dirs = []
-    for adir in os.listdir(directory):
-        path = os.path.join(directory, adir)
+    for adir in os.listdir(base_dir):
+        path = os.path.join(base_dir, adir)
         if os.path.isfile(path):
             continue
         if '__pycache__' in path:
@@ -25,12 +27,10 @@ def package_dirs(directory):
         initpy = os.path.join(path, '__init__.py')
         if not os.path.isfile(initpy):
             continue
+        path = path.replace(cwd + os.sep, '')
         dirs.append(path)
     return dirs
 
-from subprocess import check_output
-print(check_output(['pwd']))
-print(check_output(['ls', '-alh']))
 plugin_dirs = package_dirs('swak/plugins')
 plugins = [adir.replace(os.path.sep, '.') for adir in plugin_dirs]
 
