@@ -1,6 +1,5 @@
 """Swak core.
 """
-import swak.plugins
 from swak.pipeline import Pipeline
 
 
@@ -26,6 +25,7 @@ def run_test_cmds(cmds):
     Args:
         cmds (list): Parsed command list
     """
+    import swak.plugins  # protect dependency
     mmap = swak.plugins.MODULE_MAP
 
     # build  test pipeline
@@ -37,13 +37,3 @@ def run_test_cmds(cmds):
         pline.append(pmod, args)
 
     pline.validate()
-
-
-def parse_and_run_test_cmds(cmds):
-    """Parse test commands and execute them.
-
-    Args:
-        cmds (str): Commands string
-    """
-    for tcmd in parse_test_cmds(cmds):
-        execute_test_cmd(tcmd)
