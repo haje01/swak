@@ -4,6 +4,7 @@ import glob
 from collections import namedtuple
 import hashlib
 import logging
+import py_compile
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
@@ -12,8 +13,8 @@ from swak.exception import UnsupportedPython
 PREFIX = ['in_', 'par_', 'tr_', 'buf_', 'out_', 'cmd_']
 CHKSUM_FNAME = '_CHECKSUM_.txt'
 
-PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'desc',
-                                       'module'])
+PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
+                                       'desc', 'module'])
 
 
 class Plugin(object):
@@ -169,7 +170,7 @@ def validate_plugin_info(adir):
         adir: Absolute directory path to test.
 
     Returns:
-        PluginInfo: If the direcotry is valid.
+        PluginInfo: If the plugin direcotry is valid.
         None: If not.
     """
     for pypath in glob.glob(os.path.join(adir, '*.py')):
@@ -180,9 +181,11 @@ def validate_plugin_info(adir):
             mod = load_module(fname, pypath)
             pclass = _infer_plugin_class(mod, pr, fname)
             prefix = pr.replace('_', '.')
-            pname = '{}{}'.format(prefix, pclass.__name__.lower())
+            cname = pclass.__name__
+            pname = '{}{}'.format(prefix, cname.lower())
             dname = os.path.basename(adir)
-            return PluginInfo(fname, pname, dname, mod.main.help, mod)
+            cname = "{}{}.{}".format(pr, cname.lower(), cname)
+            return PluginInfo(fname, pname, dname, cname, mod.main.help, mod)
 
 
 def _infer_plugin_class(mod, pr, fname):
@@ -243,7 +246,7 @@ def dump_plugins_import(io, chksum=None):
         # io.write(u"{} = load_module('swak.plugins.{}', r'{}')\n".format(fname,
         #                                                                pi.dname,
         #                                                                path))
-        plugins.append((pi.pname, fname))
+        plugins.append((pi.pname, fname, pi.cname))
 
     io.write(u'\nMODULE_MAP = {\n')
     for pl in plugins:
@@ -274,13 +277,16 @@ def get_plugins_initpy_path():
 
 
 def remove_plugins_initpy():
-    """Remove plugins/__init__.py file."""
-    path = get_plugins_initpy_path()
-    if os.path.isfile(path):
-        os.unlink(path)
-        logging.debug("removed {}".format(path))
-    else:
-        logging.debug("{} does not exist.".format(path))
+    """Remove plugins/__init__.py file and checksum file."""
+    def remove(path):
+        if os.path.isfile(path):
+            os.unlink(path)
+            logging.debug("removed {}".format(path))
+        else:
+            logging.debug("{} does not exist.".format(path))
+
+    remove(get_plugins_initpy_path())
+    remove(get_plugins_chksum_path())
 
 
 def get_plugins_chksum_path():
@@ -322,6 +328,7 @@ def check_plugins_initpy(plugin_infos):
         logging.debug("writing {}".format(path))
         with open(path, 'wt') as f:
             dump_plugins_import(f, chksum)
+        py_compile.compile(path)
 
         logging.debug("writing {} - {}".format(cpath, chksum))
         with open(cpath, 'wt') as f:

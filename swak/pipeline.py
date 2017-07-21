@@ -1,10 +1,12 @@
 import re
 import sys
 import logging
-
+from collections import namedtuple
 
 from swak.plugin import BaseInput
 import swak.plugins
+
+PluginObj = namedtuple('PluginObj', ['mod', 'obj'])
 
 
 cmd_ptrn = re.compile(r'\S*(?P<cmd>((in\.|par\.|tr\.|buf\.|out\.|cmd\.)\S+)'
@@ -13,16 +15,32 @@ cmd_ptrn = re.compile(r'\S*(?P<cmd>((in\.|par\.|tr\.|buf\.|out\.|cmd\.)\S+)'
 
 class Pipeline(object):
 
-    def __init__(self, plugins):
+    def __init__(self):
         """Initialize pipeline from plugin instances."""
-        self.plugins = plugins
+        self.plugins = []
         self.started = False
+
+    def append(self, pmod, args):
+        """Append plugin and arguments.
+
+        Args:
+            pmod (module): Plugin module
+            args (list): Arguments for plugin main function
+        """
+        try:
+            obj = pmod.main(args=args, standalone_mode=False)
+        except click.exceptions as e:
+            logging.error("Error {} at plugin {} init {} with arguments"
+                          " {}".format(pmod, e, args))
+        else:
+            self.plugins.append(PluginObj(pmod, obj))
 
     def validate(self):
         """Validate pipeline."""
         if len(self.plugins) == 0:
             raise ValueError("There is no plugins.")
-        if not isinstance(self.plugins[0], BaseInput):
+        fplugin = self.plugins[0]
+        if not isinstance(fplugin.obj, BaseInput):
             raise ValueError("First plugin ought be an input plugin.")
 
     def start(self):
