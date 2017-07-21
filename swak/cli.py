@@ -82,6 +82,6 @@ def prepare_cli(ctx):
         check_plugins_initpy(enumerate_plugins())
         sys.path.insert(0, get_exe_dir())
 
-    logging.debug(os.environ['TRAVIS_PYTHON_VERSION'])
+    logging.debug(os.environ)
     import swak.plugins
     return swak.plugins
