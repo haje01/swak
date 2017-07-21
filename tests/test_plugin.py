@@ -4,6 +4,8 @@ import os
 from subprocess import call
 from io import StringIO
 
+import pytest
+
 from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,\
     calc_plugins_hash, remove_plugins_initpy, check_plugins_initpy,\
