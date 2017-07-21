@@ -7,7 +7,7 @@ environment:
           PYTHON_ARCH: "32"
 
 install:
-    - "%PYTHON%\\python -m pip install ."
+    - "%PYTHON%\\python -m pip install . -e"
     - "%PYTHON%\\python -m pip install -r requirements.txt"
     - "%PYTHON%\\python -m pip install -r requirements-dev.txt"
     - "set PATH=%PYTHON%\\Scripts\\;%PATH%"
@@ -17,7 +17,7 @@ build: false
 test_script:
     - set SWAK_EXE_DIR=%APPVEYOR_BUILD_FOLDER%\swak
     - swak refresh
-    - coverage run --source swak --parallel-mode --module pytest tests
+    - coverage run --source swak --parallel-mode --module pytest tests -s
     - "tools\\build.bat"
 
 after_test:
