@@ -82,11 +82,6 @@ def prepare_cli(ctx):
         check_plugins_initpy(enumerate_plugins())
         sys.path.insert(0, get_exe_dir())
 
-    logging.debug(sys.path)
-    logging.debug(os.getcwd())
-    from subprocess import check_output
-    logging.debug(check_output(['ls', '-alh', 'swak']))
-    logging.debug(check_output(['ls', '-alh', 'swak/plugins']))
-    logging.debug(check_output(['ls', '-alh', 'swak/plugins/counter']))
+    logging.debug(os.environ['TRAVIS_PYTHON_VERSION'])
     import swak.plugins
     return swak.plugins
