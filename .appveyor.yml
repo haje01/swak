@@ -17,8 +17,9 @@ build: false
 test_script:
     - set SWAK_EXE_DIR=%APPVEYOR_BUILD_FOLDER%\swak
     - swak -vv refresh
-    - coverage run --source swak --parallel-mode --module pytest tests -s
-    - "tools\\build.bat"
+    - coverage run --source swak --module pytest tests -s
+    # Can not build & run service uner App veyor
+    # - "tools\\build.bat"
 
 after_test:
     - "%PYTHON%\\python -m pip install codecov"
