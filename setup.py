@@ -31,7 +31,6 @@ def package_dirs(directory):
 
 plugin_dirs = package_dirs('swak/plugins')
 plugins = [adir.replace(os.path.sep, '.') for adir in plugin_dirs]
-import pdb; pdb.set_trace()  # XXX BREAKPOINT
 
 setup(
     name='swak',
