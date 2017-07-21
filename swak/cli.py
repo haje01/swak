@@ -25,7 +25,14 @@ def main(ctx, verbose):
     ctx.obj['verbosity'] = verbose
 
 
-@main.command(help="List installed plugins.")
+if not getattr(sys, 'frozen', False):
+    @main.command(help="Search and update plugin information.")
+    @click.pass_context
+    def refresh(ctx):
+        check_plugins_initpy(enumerate_plugins())
+
+
+@main.command(help="List known plugins.")
 @click.pass_context
 def list(ctx):
     plugins = prepare_cli(ctx)
@@ -78,10 +85,15 @@ def prepare_cli(ctx):
     verbosity = ctx.obj['verbosity']
     set_log_verbosity(verbosity)
 
-    if not getattr(sys, 'frozen', False):
-        check_plugins_initpy(enumerate_plugins())
-        sys.path.insert(0, get_exe_dir())
+    # if not getattr(sys, 'frozen', False):
+    #    check_plugins_initpy(enumerate_plugins())
+        # sys.path.insert(0, get_exe_dir())
 
-    logging.debug(os.environ)
-    import swak.plugins
-    return swak.plugins
+    try:
+        import swak.plugins
+        swak.plugins.MODULE_MAP  # sanity check
+    except Exception as e:
+        print("Plugin information not exists. Try `refresh`.")
+        sys.exit(-1)
+    else:
+        return swak.plugins
