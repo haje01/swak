@@ -11,12 +11,14 @@ install:
     #- pip install -r requirements-dev.txt
 
 env:
-    global:
-        - SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
+    - TOX_ENV=py27
+    - TOX_ENV=py35
+    #global:
+        #- SWAK_HOME=$TRAVIS_BUILD_DIR/devhome
         #- SWAK_EXE_DIR=$TRAVIS_BUILD_DIR/swak
 
 script:
-    - tox
+    - tox -e $TOX_ENV
     #- coverage run --source swak --module pytest tests -s
     #- ./tools/build.sh
 
