@@ -28,7 +28,9 @@ def package_dirs(directory):
         dirs.append(path)
     return dirs
 
-
+from subprocess import check_output
+print(check_output(['pwd']))
+print(check_output(['ls', '-alh']))
 plugin_dirs = package_dirs('swak/plugins')
 plugins = [adir.replace(os.path.sep, '.') for adir in plugin_dirs]
 
