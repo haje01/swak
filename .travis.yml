@@ -4,10 +4,8 @@ python:
     - "2.7"
     - "3.5"
 
-virtualenv:
-      system_site_packages: true
-
 install:
+    - pip install -e .
     - pip install -r requirements.txt
     - pip install -r requirements-dev.txt
 
