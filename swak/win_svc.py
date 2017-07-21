@@ -37,7 +37,8 @@ def show_usage():
 
 
 # Handle help / cli command beforehand (No need to parse config)
-if len(sys.argv) > 2:
+print(sys.argv)
+if len(sys.argv) >= 2:
     cmd = sys.argv[1]
     if cmd == 'help':
         show_usage()
