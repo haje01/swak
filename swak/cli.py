@@ -83,5 +83,7 @@ def prepare_cli(ctx):
         sys.path.insert(0, get_exe_dir())
 
     logging.debug(sys.path)
+    logging.debug(os.getcwd())
+    logging.debug(check_output(['ls', '-alh', 'swak']))
     import swak.plugins
     return swak.plugins
