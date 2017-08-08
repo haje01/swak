@@ -3,6 +3,8 @@ import sys
 import logging
 from collections import namedtuple
 
+import click
+
 from swak.plugin import BaseInput
 
 PluginObj = namedtuple('PluginObj', ['mod', 'obj'])
@@ -28,9 +30,10 @@ class Pipeline(object):
         """
         try:
             obj = pmod.main(args=args, standalone_mode=False)
-        except click.exceptions as e:
-            logging.error("Error {} at plugin {} init {} with arguments"
-                          " {}".format(pmod, e, args))
+        except click.exceptions.UsageError as e:
+            logging.error("Error {} at plugin {} init with {} arguments"
+                          .format(e, pmod.__name__, args))
+            raise
         else:
             self.plugins.append(PluginObj(pmod, obj))
 

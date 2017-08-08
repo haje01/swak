@@ -1,19 +1,9 @@
 from __future__ import absolute_import
 
 import pytest
+import click
 
-from swak.core import parse_test_cmds, run_test_cmds
-# from swak.plugin import check_plugins_initpy, enumerate_plugins
-
-
-#def plugin_filter(_dir):
-    #return _dir in ['counter', 'stdout']
-
-
-#@pytest.fixture(scope="session", autouse=True)
-#def initpy():
-    #import pdb; pdb.set_trace()  # XXX BREAKPOINT
-    #check_plugins_initpy(enumerate_plugins(None, plugin_filter))
+from swak.core import parse_test_cmds, run_test_cmds, build_pipeline
 
 
 def test_core_util():
@@ -28,3 +18,9 @@ def test_core_util():
 
     run_test_cmds(parsed)
 
+    with pytest.raises(click.exceptions.UsageError):
+        build_pipeline(parse_test_cmds('in.counter --foo 3'))
+
+    pline = build_pipeline(parse_test_cmds('out.stdout'))
+    with pytest.raises(ValueError):
+        pline.validate()

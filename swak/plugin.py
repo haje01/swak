@@ -20,7 +20,8 @@ PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
 class Plugin(object):
     """Base class for plugin."""
 
-    def __init__(self): self.started = self.terminated = False
+    def __init__(self):
+        self.started = self.terminated = False
 
     def start(self):
         self.started = True
@@ -35,13 +36,35 @@ class Plugin(object):
 class BaseInput(Plugin):
     """Base class for input plugin.
 
-    Following methods should be implemented:
-        read
+    Implementation of following functions is required:
 
+        `read`
     """
+    def __init__(self):
+        super(BaseInput, self).__init__()
+        self.filter_fn = None
 
     def read(self):
         raise NotImplemented()
+
+    def filter(self, line):
+        """Filter unparsed line.
+
+        You can override this function or set filter function by
+            `set_filter_func`.
+
+        Args:
+            line (str): Unparsed line.
+
+        Returns:
+            (str): Returns only passed line.
+        """
+        if self.filter_fn is not None:
+            if self.filter_fn(line):
+                return line
+
+    def set_filter_func(self, func):
+        self.filter_fn = func
 
 
 class BaseParser(Plugin):

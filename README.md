@@ -1,4 +1,4 @@
-# Swak
+# Swak 사용자 문서
 
 [![Codecov Status](https://codecov.io/gh/haje01/swak/branch/master/graph/badge.svg)](https://codecov.io/gh/haje01/swak)
 
@@ -7,30 +7,34 @@
 - [개발자 문서](swak/README.md)
 - [기본 플러그인 소개](swak/plugins/README.md)
 
+
 ## 무엇인가?
 
 - 멀티 OS(Windows, Linux, macOS)에서
 - 서비스(데몬) 형태로
 - 다양한 목적을 위한 파이썬 플러그인을 실행하거나
-- 외부 프로세스를 실행히주는 
-- 틀
+- 외부 프로세스를 실행히주는 틀
 
-## 플러그인 구조
 
-Swak은 어플리케이션의 기본 틀외 모든 기능들을 플러그인으로 구현한다. 다음과 같은 기본 플러그인들이 가진다.
+  ## 플러그인 구조
 
-- FileTail - 파일에 추가된 내용 입력으로 가져옴
-- Fluentd - Fluentd로 출력
-- failover - 출력 실패시 대체
+Swak은 어플리케이션의 기본 틀외 모든 기능들을 플러그인으로 구현한다. 플러그인은 크게 입력, 파서, 변환, 버퍼, 출력 그리고 명령 플러그인의 여섯가지 타입으로 나뉜다. 각 타입별 플러그인은 다음과 같은 패키지명 형식으로 시작한다.
+
+- 입력 플러그인: `in.`
+- 파서 플러그인: `par.`
+- 변환 플러그인: `tr.`
+- 버퍼 플러그인: `buf.`
+- 출력 플러그인: `out.`
+- 명령 플러그인: `cmd.`
+
+다음과 같은 기본 플러그인들을 가진다.
+
+- `in.filetail` - 파일에 추가된 행을 가져옴
+- `buf.file` - 데이터를 파일에 버퍼링함
+- `out.fluentd` - Fluentd로 출력
 
 자세한 것은 [기본 플러그인 소개](swak/plugins/README.md)를 참고하자. 
 
-이외에 아래와 같은 다양한 외부 플러그인이 나올 수 있을 것이다.
-
-- DB Tailing
-- 시스템(윈도우 이벤트, syslog) 로그 입력으로 가져오기
-- 프로세스/커넥션 모니터링
-- Elasticsearch, Logstash로 출력
 
 ## 코드 설치
 
@@ -57,6 +61,7 @@ swak/
     run/     # 데몬으로 실행된 경우 .pid 파일 저장
 ```
 
+
 ## 홈 디렉토리
 
 Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음과 같은 구조를 가진다.
@@ -81,7 +86,9 @@ Swak은 실행을 위해 홈 디렉토리를 필요로 한다. 이것은 다음�
 - 본인 만의 커스텀한 설정이 필요한 경우, `devhome/config.yml`을 수정하지 말고, 별도로 디렉토리를 만들고 거기에 `config.yml`을 저장한 후, 홈 디렉토리로 지정해준다. (`logs/`, `run/` 같은 하위 디렉토리는 자동으로 만들어진다.`)
 - 바이너리로 빌드되어 배포 될 때는, 일반적으로 실행 파일과 같은 디렉토리에 `config.yml`을 만들어 주면 된다. 
 
+
 # Swak 활용 예
+
 
 ## Swak 커맨드 라인 명령
 
@@ -99,16 +106,17 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 
     swak run 'in.fakedata --type people | out.Stdout'
 
+
+
 ## 설정 파일
 
 설정 파일은 YAML(`*.yml`) 형식으로 Swak이 할 일을 명시한다. 샘플 설정 파일을 통해 Swak의 사용법을 살펴보자.
 
-설정 파일내에 플러그인  플러그인 들은 플러그인 타입별로 각각의 섹션 아래에 선언된다. 예를 들어
-입력과 출력 플러그인은 각각 `inputs` 및 `outputs` 섹션의 데이터 스트림 태그 아래에 위치한다.
+설정 파일에서 가장 핵심은 `streams` 필드이다. 이 아래에 여러 데이터 스트림이 그것의 태그명을 필드로 등장한다. 각 데이터 스트림은 하나 이상의 플러그인으로 구성된다. 
 
 ### 미니멀한 설정 파일의 예
 
-가짜 데이터를 표준 출력을 통해 출력하는 간단한 예이다. `in.fakedata` -> `out.stdout` 순서, 즉 등장 순으로 처리된다.
+가짜 데이터를 표준 출력을 통해 출력하는 간단한 예를 살펴보자.
 
 ```yml
 streams:
@@ -120,39 +128,37 @@ streams:
 ```
 
 위의 스크립트는 다음과 같은 식으로 이해하면 된다.
-- `inputs`에서는 데이터 스트림 별 입력을 선언한다.
-- `foo` 는 데이터 스트림의 태그로, 데이터 스트림을 칭할 때 사용된다.
-- `in.fakedata` 플러그인을 통해 가짜 데이터를 생성하고 `foo` 데이터 스트림으로 보낸다.
-- `outputs`에서는 데이터 스트림 별 출력을 선언한다.
-- `out.stdout` 플러그인은 표준 출력으로 스트림을 보낸다.
+
+1. `streams`아래 다양한 데이터 스트림을 선언한다.
+1. `foo` 는 데이터 스트림의 태그로, 데이터 스트림을 칭할 때 사용된다.
+1. `in.fakedata` 플러그인을 통해 생성된 가짜 데이터는 `foo` 데이터 스트림으로 보낸다.
+1. `foo` 데이터 스트림의 `output` 플러그인인 `out.stdout` 플러그인은 데이터 스트림에서 받은 데이터를 표준 출력으로 보낸다.
 
 ### 좀 더 복잡한 예
 
-다음은 특정 파일을 테일링하여 Fluentd로 전송하는 설정 파일의 예이다. 조금 복잡하지만 순서대로 처리된다.
+다음은 특정 파일을 테일링하여 Fluentd로 전송하는 설정 파일의 예이다. 조금 복잡하지만 순서대로 처리되기에 어려울 것은 없다.
 
 ```yml
 streams:
   foo:  # 데이터 스트림 태그
     # 주석행을 제거하며 대상 파일 테일링
-    - in.filetail -path C:/myprj/logs/mylog.txt -posdir C:/swak_temp/pos -encoding: cp949 --exclude ^\S*#.*
+    - in.filetail --path C:\myprj\logs\mylog.txt --posdir C:\swak_temp\pos --encoding: cp949 --exclude ^\S*#.*
     # 커스텀 포맷 파서
     - par.mylog
     # 5분 단위로 버퍼링
-    - buf.file time --min 5
+    - buf.file time --minute 5
     # Fluentd 전송
     - out.fluentd --server 192.168.0.1 --server: 169.168.0.2 --last /tmp/failed.txt --start_by: ip
 ```
 
-
-`in.filetail`은 지정된 파일에서 추가된 내용을 스트림으로 보낸다.
-
-`out.timebuffer`는 스트림의 내용을 버퍼에 쌓아두다가, 지정한 시간이 되었을 때만 출력해 지나친 IO를 막아준다.
-
-`out.fluentd` 플러그인은 스트림을 지정된 Fluentd 서버로 보낸다. 이때 하나 이상의 서버를 받고, 에러가 발생하면 다른 리스트로 시도한다. 시작 출력은 `start_by`로 지정하는 값에 의존하여 결정된다. 모든 출력이 실패하면 `last`로 지정된 출력으로 스트림을 보낸다.
+1. `in.filetail`은 지정된 파일에서 추가된 행을 스트림으로 보낸다.
+1. `par.mylog`는 행을 파싱하여 레코드 형태로 스트림에 보낸다.
+1. `out.timebuffer`는 스트림의 레코드를 버퍼에 쌓다가, 지정한 시간이 되었을 때 한 번씩 출력해 지나친 IO를 막아준다.
+1. `out.fluentd` 플러그인은 스트림을 지정된 Fluentd 서버로 보낸다. 이때 하나 이상의 서버를 받고, 에러가 발생하면 다른 서버로 시도한다. 시작 출력은 `start_by`로 지정하는 값에 의존하여 결정된다. 모든 출력이 실패하면 `last`로 지정된 출력으로 스트림을 보낸다.
 
 ### 처리 순서가 순환적인 예
 
-플러그인이 꼭 등장하는 순서대로 시작되는 것은 아니다. 태그의 지정을 통해 순환적으로 처리될 수 있다. 아래의 예를 살펴보자.
+항상 데이터가 플러그인이 등장하는 순서대로 처리되는 것은 아니다. 새로운 태그의 지정을 통해 다양한 데이터 스트림을 오가면서 처리될 수 있다. 아래의 예를 살펴보자.
 
 ```yml
 streams:
@@ -165,15 +171,22 @@ streams:
     - buf.file size --lines 100 --tag detect
 ```
 
-이 경우는 먼저 `collect` 스트림에서 `in.mysqltail` -> `buf.file` 처리 후 `detect` 스트림에서 `tr.exec` -> `out.stdout` 순으로 처리된다.
+이 경우는 이 경우는 `detect` 스트림에 인풋 플러그인이 없기에, 다음과 같은 순서대로 실행된다.
 
-먼저 `in.mysqltail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 내용을 스트림으로 보낸다.
+1. `in.mysqltail`
+2. `buf.file`
+3. `tr.exec`
+4. `out.stdout`
 
-`buf.file size`는 스트림의 내용을 파일 버퍼에 쌓아두다가, 지정한 라인(행) 수가 되었을 때 전달해 지나친 IO 사용을 막아준다. 전달시에는 새로운 스트림 `foo.buffered`로 보낸다.
+하나씩 살펴보자.
 
-거기에서 `tr.exec` 플러그인은 버퍼링된 청크를 받고, 지정된 별도 프로세스에서 처리한 후, 그 결과를 임시 파일로 받는다. 같은 태그에 관해서는 등장 순서대로 처리되기에, 받은 결과는 `out.stdout` 으로 보내진다.
+1. 먼저 `in.mysqltail` 플러그인은 지정된 MySQL DB의 테이블에서 추가되는 행을 스트림으로 보낸다.
+1. `buf.file size`는 스트림의 내용을 파일 버퍼에 쌓아두다가, 지정한 행 수가 되었을 때 모아서 다음 플러그인으로 전달해 지나친 IO 사용을 막아준다. 전달시에는 새로운 스트림 `detect`로 보낸다.
+1. 거기에서 `tr.exec` 플러그인은 버퍼링된 청크를 받고, 지정된 별도 프로세스에서 처리한 후, 그 결과를 임시 파일로 받는다. 
+1. 같은 태그에 관해서는 등장 순서대로 처리되기에, 받은 결과는 `out.stdout` 으로 보내진다.
 
-> 각 스트림은 입력 플러그인이 있다면 등장 순서대로 시작되고, 없다면 매칭되는 데이터가 있을 때 시작된다.
+> 각 스트림은 입력 플러그인이 있다면 등장 순서대로 시작되고, 없다면 스트림에 매칭되는 데이터가 있을 때 시작된다.
+
 
 ## 설정 파일 테스트하기
 
@@ -185,15 +198,16 @@ streams:
 swak test
 ```
 
-테스트 모드에서는 하나의 데이터 스트림에 대해서만 실행할 수 있다. 설정 파일에 데이터 스트림이 여럿있다면, 실행할 데이터 스트림의 태그를 지정하자. (지정하지 않으면 최초로 등장하는 데이터 스트림이 선택)
+테스트 모드에서는 하나의 데이터 스트림만 실행할 수 있다. 설정 파일에 데이터 스트림이 여럿있다면, 아래와 같이 실행할 데이터 스트림의 태그를 지정하자. (지정하지 않으면 최초로 등장하는 데이터 스트림이 선택)
 
 ```
 swak test --tag foo  # foo 데이터 스트림에 대해 테스트
 ```
 
+
 ## 외부 플러그인 설치
 
-필요한 플러그인을 GitHub에서 찾아 설치한다. Swak의 외부 플러그인은 `swak-plugin-`으로 시작한다. 여기서는 스트림을 Fluentd로 전달하는 출력 플러그인을 설치해보겠다.
+필요한 플러그인을 GitHub에서 찾아 설치한다. Swak의 외부 플러그인은 `swak-`으로 시작한다. 여기서는 스트림을 Fluentd로 전달하는 출력 플러그인을 설치해보겠다.
 
 ### 코드 받기
 먼저 Swak 소스 코드 디렉토리 아래 `plugins` 디렉토리로 이동하고
@@ -202,11 +216,11 @@ swak test --tag foo  # foo 데이터 스트림에 대해 테스트
 
 사용할 외부 플러그인을 `clone`한다.
 
-    git clone https://github.com/haje01/swak-plugin-fluentd.git fluentd
+    git clone https://github.com/haje01/swak-fluentd.git fluentd
 
-마지막 인자로 `swak-plugin-`을 제외한 플러그인 이름만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래 `fluentd` 디렉토리에 플러그인 코드가 받아진다.
+마지막 인자로 `swak-`을 제외한 플러그인 이름만을 디렉토리 명으로 추가한 것에 주의하자. 이렇게 하면 `plugins` 아래 `fluentd` 디렉토리에 플러그인 코드가 받아진다.
 
-다음과 같이 확인할 수 있다.
+다음과 같이 설치된 것을 확인할 수 있다.
 
 ```
 $ swak list
@@ -214,11 +228,12 @@ $ swak list
 | Plugin     | Description                |
 |------------+----------------------------|
 | in.counter | Emit incremental number.   |
+| out.fluentd | Output to fluentd server. |
 | out.stdout | Output to standard output. |
 +------------+----------------------------+
 ```
 
-플러그인에 따라 의존 패키지 설치가 필요할 수 있다.(자세한 것은 해당 플러그인 `README.md` 를 참고하자.)
+플러그인에 따라 의존 패키지 설치가 필요할 수 있다.(자세한 것은 해당 플러그인의 `README.md` 를 참고하자.)
 
 ### 의존 패키지 설치
 
@@ -230,9 +245,12 @@ $ swak list
 
 설치된 플러그인은 Swak 기동시에 자동으로 등록되고, 실행할 수 있다.
 
+
+
 # 빌드 그리고 배포
 
-개발 및 테스트는 파이썬 개발 환경이 설치된 곳에서 인터프리터를 이용하는 것이 좋지만, 실제 배포를 위해서는 실행 가능한 형태가 편하다. Swak는 PyInstaller를 통해 파이썬 코드를 실행 파일로 빌드한다.
+개발 및 테스트는 파이썬 개발 환경이 설치된 곳에서 인터프리터를 이용하는 것이 좋지만, 실제 배포를 위해서는 실행 가능한 형태로 만드는 것이 좋다. Swak는 PyInstaller를 통해 파이썬 코드를 실행 파일로 빌드한다.
+
 
 ## PyInstaller 설치
 
@@ -241,6 +259,7 @@ $ swak list
 > PyEnv를 사용하는 경우 빌드시 동적 라이브러리를 찾지 못해 에러가 나올 수 있다. 이때는 macOS의 경우 `--enable-framework` 옵션으로 파이썬을 빌드하여 설치해야 한다. 자세한 것은 [이 글](https://github.com/pyenv/pyenv/issues/443)을 참고하자. 리눅스의 경우 `--enable-shared` 옵션으로 빌드한다.
 
 > 윈도우에서 파이썬 3.5를 사용할 때 "ImportError: DLL load failed" 에러가 나오는 경우 [Microsoft Visual C++ 2010 Redistributable Package](https://www.microsoft.com/en-us/download/confirmation.aspx?id=5555)를 설치하자.
+
 
 ## 빌드
 
@@ -262,6 +281,7 @@ cd swak
 
 > PyInstaller는 파이썬 3.x에서 실행 파일의 버전 정보 설정에 문제가 있다. 이 [페이지](https://github.com/pyinstaller/pyinstaller/issues/1347)를 참고하자.
 
+
 ## OS별 설치 및 관리
 
 ### 윈도우
@@ -278,7 +298,7 @@ cd swak
 
     swakd.exe stop
 
-### Unix 계열(Linux/macOS)
+#### Unix 계열(Linux/macOS)
 
 다음과 같이 데몬을 시작하고
 

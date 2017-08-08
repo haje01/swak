@@ -19,11 +19,14 @@ def parse_test_cmds(cmd):
         yield args
 
 
-def run_test_cmds(cmds):
-    """Execute test command.
+def build_pipeline(cmds):
+    """Build pipeline form commands list.
 
     Args:
-        cmds (list): Parsed command list
+        cmds (list): commands in string list
+
+    Returns:
+        (Pipeline): a Pipeline object
     """
     import swak.plugins  # protect dependency
     mmap = swak.plugins.MODULE_MAP
@@ -35,5 +38,16 @@ def run_test_cmds(cmds):
         pname = cmd[0]
         pmod = mmap[pname]
         pline.append(pmod, args)
+    return pline
 
+
+def run_test_cmds(cmds):
+    """Execute test command.
+
+    Args:
+        cmds (list): Parsed command list
+    """
+    pline = build_pipeline(cmds)
     pline.validate()
+    import pdb; pdb.set_trace()  # XXX BREAKPOINT
+    pass
