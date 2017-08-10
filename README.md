@@ -2,6 +2,8 @@
 
 [![Codecov Status](https://codecov.io/gh/haje01/swak/branch/master/graph/badge.svg)](https://codecov.io/gh/haje01/swak)
 [![Document Status](http://swak.readthedocs.io/ko/latest/?badge=latest)](http://swak.readthedocs.io/ko/latest/?badge=latest)
+[![Doc st](https://swak.readthedocs.io/ko/latest/?badge=latest)[https://swak.readthedocs.io/ko/latest/?badge=latest)]
+
 
 ## Swak은?
 
