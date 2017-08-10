@@ -1,3 +1,9 @@
+"""Utility.
+
+*****
+:mod:`util` utility
+*****
+"""
 import os
 import sys
 from platform import platform
@@ -12,8 +18,13 @@ test_logger_inited = False
 LOG_FMT = logging.Formatter('%(levelname)s [%(filename)s:%(lineno)d]'
                             ' %(message)s')
 
+
 def make_dirs(adir):
-    """Make directory if not exist."""
+    """Make directory if not exist.
+
+    Args:
+        adir (str): A directory to create.
+    """
     try:
         os.makedirs(adir)
     except OSError as err:
@@ -25,11 +36,24 @@ def make_dirs(adir):
 
 
 def is_windows():
+    """Return where windows or not.
+
+    Returns:
+        (bool): True if the OS is Windows or False.
+    """
     plt = platform()
     return 'Windows' in plt
 
 
 def get_winsvc_status(svcname):
+    """Get Windows service status.
+
+    Args:
+        svcname (str): Service name to query.
+
+    Returns:
+        (str): Service Status string.
+    """
     import win32serviceutil
     import pywintypes
 
@@ -43,14 +67,15 @@ def get_winsvc_status(svcname):
 def update_dict(d, u):
     """Update dictionary recursively.
 
-    Update dictionary `d` with the value of `u` of matching key & hierarchy.
+    Update dictionary ``d`` with the value of ``u`` of matching key &
+        hierarchy.
 
     Args:
         d (dict): Original dictionary to be updated.
         u (dict): Referential dictionary
 
     Returns:
-        dict: Dictionary `d`
+        dict: dictionary ``d``
 
     """
     for k, v in u.items():
@@ -83,7 +108,7 @@ def init_home(home, cfg):
                     make_dirs(dname)
 
 
-def query_stream_log_handler(logger):
+def _query_stream_log_handler(logger):
     if len(logger.handlers):
         ch = logger.handlers[0]
     else:
@@ -93,6 +118,7 @@ def query_stream_log_handler(logger):
 
 
 def test_logconfig():
+    """Config logger for test."""
     global test_logger_inited
 
     if test_logger_inited:
@@ -101,7 +127,7 @@ def test_logconfig():
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    ch = query_stream_log_handler(logger)
+    ch = _query_stream_log_handler(logger)
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(LOG_FMT)
 
@@ -127,7 +153,7 @@ def check_python_version():
         raise UnsupportedPython("Python {} is not supported".format(vi))
 
 
-def log_level_from_verbosity(verbosity):
+def _log_level_from_verbosity(verbosity):
     if verbosity == 0:
         return 40
     elif verbosity == 1:
@@ -137,9 +163,14 @@ def log_level_from_verbosity(verbosity):
 
 
 def set_log_verbosity(verbosity):
-    level = log_level_from_verbosity(verbosity)
+    """Set log level by verbose level.
+
+    Args:
+        verbosity (int): verbose level.
+    """
+    level = _log_level_from_verbosity(verbosity)
     logger = logging.getLogger()
     logger.setLevel(level)
-    handler = query_stream_log_handler(logger)
+    handler = _query_stream_log_handler(logger)
     handler.setLevel(level)
     handler.setFormatter(LOG_FMT)

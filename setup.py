@@ -54,6 +54,7 @@ setup(
     ],
     extras_require={
         'dev': [
+            'sphinx',
             'pytest',
             'coverage',
             'pyinstaller',

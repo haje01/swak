@@ -1,5 +1,5 @@
-"""Swak core.
-"""
+"""Swak core."""
+
 from swak.pipeline import Pipeline
 
 
@@ -49,5 +49,4 @@ def run_test_cmds(cmds):
     """
     pline = build_pipeline(cmds)
     pline.validate()
-    import pdb; pdb.set_trace()  # XXX BREAKPOINT
     pass
