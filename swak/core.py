@@ -1,4 +1,10 @@
-"""Swak core."""
+"""Core.
+
+*****
+:mod:`core` core
+*****
+"""
+
 
 from swak.pipeline import Pipeline
 
