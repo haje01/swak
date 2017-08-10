@@ -8,10 +8,10 @@
 
 - 멀티 OS(Windows, Linux, macOS)에서
 - 서비스(데몬) 형태로
-- 다양한 목적을 위한 파이썬 플러그인을 실행하거나
-- 외부 프로세스를 실행히주는 틀
+- 다양한 목적을 위한 파이썬 플러그인이나
+- 외부 프로세스를 실행해주는 틀
 
 이다.
 
-좀 더 자세한 문서는 [이 곳](http://swak.readthedocs.io/ko/latest/?badge=latest) 을 참조.
+자세한 문서는 [이 곳](http://swak.readthedocs.io/ko/latest/?badge=latest) 을 참조.
 
