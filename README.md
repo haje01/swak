@@ -1,8 +1,7 @@
 # Swak 사용자 문서
 
 [![Codecov Status](https://codecov.io/gh/haje01/swak/branch/master/graph/badge.svg)](https://codecov.io/gh/haje01/swak)
-[![Document Status](http://swak.readthedocs.io/ko/latest/?badge=latest)](http://swak.readthedocs.io/ko/latest/?badge=latest)
-[![Doc st](https://swak.readthedocs.io/ko/latest/?badge=latest)[https://swak.readthedocs.io/ko/latest/?badge=latest)]
+[![Document Status](https://readthedocs.org/projects/swak/badge/?version=latest)](https://readthedocs.org/projects/swak/badge/?version=latest)
 
 
 ## Swak은?
