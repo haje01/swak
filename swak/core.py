@@ -1,7 +1,7 @@
 """Core.
 
 *****
-:mod:`core` core
+:mod:`core`
 *****
 """
 

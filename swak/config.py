@@ -1,4 +1,9 @@
 """Select config file and parse.
+
+*****
+:mod:`config`
+*****
+
 """
 import os
 import sys
@@ -72,7 +77,7 @@ def get_exe_dir():
 
 
 def select_and_parse(_home=None):
-    """Get config path and parse its config.
+    """Decide config file path and parse its config.
 
     To resolve environment variables while parsing config file, this function
     takes following procedures.
@@ -84,8 +89,9 @@ def select_and_parse(_home=None):
         _home (str): Force home directory
 
     Returns:
-        str: Selected home directory
-        dict: Parsed config dictionary
+        (tuple):
+            (str): Selected home directory
+            (dict): Parsed config dictionary
     """
     logging.info("select_and_parse: _home {}".format(_home))
     home = select_home(_home)
@@ -129,7 +135,7 @@ def select_home(_home=None, check_config=True):
 
     Home directory selection rule:
         1. If explicit `_home` is given, use it.
-        2. If an environment variable for home dir(`SWAK_HOME`) exists, use it.
+        2. If an environment variable(`SWAK_HOME`) exists, use it.
         3. If the executable's directory has config file, use it.
         4. Error
     """

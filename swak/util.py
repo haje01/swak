@@ -1,7 +1,7 @@
 """Utility.
 
 *****
-:mod:`util` utility
+:mod:`util`
 *****
 """
 import os
