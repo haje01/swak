@@ -89,9 +89,8 @@ def select_and_parse(_home=None):
         _home (str): Force home directory
 
     Returns:
-        (tuple):
-            (str): Selected home directory
-            (dict): Parsed config dictionary
+        str: Selected home directory
+        dict: Parsed config dictionary
     """
     logging.info("select_and_parse: _home {}".format(_home))
     home = select_home(_home)

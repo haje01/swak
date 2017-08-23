@@ -1,3 +1,5 @@
+"""Pipeline module."""
+
 import re
 import sys
 import logging
@@ -15,6 +17,7 @@ cmd_ptrn = re.compile(r'\S*(?P<cmd>((in\.|par\.|tr\.|buf\.|out\.|cmd\.)\S+)'
 
 
 class Pipeline(object):
+    """Pipeline class."""
 
     def __init__(self):
         """Initialize pipeline from plugin instances."""
@@ -22,7 +25,7 @@ class Pipeline(object):
         self.started = False
 
     def append(self, pmod, args):
-        """Append plugin and arguments.
+        """Append plugin and its arguments.
 
         Args:
             pmod (module): Plugin module

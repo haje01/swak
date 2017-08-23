@@ -1,3 +1,5 @@
+"""Plugin module."""
+
 import os
 import sys
 import glob
@@ -21,15 +23,35 @@ class Plugin(object):
     """Base class for plugin."""
 
     def __init__(self):
+        """Init."""
         self.started = self.terminated = False
 
     def start(self):
+        """Start plugin.
+
+        This method is called when the task starts after processing the
+        setting. Creation of resources such as files and threads to be used in
+        the plug-in is created here.
+        """
         self.started = True
 
     def stop(self):
+        """Stop plugin.
+
+        This method is called when the task is preparing to terminate. You
+        should do simple things that do not fail, such as setting a thread
+        stop flag.
+
+        """
         self.started = False
 
     def terminate(self):
+        """Terminate plugin.
+
+        This method is called when the task is completely terminated. Here you
+        can close or remove any files, threads, etc. that you had created in
+        ``start``.
+        """
         self.terminated = True
 
 
@@ -38,13 +60,28 @@ class BaseInput(Plugin):
 
     Implementation of following functions is required:
 
-        `read`
+        ``read``
     """
+
     def __init__(self):
+        """Init."""
         super(BaseInput, self).__init__()
         self.filter_fn = None
 
     def read(self):
+        """Read data from source.
+
+        It is implemented in the following format.
+
+        1. Read the line-delimited text from the source.
+        2. If the ``encoding`` is specified, convert it to ``utf8`` text.
+        3. Separate text line by line,
+        4. For the lines that pass ``filter``
+        5. Yield them. If this is an input plugin for data of a known type,
+           such as ``syslog``, it will parse itself and return the record,
+           otherwise it will just return the line.
+
+        """
         raise NotImplemented()
 
     def filter(self, line):
@@ -64,6 +101,7 @@ class BaseInput(Plugin):
                 return line
 
     def set_filter_func(self, func):
+        """Set filter function."""
         self.filter_fn = func
 
 
@@ -76,18 +114,34 @@ class BaseParser(Plugin):
     """
 
     def parse(self):
+        """Parse."""
         raise NotImplemented()
 
 
 class BaseTransform(Plugin):
-    """Base class for transform plugin
+    """Base class for transform plugin.
 
     Following methods should be implemented:
         transform
 
     """
 
-    def transform(self):
+    def transform(self, tag, time, record):
+        """Transform.
+
+        Args:
+            tag (str): Event tag
+            time (float): Event time
+            record (dict): Event record
+
+        Returns:
+            If transformed
+                float: Transformed time
+                record: Transformed record
+
+            If removed
+                None, None
+        """
         raise NotImplemented()
 
 
@@ -100,6 +154,7 @@ class BaseBuffer(Plugin):
     """
 
     def append(self, record):
+        """Append a record."""
         raise NotImplemented()
 
 
@@ -107,14 +162,21 @@ class BaseOutput(Plugin):
     """Base class for output plugin.
 
     Following methods should be implemented:
-        process or write
+        write_record, write_chunk
 
     """
 
-    def process(self, record):
+    def write_stream(self, tag, es):
+        """Write event stream synchronously.
+
+        Args:
+            tag (str): Event tag.
+            es (EventStream): Event stream.
+        """
         raise NotImplemented()
 
-    def write(self, chunk):
+    def write_chunk(self, chunk):
+        """Write a chunk from buffer."""
         raise NotImplemented()
 
 
@@ -127,6 +189,7 @@ class BaseCommand(Plugin):
     """
 
     def execute(self):
+        """Execute command."""
         raise NotImplemented()
 
 
@@ -141,7 +204,7 @@ BASE_CLASS_MAP = {
 
 
 def get_plugins_dir(_home=None):
-    """Returns plugins/ directory path."""
+    """Return plugins directory path."""
     edir = get_exe_dir()
     return os.path.join(edir, 'plugins')
 
@@ -265,10 +328,6 @@ def dump_plugins_import(io, chksum=None):
     for pi in enumerate_plugins():
         fname = os.path.splitext(pi.fname)[0]
         io.write(u"from swak.plugins.{} import {}\n".format(pi.dname, fname))
-        # path = os.path.join(get_plugins_dir(), pi.dname, pi.fname)
-        # io.write(u"{} = load_module('swak.plugins.{}', r'{}')\n".format(fname,
-        #                                                                pi.dname,
-        #                                                                path))
         plugins.append((pi.pname, fname, pi.cname))
 
     io.write(u'\nMODULE_MAP = {\n')
@@ -313,6 +372,7 @@ def remove_plugins_initpy():
 
 
 def get_plugins_chksum_path():
+    """Return plugin checksum path."""
     return os.path.join(get_plugins_dir(), CHKSUM_FNAME)
 
 

@@ -259,21 +259,21 @@ BaseOutput 클래스
 
     class BaseOutput(Plugin):
 
-        def process(self, record):
+        def write_record(self, tag, es):
             ...
 
-        def write(self, chunk):
+        def write_chunk(self, chunk):
             ...
 
 
 다음과 같은 메소드를 갖고 있다.
 
-process (또는 write 필수 구현)
+write_record (필수 구현)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 건네진 레코드를 출력. (앞에 버퍼가 없는 경우)
 
-write (또는 process 필수 구현)
+write_chunk (필수 구현)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 건네진 청크를 출력.(앞에 버퍼가 있는 경우)
