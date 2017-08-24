@@ -23,7 +23,7 @@ class Counter(BaseInput):
             values = [self.count] * self.field
 
 
-@click.command(help="Emit incremental number.")
+@click.command(help="Generate incremental numbers.")
 @click.option('--max', default=10, show_default=True, help="Maximum count to"
               " emit.")
 @click.option('--field', default=1, show_default=True, help="Number of count"

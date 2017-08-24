@@ -12,7 +12,7 @@ Swak 플러그인 개발
 
 - 입력 플러그인: ``in.``
 - 파서 플러그인: ``par.``
-- 변환 플러그인: ``tr.``
+- 교정 플러그인: ``ref.``
 - 버퍼 플러그인: ``buf.``
 - 출력 플러그인: ``out.``
 - 명령 플러그인: ``cmd.``
@@ -184,7 +184,7 @@ read (필수 구현)
 filter
 ^^^^^^
 
-읽어온 라인들 중 대상이 되는 라인에 대해 ``True``, 아니면 ``False`` 를 반환한다. 기본은 모든 라인에 대해 ``True``.
+레코드로 파싱될 필요가 없는 라인을 거르는 역할. 읽어온 라인들 중 대상이 되는 라인에 대해 ``True``, 아니면 ``False`` 를 반환한다. 기본은 모든 라인에 대해 ``True``.
 
 
 BaseParser 클래스
@@ -207,16 +207,16 @@ parse (필수 구현)
 
 Input에서 넘어온 텍스트의 파싱하여 레코드를 반환
 
-BaseTransform 클래스
---------------------
+BaseReform 클래스
+-----------------
 
-이것을 상속받아 변환 클래스를 만든다.
+이것을 상속받아 교정 클래스를 만든다.
 
 .. code-block:: python
 
-    class BaseTransform(BasePlugin):
+    class BaseReform(BasePlugin):
 
-        def transform(self, records):
+        def reform(self, records):
             ....
 
 
@@ -224,10 +224,10 @@ BaseTransform 클래스
 
 다음과 같은 메소드를 갖고 있다.
 
-transform (필수 구현)
-^^^^^^^^^^^^^^^^^^^^^
+reform (필수 구현)
+^^^^^^^^^^^^^^^^^^
 
-``configure`` 에서 받은 레코드들에 대해 템플릿을 확장한 후, 인자로 받은 레코드에 수정을 가한 새 레코드를 반환한다.
+``configure`` 에서 받은 레코드들에 대해 템플릿을 확장한 후, 인자로 받은 레코드에 교정을 가한 새 레코드를 반환한다.
 
 
 BaseBuffer 클래스

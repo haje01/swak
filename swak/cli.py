@@ -1,9 +1,7 @@
-"""Swak command line interface.
-"""
+"""Swak command line interface."""
 
 from __future__ import print_function
 
-import os
 import sys
 import logging
 
@@ -11,8 +9,7 @@ import click
 from tabulate import tabulate
 
 from swak.util import check_python_version, set_log_verbosity
-from swak.plugin import enumerate_plugins, check_plugins_initpy,\
-    get_plugins_initpy_path, get_exe_dir
+from swak.plugin import enumerate_plugins, check_plugins_initpy
 
 check_python_version()
 
@@ -21,6 +18,7 @@ check_python_version()
 @click.option('-v', '--verbose', count=True, help="Increase verbosity.")
 @click.pass_context
 def main(ctx, verbose):
+    """Entry for CLI."""
     ctx.obj['verbosity'] = verbose
 
 
@@ -28,6 +26,7 @@ if not getattr(sys, 'frozen', False):
     @main.command(help="Search and update plugin information.")
     @click.pass_context
     def refresh(ctx):
+        """Refresh plugin infomations."""
         verbosity = ctx.obj['verbosity']
         set_log_verbosity(verbosity)
         check_plugins_initpy(enumerate_plugins())
@@ -36,6 +35,7 @@ if not getattr(sys, 'frozen', False):
 @main.command(help="List known plugins.")
 @click.pass_context
 def list(ctx):
+    """List known plugins."""
     plugins = prepare_cli(ctx)
 
     mmap = plugins.MODULE_MAP
@@ -56,6 +56,7 @@ def list(ctx):
 @click.argument('plugin')
 @click.pass_context
 def desc(ctx, plugin):
+    """Show help message for a plugin."""
     plugins = prepare_cli(ctx)
 
     mmap = plugins.MODULE_MAP
@@ -69,8 +70,9 @@ def desc(ctx, plugin):
 @click.argument('commands')
 @click.pass_context
 def run(ctx, commands):
-    handle_command_options(ctx)
-
+    """Run commands for test."""
+    pass
+    # handle_command_options(ctx)
     # parse_and_run_test_cmds(commands)
 
 
@@ -86,15 +88,12 @@ def prepare_cli(ctx):
     verbosity = ctx.obj['verbosity']
     set_log_verbosity(verbosity)
 
-    # if not getattr(sys, 'frozen', False):
-    #    check_plugins_initpy(enumerate_plugins())
-        # sys.path.insert(0, get_exe_dir())
-
     try:
         import swak.plugins
         swak.plugins.MODULE_MAP  # sanity check
     except Exception as e:
         print("Plugin information not exists. Try `refresh`.")
+        logging.error(str(e))
         sys.exit(-1)
     else:
         return swak.plugins

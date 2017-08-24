@@ -3,7 +3,7 @@
 import os
 import sys
 import glob
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import hashlib
 import logging
 import py_compile
@@ -12,7 +12,7 @@ from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 
 
-PREFIX = ['in_', 'par_', 'tr_', 'buf_', 'out_', 'cmd_']
+PREFIX = ['in_', 'par_', 'ref_', 'buf_', 'out_', 'cmd_']
 CHKSUM_FNAME = '_CHECKSUM_.txt'
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
@@ -85,7 +85,7 @@ class BaseInput(Plugin):
         raise NotImplemented()
 
     def filter(self, line):
-        """Filter unparsed line.
+        """Filter unparsed raw line.
 
         You can override this function or set filter function by
             `set_filter_func`.
@@ -118,16 +118,15 @@ class BaseParser(Plugin):
         raise NotImplemented()
 
 
-class BaseTransform(Plugin):
-    """Base class for transform plugin.
+class BaseReform(Plugin):
+    """Base class for reform plugin.
 
     Following methods should be implemented:
-        transform
-
+        reform
     """
 
-    def transform(self, tag, time, record):
-        """Transform.
+    def reform(self, tag, time, record):
+        """Reform an event.
 
         Args:
             tag (str): Event tag
@@ -135,12 +134,12 @@ class BaseTransform(Plugin):
             record (dict): Event record
 
         Returns:
-            If transformed
-                float: Transformed time
-                record: Transformed record
+            If reformed
+                float: Reformed time
+                record: Reformed record
 
             If removed
-                None, None
+                None
         """
         raise NotImplemented()
 
@@ -196,7 +195,7 @@ class BaseCommand(Plugin):
 BASE_CLASS_MAP = {
     'in_': BaseInput,
     'par_': BaseParser,
-    'tr_': BaseTransform,
+    'ref_': BaseReform,
     'buf_': BaseBuffer,
     'out_': BaseOutput,
     'cmd_': BaseCommand,
@@ -233,6 +232,7 @@ def enumerate_plugins(_home=None, _filter=None):
             continue
 
         adir = os.path.join(pdir, _dir)
+        logging.debug("validate plugin {}".format(adir))
         pi = validate_plugin_info(adir)
         if pi is not None:
             yield pi
@@ -264,6 +264,7 @@ def validate_plugin_info(adir):
         for pr in PREFIX:
             if not fname.startswith(pr):
                 continue
+            logging.debug("found valid plugin module {}".format(fname))
             mod = load_module(fname, pypath)
             pclass = _infer_plugin_class(mod, pr, fname)
             prefix = pr.replace('_', '.')
@@ -418,3 +419,31 @@ def check_plugins_initpy(plugin_infos):
             f.write('{}\n'.format(chksum))
 
     return create, chksum
+
+
+class DummyOutput(BaseOutput):
+    """Output plugin for test."""
+
+    def __init__(self):
+        """init."""
+        super(DummyOutput, self).__init__()
+        self.events = defaultdict(list)
+
+    def emit_events(self, tag, es):
+        """Emit events."""
+        for time, record in es:
+            print("tag {}, time {}, record {}".format(tag, time, record))
+            self.events[tag].append((time, record))
+
+    def emit(self, tag, es):
+        """Process event stream."""
+        for time, record in es:
+            self.events[tag].append((time, record))
+
+    def reset(self, tag=None):
+        """Reset events."""
+        if tag is not None:
+            self.envents[tag] = []
+        else:
+            for tag in self.events.keys():
+                self.events[tag] = []
