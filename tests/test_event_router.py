@@ -5,6 +5,7 @@ import pytest
 
 from swak.event_router import EventRouter
 from swak.plugin import DummyOutput
+from swak.plugins.filter.ref_filter import Filter
 
 
 @pytest.fixture()
@@ -14,9 +15,9 @@ def def_output():
 
 
 @pytest.fixture()
-def reform():
-    """Create default reform and returns it."""
-    pass
+def filter():
+    """Create filter plugin and returns it."""
+    Refor
 
 
 @pytest.fixture()
