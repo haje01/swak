@@ -1,3 +1,4 @@
+"""Test plugin."""
 from __future__ import absolute_import
 
 import os
@@ -7,46 +8,54 @@ from io import StringIO
 import pytest
 
 from swak.config import get_exe_dir
-from swak.plugin import enumerate_plugins, get_plugins_dir, dump_plugins_import,\
-    calc_plugins_hash, get_plugins_initpy_path, remove_plugins_initpy,\
-    check_plugins_initpy
+from swak.plugin import enumerate_plugins, get_plugins_dir,\
+    dump_plugins_import, calc_plugins_hash, get_plugins_initpy_path,\
+    remove_plugins_initpy, check_plugins_initpy
 from swak.util import test_logconfig
 
-SWAK_CMD = 'swak.bat' if os.name == 'nt' else 'swak'
+SWAK_CLI = 'swak.bat' if os.name == 'nt' else 'swak'
 
 test_logconfig()
 
 
 def plugin_filter(_dir):
+    """Filter plugins."""
     return _dir in ['counter', 'stdout']
 
 
 def plugin_filter1(_dir):
+    """Filter plugins."""
     return _dir in ['counter']
 
 
 def test_plugin_cmd(capfd):
-    cmd = [SWAK_CMD, '-vv', 'list']
-    call(cmd)
+    """Test plugin command."""
+    cmd = [SWAK_CLI, '-vv', 'list']
+    try:
+        call(cmd)
+    except FileNotFoundError:
+        return
+
     out, err = capfd.readouterr()
     print(err)
-    assert 'Swak has 2 plugin(s)' in out
+    assert 'Swak has 3 plugin(s)' in out
 
     # after first command, plugins/__init__.py shall exist.
     assert os.path.isfile(get_plugins_initpy_path())
 
-    cmd = [SWAK_CMD, 'desc', 'in.counter']
+    cmd = [SWAK_CLI, 'desc', 'in.counter']
     call(cmd)
     out, err = capfd.readouterr()
-    assert "Emit incremental number" in out
+    assert "Generate incremental numbers" in out
 
-    cmd = [SWAK_CMD, 'desc', 'in.notexist']
+    cmd = [SWAK_CLI, 'desc', 'in.notexist']
     call(cmd)
     out, err = capfd.readouterr()
     assert "Can not find" in err
 
 
 def test_plugin_util():
+    """Test plugin util."""
     path = os.path.join(get_exe_dir(), 'plugins')
     assert path == get_plugins_dir()
 
@@ -55,6 +64,7 @@ def test_plugin_util():
 
 
 def test_plugin_dump():
+    """Test plugin information dump."""
     dump = """\
 # WARNING: Auto-generated code. Do not edit.
 
@@ -68,7 +78,7 @@ MODULE_MAP = {
 """.replace('/', os.path.sep)
 
     sbuf = StringIO()
-    dump_plugins_import(sbuf)
+    dump_plugins_import(sbuf, _filter=plugin_filter)
     assert dump == sbuf.getvalue().replace(get_exe_dir(), '')
     sbuf.close()
 
@@ -76,6 +86,7 @@ MODULE_MAP = {
 @pytest.mark.skip(reason="Cause false import of plugins/__init__.py to other"
                   " tests.")
 def test_plugin_initpy():
+    """Test plugin __init__.py."""
     # test plugin checksum
     h = calc_plugins_hash(enumerate_plugins(None, plugin_filter1))
     assert '9d4feaa6af4dd11e31572d6c1896d8b2' == h

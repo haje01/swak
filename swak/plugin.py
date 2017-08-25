@@ -316,17 +316,18 @@ def load_module(name, path):
         raise UnsupportedPython()
 
 
-def dump_plugins_import(io, chksum=None):
+def dump_plugins_import(io, chksum=None, _filter=None):
     """Enumerate all plugins and dump import code to io.
 
     Args:
         io (IOBase): an IO instance where import code is written to.
         chksum (str): Explicitly given checksum.
+        _filter (function): Filter function for plugins test.
     """
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
 
     plugins = []
-    for pi in enumerate_plugins():
+    for pi in enumerate_plugins(_filter=_filter):
         fname = os.path.splitext(pi.fname)[0]
         io.write(u"from swak.plugins.{} import {}\n".format(pi.dname, fname))
         plugins.append((pi.pname, fname, pi.cname))
