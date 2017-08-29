@@ -35,6 +35,10 @@ class OneEventStream(EventStream):
             return self.time, self.record
         raise StopIteration()
 
+    def next(self):
+        """Iterate next for Python2."""
+        return self.__next__()
+
 
 # class ArrayEventStream(EventStream):
 #     """EventStream class."""
@@ -84,3 +88,7 @@ class MultiEventStream(EventStream):
             return time, record
         else:
             raise StopIteration()
+
+    def next(self):
+        """Iterate next for Python2."""
+        return self.__next__()

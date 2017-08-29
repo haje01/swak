@@ -1,6 +1,6 @@
 # swak-counter
 
-Input plugin for Swak.
+An input plugin for Swak.
 Generate incremental numbers.
 
 ## Usage

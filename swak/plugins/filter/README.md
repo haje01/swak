@@ -1,11 +1,11 @@
 # swak-filter
 
-Reform plugin for Swak.
-Reform events by filtering.
+This is a modifier plugin for Swak.
+Modify events by filtering.
 
 ## Usage
 
-Usage: ref_filter.py [OPTIONS]
+Usage: mod.filter [OPTIONS]
 
   Filter events by regular expression.
 

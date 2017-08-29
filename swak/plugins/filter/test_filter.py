@@ -5,7 +5,7 @@ import pytest
 from swak.event_router import EventRouter
 from swak.plugin import DummyOutput
 
-from .ref_filter import Filter
+from .mod_filter import Filter
 
 
 @pytest.fixture()
@@ -14,12 +14,12 @@ def def_output():
     return DummyOutput()
 
 
-def init_event_router(doutput, reforms):
+def init_event_router(doutput, modifiers):
     """Make new event router."""
     doutput.reset()
     router = EventRouter(doutput)
-    for reform in reforms:
-        router.add_rule("test", reform)
+    for modifier in modifiers:
+        router.add_rule("test", modifier)
     return router
 
 
@@ -35,13 +35,13 @@ def emit_records(router):
         router.emit("test", i, rec)
 
 
-def emit_to_new_router(doutput, reforms):
+def emit_to_new_router(doutput, modifiers):
     """Make new router and emit record to it."""
-    router = init_event_router(doutput, reforms)
+    router = init_event_router(doutput, modifiers)
     emit_records(router)
 
 
-def test_ref_filter_basic(def_output):
+def test_filter_basic(def_output):
     """Test filter basic."""
     # test include
     includes = [("k1", "a")]

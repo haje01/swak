@@ -12,7 +12,7 @@ from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 
 
-PREFIX = ['in_', 'par_', 'ref_', 'buf_', 'out_', 'cmd_']
+PREFIX = ['in_', 'par_', 'mod_', 'buf_', 'out_', 'cmd_']
 CHKSUM_FNAME = '_CHECKSUM_.txt'
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
@@ -118,25 +118,26 @@ class BaseParser(Plugin):
         raise NotImplemented()
 
 
-class BaseReform(Plugin):
-    """Base class for reform plugin.
+class BaseModifier(Plugin):
+    """Base class for modify plugin.
 
     Following methods should be implemented:
-        reform
+        modify
     """
 
-    def reform(self, tag, time, record):
-        """Reform an event.
+    def modify(self, tag, time, record, placeholders):
+        """Modify an event.
 
         Args:
             tag (str): Event tag
             time (float): Event time
             record (dict): Event record
+            placeholders (dict): Placeholder value reference
 
         Returns:
-            If reformed
-                float: Reformed time
-                record: Reformed record
+            If modified
+                float: Modified time
+                record: Modified record
 
             If removed
                 None
@@ -195,7 +196,7 @@ class BaseCommand(Plugin):
 BASE_CLASS_MAP = {
     'in_': BaseInput,
     'par_': BaseParser,
-    'ref_': BaseReform,
+    'mod_': BaseModifier,
     'buf_': BaseBuffer,
     'out_': BaseOutput,
     'cmd_': BaseCommand,
@@ -246,7 +247,7 @@ def validate_plugin_info(adir):
     1. The directory has a python script with a name of standard plugin module
         name:
 
-        plugin type prefix(`in`, `par`, `tr`, `buf`, `out`, `cmd`) + '_' +
+        plugin type prefix(`in`, `par`, `mod`, `buf`, `out`, `cmd`) + '_' +
         module name(snake case).
         ex) in_fake_data.py
 

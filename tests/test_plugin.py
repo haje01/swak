@@ -38,7 +38,7 @@ def test_plugin_cmd(capfd):
 
     out, err = capfd.readouterr()
     print(err)
-    assert 'Swak has 3 plugin(s)' in out
+    assert 'Swak has 4 plugin(s)' in out
 
     # after first command, plugins/__init__.py shall exist.
     assert os.path.isfile(get_plugins_initpy_path())

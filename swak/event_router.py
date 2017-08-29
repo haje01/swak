@@ -3,24 +3,59 @@ import logging
 
 from swak.event import OneEventStream, MultiEventStream
 from swak.match import MatchPattern, OrMatchPattern
-from swak.plugin import BaseReform
+from swak.plugin import BaseModifier
 from swak.config import select_and_parse
 
 _, cfg = select_and_parse()
 DEBUG = cfg['debug']
 
 
+def _tag_prefix(tag_parts):
+    cnt = len(tag_parts)
+    if cnt == 0:
+        return []
+    tag_prefix = [None] * cnt
+    for i in range(1, cnt + 1):
+        tag_prefix[i - 1] = '.'.join([tag_parts[j] for j in range(0, i)])
+    return tag_prefix
+
+
+def _tag_suffix(tag_parts):
+    cnt = len(tag_parts)
+    if cnt == 0:
+        return []
+    rev_tag_parts = tag_parts[::-1]
+    rev_tag_suffix = [None] * cnt
+    for i in range(1, cnt + 1):
+        rev_tag_suffix[i - 1] = '.'.join([rev_tag_parts[j]
+                                         for j in range(0, i)])[::-1]
+    return rev_tag_suffix
+
+
 class Pipeline(object):
     """Pipeline class."""
 
-    def __init__(self):
-        """Init."""
-        self.reforms = []
-        self.output = None
+    def __init__(self, tag):
+        """Init.
 
-    def add_reform(self, reform):
-        """Add reform."""
-        self.reforms.append(reform)
+        Args:
+            tag (str): Pipeline tag
+        """
+        self.modifiers = []
+        self.output = None
+        self.tag = tag
+        self._build_placeholder(tag)
+
+    def _build_placeholder(self, tag):
+        tag_parts = tag.split('.')
+        tag_prefix = _tag_prefix(tag_parts)
+        tag_suffix = _tag_suffix(tag_parts)
+        self.placeholders = dict(tag=tag, tag_parts=tag_parts,
+                                 tag_prefix=tag_prefix, tag_suffix=tag_suffix)
+
+    def add_modifier(self, modifier):
+        """Add modifier."""
+        self.modifiers.append(modifier)
 
     def set_output(self, output):
         """Set output."""
@@ -35,31 +70,31 @@ class Pipeline(object):
             tag (str): Event tag
             es (EventStream): Event stream to emit
         """
-        reformed = self.reform_stream(tag, es)
-        self.output.emit_events(tag, reformed)
+        modified = self.modify_stream(tag, es)
+        self.output.emit_events(tag, modified)
 
-    def reform_stream(self, tag, es):
-        """Reform event stream.
+    def modify_stream(self, tag, es):
+        """Modify event stream.
 
         Args:
-            es (EventStream): Event stream to be reformed.
+            es (EventStream): Event stream to be modified.
 
         Returns:
-            If reformed
-                Reformed MultiEventStream object
+            If modified
+                Modified MultiEventStream object
 
-            If no reform exists
+            If no modifiers exists
                 Original event stream object
         """
-        if len(self.reforms) == 0:
+        if len(self.modifiers) == 0:
             return es
 
         times = []
         records = []
         for time, record in es:
             skip = False
-            for ref in self.reforms:
-                result = ref.reform(tag, time, record)
+            for mod in self.modifiers:
+                result = mod.modify(tag, time, record, self.placeholders)
                 if result is None:
                     skip = True
                     break
@@ -78,7 +113,7 @@ class Rule(object):
 
         Args:
             pattern (str): Glob style patterns seperated by space.
-            collector: Reform or Output
+            collector: Modifier or Output
         """
         patterns = [MatchPattern().create(ptrn) for ptrn in pattern.split()]
         self.pattern = patterns[0] if len(patterns) == 0 else\
@@ -112,7 +147,7 @@ class EventRouter(object):
     2. Match the event's tag with tag patterns
     3. Forward the event to the corresponding Collector
 
-    Collector is either of Output, Reform.
+    Collector is either of Output, Modifier.
     """
 
     def __init__(self, default_output):
@@ -190,12 +225,12 @@ class EventRouter(object):
         Returns:
             ``Pipeline``
         """
-        pipeline = Pipeline()
+        pipeline = Pipeline(tag)
         for rule in self.rules:
             if not rule.match(tag):
                 continue
-            if isinstance(rule.collector, BaseReform):
-                pipeline.add_reform(rule.collector)
+            if isinstance(rule.collector, BaseModifier):
+                pipeline.add_modifier(rule.collector)
             else:
                 pipeline.set_output(rule.collector)
                 return pipeline

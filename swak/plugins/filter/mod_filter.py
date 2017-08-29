@@ -1,10 +1,10 @@
-"""Reform events by filtering."""
+"""Filter: A modifier plugin."""
 
 import re
 
 import click
 
-from swak.plugin import BaseReform
+from swak.plugin import BaseModifier
 
 
 def make_effective_patterns(ptrns):
@@ -18,8 +18,8 @@ def make_effective_patterns(ptrns):
     return result
 
 
-class Filter(BaseReform):
-    """Filter records by regular expression."""
+class Filter(BaseModifier):
+    """Filter class."""
 
     def __init__(self, includes, excludes=[]):
         """Init.
@@ -31,8 +31,8 @@ class Filter(BaseReform):
         self.includes = make_effective_patterns(includes)
         self.excludes = make_effective_patterns(excludes)
 
-    def reform(self, tag, time, record):
-        """Reform an event by filtering.
+    def modify(self, tag, time, record, placeholders):
+        """Modify an event by filtering.
 
         To include, all inclusive conditions must be true,
         To exclude, one true condition is enough.
@@ -42,6 +42,7 @@ class Filter(BaseReform):
             tag (str): Event tag
             time (float): Event time
             record (dict): Event record
+            placeholders (dict): Placeholder value reference
 
         Returns:
             If included
@@ -71,13 +72,13 @@ class Filter(BaseReform):
 
 
 @click.command(help="Filter events by regular expression.")
-@click.option('-i', '--include', multiple=True, default=None,
-              show_default=True, help="Key and RegExp to include.")
-@click.option('-x', '--exclude', multiple=True, default=None,
-              show_default=True, help="Key and RegExp to exclude.")
+@click.option('-i', '--include', nargs=2, type=str, multiple=True,
+              help="Key and RegExp to include.")
+@click.option('-x', '--exclude', nargs=2, type=str, multiple=True,
+              help="Key and RegExp to exclude.")
 @click.pass_context
 def main(ctx, include, exclude):
-    """Entry for cli."""
+    """Plugin entry for cli."""
     return Filter(include, exclude)
 
 

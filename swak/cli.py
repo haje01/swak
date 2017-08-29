@@ -61,6 +61,7 @@ def desc(ctx, plugin):
 
     mmap = plugins.MODULE_MAP
     if plugin in mmap:
+        sys.argv[0] = plugin
         mmap[plugin].main(args=['--help'])
     else:
         print("Can not find plugin '{}'".format(plugin), file=sys.stderr)

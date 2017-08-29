@@ -50,15 +50,18 @@ setup(
         'tabulate',
     ],
     dependency_links=[
-        'http://github.com/serverdensity/python-daemon/master#egg=python_daemon',
+        'http://github.com/serverdensity/python-daemon/master#egg='
+        'python_daemon'
     ],
     extras_require={
         'dev': [
-            'sphinx',
             'pytest',
             'coverage',
             'pyinstaller',
             'tox',
+            'sphinx',
+            'konlpy',
+            'JPype1'
         ],
     },
     keywords=['system'],
