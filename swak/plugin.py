@@ -125,14 +125,22 @@ class BaseModifier(Plugin):
         modify
     """
 
-    def modify(self, tag, time, record, placeholders):
+    def prepare_for_stream(self, tag, es):
+        """Prepare to modify an event stream.
+
+        Args:
+            tag (str): Event tag
+            es (EventStream): Event stream
+        """
+        pass
+
+    def modify(self, tag, time, record):
         """Modify an event.
 
         Args:
             tag (str): Event tag
             time (float): Event time
             record (dict): Event record
-            placeholders (dict): Placeholder value reference
 
         Returns:
             If modified
@@ -447,5 +455,4 @@ class DummyOutput(BaseOutput):
         if tag is not None:
             self.envents[tag] = []
         else:
-            for tag in self.events.keys():
-                self.events[tag] = []
+            self.events = defaultdict(list)

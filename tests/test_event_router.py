@@ -6,6 +6,7 @@ import pytest
 from swak.event_router import EventRouter
 from swak.plugin import DummyOutput
 from swak.plugins.filter.mod_filter import Filter
+from swak.plugins.reform.mod_reform import Reform
 
 
 @pytest.fixture()
@@ -32,15 +33,9 @@ def test_event_router_pipeline(def_output):
     assert len(router.match_cache) == 0
     router.emit("a.b.c", 0, {"k": "v"})
     assert len(router.match_cache) == 1
-    pline = router.match_cache['a.b.c']
-    pholder = pline.placeholders
-    assert pholder['tag'] == 'a.b.c'
-    assert pholder['tag_parts'] == ['a', 'b', 'c']
-    assert pholder['tag_prefix'] == ['a', 'a.b', 'a.b.c']
-    assert pholder['tag_suffix'] == ['c', 'b.c', 'a.b.c']
 
 
-def test_event_router(def_output, filter, output):
+def test_event_router_basic(def_output, filter, output):
     """Test event router."""
     # router with only default output.
     router = EventRouter(def_output)
@@ -62,3 +57,36 @@ def test_event_router(def_output, filter, output):
     router.add_rule("test", output)
     router.emit("test", time.time(), {"k": "v"})
     assert len(output.events['test']) == 0
+
+
+def test_event_router_complex(def_output):
+    """Test V shaped event router.
+        a     b
+         \   /
+           c
+    """
+    reform_a = Reform([('a', "1")])
+    reform_b = Reform([('b', "2")])
+    reform_c = Reform([('c', "3")])
+    router = EventRouter(def_output)
+    router.add_rule("a", reform_a)
+    router.add_rule("b", reform_b)
+    router.add_rule("*", reform_c)
+
+    # Pipeline: a -> c
+    def_output.reset()
+    router.emit("a", 0, {})
+    record = def_output.events["a"][0][1]
+    assert dict(a="1", c="3") == record
+
+    # Pipeline: b -> c
+    def_output.reset()
+    router.emit("b", 0, {})
+    record = def_output.events["b"][0][1]
+    assert dict(b="2", c="3") == record
+
+    # Pipeline: c
+    def_output.reset()
+    router.emit("c", 0, {})
+    record = def_output.events["c"][0][1]
+    assert dict(c="3") == record

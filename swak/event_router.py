@@ -8,28 +8,7 @@ from swak.config import select_and_parse
 
 _, cfg = select_and_parse()
 DEBUG = cfg['debug']
-
-
-def _tag_prefix(tag_parts):
-    cnt = len(tag_parts)
-    if cnt == 0:
-        return []
-    tag_prefix = [None] * cnt
-    for i in range(1, cnt + 1):
-        tag_prefix[i - 1] = '.'.join([tag_parts[j] for j in range(0, i)])
-    return tag_prefix
-
-
-def _tag_suffix(tag_parts):
-    cnt = len(tag_parts)
-    if cnt == 0:
-        return []
-    rev_tag_parts = tag_parts[::-1]
-    rev_tag_suffix = [None] * cnt
-    for i in range(1, cnt + 1):
-        rev_tag_suffix[i - 1] = '.'.join([rev_tag_parts[j]
-                                         for j in range(0, i)])[::-1]
-    return rev_tag_suffix
+default_placeholder = None
 
 
 class Pipeline(object):
@@ -44,14 +23,6 @@ class Pipeline(object):
         self.modifiers = []
         self.output = None
         self.tag = tag
-        self._build_placeholder(tag)
-
-    def _build_placeholder(self, tag):
-        tag_parts = tag.split('.')
-        tag_prefix = _tag_prefix(tag_parts)
-        tag_suffix = _tag_suffix(tag_parts)
-        self.placeholders = dict(tag=tag, tag_parts=tag_parts,
-                                 tag_prefix=tag_prefix, tag_suffix=tag_suffix)
 
     def add_modifier(self, modifier):
         """Add modifier."""
@@ -89,12 +60,17 @@ class Pipeline(object):
         if len(self.modifiers) == 0:
             return es
 
+        # give modifiers chance to do stream specific operation
+        for mod in self.modifiers:
+            mod.prepare_for_stream(tag, es)
+
+        # modify each records
         times = []
         records = []
         for time, record in es:
             skip = False
             for mod in self.modifiers:
-                result = mod.modify(tag, time, record, self.placeholders)
+                result = mod.modify(tag, time, record)
                 if result is None:
                     skip = True
                     break

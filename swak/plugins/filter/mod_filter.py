@@ -31,7 +31,7 @@ class Filter(BaseModifier):
         self.includes = make_effective_patterns(includes)
         self.excludes = make_effective_patterns(excludes)
 
-    def modify(self, tag, time, record, placeholders):
+    def modify(self, tag, time, record):
         """Modify an event by filtering.
 
         To include, all inclusive conditions must be true,
@@ -42,7 +42,6 @@ class Filter(BaseModifier):
             tag (str): Event tag
             time (float): Event time
             record (dict): Event record
-            placeholders (dict): Placeholder value reference
 
         Returns:
             If included
