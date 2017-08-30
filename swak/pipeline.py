@@ -12,7 +12,7 @@ from swak.plugin import BaseInput
 PluginObj = namedtuple('PluginObj', ['mod', 'obj'])
 
 
-cmd_ptrn = re.compile(r'\S*(?P<cmd>((in\.|par\.|tr\.|buf\.|out\.|cmd\.)\S+)'
+cmd_ptrn = re.compile(r'\S*(?P<cmd>((in\.|par\.|mod\.|buf\.|out\.|cmd\.)\S+)'
                       r'(\s+[^|$]+)?)')
 
 

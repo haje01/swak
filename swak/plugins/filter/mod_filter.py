@@ -77,7 +77,7 @@ class Filter(BaseModifier):
               help="Key and RegExp to exclude.")
 @click.pass_context
 def main(ctx, include, exclude):
-    """Plugin entry for cli."""
+    """Plugin entry."""
     return Filter(include, exclude)
 
 

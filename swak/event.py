@@ -21,6 +21,7 @@ class OneEventStream(EventStream):
         """
         super(OneEventStream, self).__init__()
         self.time = time
+        assert type(record) is dict
         self.record = record
 
     def __iter__(self):

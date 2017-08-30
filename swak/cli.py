@@ -10,6 +10,7 @@ from tabulate import tabulate
 
 from swak.util import check_python_version, set_log_verbosity
 from swak.plugin import enumerate_plugins, check_plugins_initpy
+from swak.core import parse_and_validate_test_cmds, run_test_cmds
 
 check_python_version()
 
@@ -67,14 +68,13 @@ def desc(ctx, plugin):
         print("Can not find plugin '{}'".format(plugin), file=sys.stderr)
 
 
-@main.command(help="Run commands for test.")
+@main.command(help="Run '|' seperated test commands.")
 @click.argument('commands')
 @click.pass_context
 def run(ctx, commands):
     """Run commands for test."""
-    pass
-    # handle_command_options(ctx)
-    # parse_and_run_test_cmds(commands)
+    cmds = parse_and_validate_test_cmds(commands)
+    run_test_cmds(cmds)
 
 
 def prepare_cli(ctx):

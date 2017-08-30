@@ -42,7 +42,7 @@ class Pipeline(object):
             es (EventStream): Event stream to emit
         """
         modified = self.modify_stream(tag, es)
-        self.output.emit_events(tag, modified)
+        self.output.write_stream(tag, modified)
 
     def modify_stream(self, tag, es):
         """Modify event stream.

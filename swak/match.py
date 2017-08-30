@@ -83,10 +83,10 @@ class GlobMatchPattern(MatchPattern):
             elif c == "," and stack:
                 stack[-1].append(regex.pop())
                 regex.append('')
-            elif re.search(r'[a-zA-Z0-9]', c) is not None:
+            elif re.search(r'[a-zA-Z0-9_]', c) is not None:
                 regex[-1] += c
             else:
-                regex[-1] += "\\#{c}"
+                regex[-1] += "\\#{}".format(c)
 
             i += 1
 

@@ -7,13 +7,11 @@ import click
 
 from swak.plugin import BaseModifier
 
-# Placeholder keys
-PHK_HOSTNAME = '${hostname}'
-PHK_HOSTADDR = '${hostaddr}'
-PHK_TAG_PARTS = '\${tag_parts\[(-?\d)\]}'
-PHK_HOSTADDR_PARTS = '\${hostaddr_parts\[(-?\d)\]}'
-ptrn_tag_parts = re.compile(PHK_TAG_PARTS)
-ptrn_hostaddr_parts = re.compile(PHK_HOSTADDR_PARTS)
+# Syntax patterns
+ptrn_tag_parts = re.compile(r'{tag_parts\[(-?\d)\]}')
+ptrn_hostaddr_parts = re.compile(r'{hostaddr_parts\[(-?\d)\]}')
+ptrn_variable = re.compile(r'\$\{([^}]+?)\}')
+ptrn_curly_bracket = re.compile(r'([^\$]|^)\{([^}]+?)\}')
 
 
 def _tag_prefix(tag_parts):
@@ -38,6 +36,25 @@ def _tag_suffix(tag_parts):
     return rev_tag_suffix
 
 
+def _normalize(expr):
+    """Normalize value expression.
+
+    Normalize value expression for python string formatting.
+
+    - {lit} -> {{lit}}
+    - ${val} -> {val}
+
+    Args:
+        expr (str): Value expression
+
+    Return:
+        str: Formalized string
+    """
+    expr = ptrn_variable.sub('%[%[\\1%]%]', expr)
+    expr = expr.replace('{', '{{').replace('}', '}}')
+    return expr.replace('%[%[', '{').replace('%]%]', '}')
+
+
 def _expand(val, placeholders):
     """Expand value string with placeholders.
 
@@ -48,20 +65,13 @@ def _expand(val, placeholders):
     Returns:
         dict: Expanded value
     """
-    if PHK_HOSTNAME in val:
-        phv = placeholders[PHK_HOSTNAME]
-        val = val.replace(PHK_HOSTNAME, phv)
-    if PHK_HOSTADDR in val:
-        phv = placeholders[PHK_HOSTADDR]
-        val = val.replace(PHK_HOSTADDR, phv)
-
     # expand tag_parts
     while True:
         m = ptrn_tag_parts.search(val)
         if m is None:
             break
         idx = int(m.groups()[0])
-        key = '${{tag_parts[{}]}}'.format(idx)
+        key = '{{tag_parts[{}]}}'.format(idx)
         phv = placeholders[key]
         val = val.replace(key, phv)
 
@@ -71,25 +81,25 @@ def _expand(val, placeholders):
         if m is None:
             break
         idx = int(m.groups()[0])
-        key = '${{hostaddr_parts[{}]}}'.format(idx)
+        key = '{{hostaddr_parts[{}]}}'.format(idx)
         phv = placeholders[key]
         val = val.replace(key, phv)
 
-    return val
+    return val.format(**placeholders)
 
 
 def _make_default_placeholders():
     """Make a default placeholder."""
     pholder = {}
     hostname = socket.gethostname()
-    pholder[PHK_HOSTNAME] = hostname
+    pholder['hostname'] = hostname
     hostaddr = socket.gethostbyname(hostname)
-    pholder[PHK_HOSTADDR] = hostaddr
+    pholder['hostaddr'] = hostaddr
     hostaddr_parts = hostaddr.split('.')
     for i in range(4):
-        key = '${{hostaddr_parts[{}]}}'.format(i)
+        key = '{{hostaddr_parts[{}]}}'.format(i)
         pholder[key] = hostaddr_parts[i]
-        rkey = '${{hostaddr_parts[{}]}}'.format(i - 4)
+        rkey = '{{hostaddr_parts[{}]}}'.format(i - 4)
         pholder[rkey] = hostaddr_parts[i]
     return pholder
 
@@ -125,9 +135,9 @@ class Reform(BaseModifier):
         # tag parts
         placeholders['tag_parts'] = tag_parts
         for i in range(tp_cnt):
-            key = '${{tag_parts[{}]}}'.format(i)
+            key = '{{tag_parts[{}]}}'.format(i)
             placeholders[key] = tag_parts[i]
-            rkey = '${{tag_parts[{}]}}'.format(i - tp_cnt)
+            rkey = '{{tag_parts[{}]}}'.format(i - tp_cnt)
             placeholders[rkey] = tag_parts[i]
 
         placeholders['tag_prefix'] = _tag_prefix(tag_parts)
@@ -148,10 +158,11 @@ class Reform(BaseModifier):
             float: Modified time
             record: Modified record
         """
+        assert type(record) is dict
         self.placeholders['time'] = time
         self.placeholders['record'] = record
         for key, val in self.adds:
-            record[key] = _expand(val, self.placeholders)
+            record[key] = _expand(_normalize(val), self.placeholders)
 
         for key in self.dels:
             del record[key]
@@ -165,7 +176,7 @@ class Reform(BaseModifier):
 @click.option('-d', '--del', "dels", type=str, multiple=True,
               help="Delete existing key / value pair by key.")
 def main(adds, dels):
-    """Plugin entry for CLI."""
+    """Plugin entry."""
     return Reform(adds, dels)
 
 

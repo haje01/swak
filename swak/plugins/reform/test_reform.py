@@ -7,7 +7,7 @@ import pytest
 from swak.plugin import DummyOutput
 from swak.event_router import EventRouter
 
-from .mod_reform import Reform, _tag_suffix
+from .mod_reform import Reform, _tag_suffix, _normalize
 
 
 @pytest.fixture()
@@ -44,6 +44,15 @@ def test_reform_basic(def_output):
     router.emit("test", 0, records)
     assert len(def_output.events['test'][0][1]) == 1
     assert 'k1' not in def_output.events['test'][0][1]
+
+
+def test_reform_normalize():
+    """Test normalizing value syntax."""
+    assert '{{lit}}' == _normalize('{lit}')
+    assert '{var}' == _normalize('${var}')
+    assert '{var} is variable, {{lit}} is literal' ==\
+        _normalize('${var} is variable, {lit} is literal')
+    assert '{{{{lit}}}}' == _normalize('{{lit}}')
 
 
 def test_reform_expand(def_output):

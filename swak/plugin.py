@@ -10,6 +10,7 @@ import py_compile
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
+from swak.const import TEST_STREAM_TAG
 
 
 PREFIX = ['in_', 'par_', 'mod_', 'buf_', 'out_', 'cmd_']
@@ -75,10 +76,10 @@ class BaseInput(Plugin):
 
         1. Read the line-delimited text from the source.
         2. If the ``encoding`` is specified, convert it to ``utf8`` text.
-        3. Separate text line by line,
-        4. For the lines that pass ``filter``
+        3. Separate text by new line,
+        4. Filter lines if filter function exists.
         5. Yield them. If this is an input plugin for data of a known type,
-           such as ``syslog``, it will parse itself and return the record,
+           such as ``syslog``, it shall parse itself and return the record,
            otherwise it will just return the line.
 
         """
@@ -170,7 +171,7 @@ class BaseOutput(Plugin):
     """Base class for output plugin.
 
     Following methods should be implemented:
-        write_record, write_chunk
+        write_stream, write_chunk
 
     """
 
@@ -295,8 +296,11 @@ def _infer_plugin_class(mod, pr, fname):
     for n in dir(mod):
         obj = getattr(mod, n)
         n = n.lower()
-        if issubclass(obj, bclass) and n == name:
-            return obj
+        try:
+            if issubclass(obj, bclass) and n == name:
+                return obj
+        except TypeError:
+            pass
 
 
 def load_module(name, path):
@@ -396,7 +400,7 @@ def check_plugins_initpy(plugin_infos):
         plugin_infos: Generator of PluginInfo
 
     Returns:
-        bool: Where file has been created.
+        bool: Whether file has been created or not.
         str: Plugins checksum
     """
     logging.debug("check_plugins_initpy")
@@ -434,21 +438,23 @@ def check_plugins_initpy(plugin_infos):
 class DummyOutput(BaseOutput):
     """Output plugin for test."""
 
-    def __init__(self):
-        """init."""
+    def __init__(self, echo=False):
+        """init.
+
+        Args:
+            echo: Whether print output or not.
+        """
         super(DummyOutput, self).__init__()
         self.events = defaultdict(list)
+        self.echo = echo
 
-    def emit_events(self, tag, es):
-        """Emit events."""
-        for time, record in es:
-            print("tag {}, time {}, record {}".format(tag, time, record))
-            self.events[tag].append((time, record))
-
-    def emit(self, tag, es):
-        """Process event stream."""
+    def write_stream(self, tag, es):
+        """Write event stream."""
         for time, record in es:
             self.events[tag].append((time, record))
+            stag = '' if tag == TEST_STREAM_TAG else "tag: {}, ".format(tag)
+            if self.echo:
+                print("{}time: {}, record: {}".format(stag, time, record))
 
     def reset(self, tag=None):
         """Reset events."""

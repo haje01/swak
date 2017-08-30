@@ -60,10 +60,11 @@ def test_event_router_basic(def_output, filter, output):
 
 
 def test_event_router_complex(def_output):
-    """Test V shaped event router.
-        a     b
-         \   /
-           c
+    r"""Test V shaped event router.
+
+    a     b
+     \   /
+       c
     """
     reform_a = Reform([('a', "1")])
     reform_b = Reform([('b', "2")])
