@@ -38,10 +38,10 @@ def test_plugin_cmd(capfd):
 
     out, err = capfd.readouterr()
     print(err)
-    assert 'Swak has 4 plugin(s)' in out
+    assert 'Swak has 4 plugins' in out
 
     # after first command, plugins/__init__.py shall exist.
-    assert os.path.isfile(get_plugins_initpy_path())
+    assert os.path.isfile(get_plugins_initpy_path(True))
 
     cmd = [SWAK_CLI, 'desc', 'in.counter']
     call(cmd)
@@ -56,8 +56,8 @@ def test_plugin_cmd(capfd):
 
 def test_plugin_util():
     """Test plugin util."""
-    path = os.path.join(get_exe_dir(), 'plugins')
-    assert path == get_plugins_dir()
+    path = os.path.join(get_exe_dir(), 'stdplugins')
+    assert path == get_plugins_dir(True)
 
     plugin_infos = list(enumerate_plugins(None, plugin_filter))
     assert len(plugin_infos) > 0
@@ -68,8 +68,8 @@ def test_plugin_dump():
     dump = """\
 # WARNING: Auto-generated code. Do not edit.
 
-from swak.plugins.counter import in_counter
-from swak.plugins.stdout import out_stdout
+from swak.stdplugins.counter import in_counter
+from swak.stdplugins.stdout import out_stdout
 
 MODULE_MAP = {
     'in.counter': in_counter,
@@ -94,19 +94,23 @@ def test_plugin_initpy():
     assert '7ed9a23f52202cd70253890a591bb96a'
 
     # test plugins/__init__.py creation
-    remove_plugins_initpy()
+    remove_plugins_initpy(True)
 
     # enumerate 1 plugin and __init__.py has been created.
-    created, chksum1 = check_plugins_initpy(enumerate_plugins(None,
+    created, chksum1 = check_plugins_initpy(True,
+                                            enumerate_plugins(True, None,
                                                               plugin_filter1))
     assert created
 
     # enumerate 1 plugin again and __init__.py hasn't been created.
-    created, _ = check_plugins_initpy(enumerate_plugins(None, plugin_filter1))
+    created, _ = check_plugins_initpy(True,
+                                      enumerate_plugins(True, None,
+                                                        plugin_filter1))
     assert not created
 
     # enumerate 2 plugin and __init__.py has been created.
-    created, chksum = check_plugins_initpy(enumerate_plugins(None,
+    created, chksum = check_plugins_initpy(True,
+                                           enumerate_plugins(True, None,
                                                              plugin_filter))
     assert created
     assert chksum != chksum1

@@ -101,11 +101,11 @@ def _parse_cmds(cmds):
 
 
 def _create_plugin_from_cmd(cmd):
-    import swak.plugins  # prevent dependency
+    import swak.stdplugins  # prevent dependency
 
     elm = cmd.split()
     name = elm[0]
-    mmap = swak.plugins.MODULE_MAP
+    mmap = swak.stdplugins.MODULE_MAP
     for pname in mmap.keys():
         if name == pname:
             sys.argv = elm

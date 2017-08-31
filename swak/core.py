@@ -65,8 +65,8 @@ def _create_plugin_from_cmd(cmd, args):
     Returns:
         Plugin module
     """
-    import swak.plugins  # prevent dependency
-    mmap = swak.plugins.MODULE_MAP
+    import swak.stdplugins  # prevent dependency
+    mmap = swak.stdplugins.MODULE_MAP
     for pname in mmap.keys():
         if pname == cmd:
             plugin = mmap[cmd].main(args=args, standalone_mode=False)

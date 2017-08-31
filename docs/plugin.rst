@@ -406,7 +406,7 @@ Swak는 파이썬 2.7와 3.5를 지원한다.
 2. Swak의 ``plugins`` 디렉토리로 이동한다.
 3. 저장소를 ``clone`` 한다.::
 
-    git clone https://github.com/GitHub계정/swak-linenumber.git linenumber
+    git clone https://github.com/GitHub계정/swak-linenumber.git
 
 4. ``main.py`` 파일을 만들고 플러그인 코드를 작성한다.
 5. 테스트용 설정 파일 ``cfg-test.yml`` 을 작성한다.

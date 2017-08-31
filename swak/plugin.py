@@ -212,13 +212,14 @@ BASE_CLASS_MAP = {
 }
 
 
-def get_plugins_dir(_home=None):
+def get_plugins_dir(standard, _home=None):
     """Return plugins directory path."""
     edir = get_exe_dir()
-    return os.path.join(edir, 'plugins')
+    dirn = 'stdplugins' if standard else 'stdplugins'
+    return os.path.join(edir, dirn)
 
 
-def enumerate_plugins(_home=None, _filter=None):
+def enumerate_plugins(standard, _home=None, _filter=None):
     """Enumerate plugin infos.
 
     While visiting each sub-directory of the plugin directory, yield plugin
@@ -231,7 +232,7 @@ def enumerate_plugins(_home=None, _filter=None):
     Returns:
         PluginInfo:
     """
-    pdir = get_plugins_dir(_home)
+    pdir = get_plugins_dir(standard, _home)
     if not os.path.isdir(pdir):
         raise ValueError("Plugin directory '{}' is not exist.".format(pdir))
 
@@ -340,9 +341,10 @@ def dump_plugins_import(io, chksum=None, _filter=None):
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
 
     plugins = []
-    for pi in enumerate_plugins(_filter=_filter):
+    for pi in enumerate_plugins(True, _filter=_filter):
         fname = os.path.splitext(pi.fname)[0]
-        io.write(u"from swak.plugins.{} import {}\n".format(pi.dname, fname))
+        io.write(u"from swak.stdplugins.{} import {}\n".format(pi.dname,
+                                                               fname))
         plugins.append((pi.pname, fname, pi.cname))
 
     io.write(u'\nMODULE_MAP = {\n')
@@ -368,12 +370,12 @@ def calc_plugins_hash(plugin_infos):
     return m.hexdigest()
 
 
-def get_plugins_initpy_path():
+def get_plugins_initpy_path(standard):
     """Return path of plugins/__init__.py."""
-    return os.path.join(get_plugins_dir(), '__init__.py')
+    return os.path.join(get_plugins_dir(standard), '__init__.py')
 
 
-def remove_plugins_initpy():
+def remove_plugins_initpy(standard):
     """Remove plugins/__init__.py file and checksum file."""
     def remove(path):
         if os.path.isfile(path):
@@ -382,17 +384,17 @@ def remove_plugins_initpy():
         else:
             logging.debug("{} does not exist.".format(path))
 
-    remove(get_plugins_initpy_path())
-    remove(get_plugins_chksum_path())
+    remove(get_plugins_initpy_path(standard))
+    remove(get_plugins_chksum_path(standard))
 
 
-def get_plugins_chksum_path():
+def get_plugins_chksum_path(standard):
     """Return plugin checksum path."""
-    return os.path.join(get_plugins_dir(), CHKSUM_FNAME)
+    return os.path.join(get_plugins_dir(standard), CHKSUM_FNAME)
 
 
-def check_plugins_initpy(plugin_infos):
-    """Create plugins/__init__.py file if plugins checksum has been changed.
+def check_plugins_initpy(standard, plugin_infos):
+    """Create (std)plugins/__init__.py file if plugins checksum has been changed.
 
     Checksum is serialized to a dedicated file.
 
@@ -405,10 +407,10 @@ def check_plugins_initpy(plugin_infos):
     """
     logging.debug("check_plugins_initpy")
     create = False
-    path = get_plugins_initpy_path()
+    path = get_plugins_initpy_path(standard)
     logging.debug("plugin initpy path: {}".format(path))
     chksum = calc_plugins_hash(plugin_infos)
-    cpath = get_plugins_chksum_path()
+    cpath = get_plugins_chksum_path(standard)
     if not os.path.isfile(path):
         logging.debug("{} does not exist.".format(path))
         create = True

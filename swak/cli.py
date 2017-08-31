@@ -23,14 +23,16 @@ def main(ctx, verbose):
     ctx.obj['verbosity'] = verbose
 
 
+# if not packged into binary
 if not getattr(sys, 'frozen', False):
+    # provide refresh command
     @main.command(help="Search and update plugin information.")
     @click.pass_context
     def refresh(ctx):
         """Refresh plugin infomations."""
         verbosity = ctx.obj['verbosity']
         set_log_verbosity(verbosity)
-        check_plugins_initpy(enumerate_plugins())
+        check_plugins_initpy(True, enumerate_plugins(True))
 
 
 @main.command(help="List known plugins.")
@@ -48,7 +50,7 @@ def list(ctx):
         info = [mname, desc]
         plugins.append(info)
 
-    print("Swak has {} plugin(s):".format(cnt))
+    print("Swak has {} plugins:".format(cnt))
     header = ['Plugin', 'Description']
     print(tabulate(plugins, headers=header, tablefmt='psql'))
 
@@ -90,11 +92,11 @@ def prepare_cli(ctx):
     set_log_verbosity(verbosity)
 
     try:
-        import swak.plugins
-        swak.plugins.MODULE_MAP  # sanity check
+        import swak.stdplugins
+        swak.stdplugins.MODULE_MAP  # sanity check
     except Exception as e:
         print("Plugin information not exists. Try `refresh`.")
         logging.error(str(e))
         sys.exit(-1)
     else:
-        return swak.plugins
+        return swak.stdplugins

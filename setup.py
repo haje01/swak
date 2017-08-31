@@ -1,5 +1,7 @@
+"""Swak setup module."""
 #!/usr/bin/env python
 import os
+from distutils.core import setup
 
 with open(os.path.join('swak', 'version.py'), 'rt') as f:
     version = f.read().strip()
@@ -7,7 +9,6 @@ with open(os.path.join('swak', 'version.py'), 'rt') as f:
 
 __version__ = version
 
-from distutils.core import setup
 
 SCRIPTS = ['bin/swak']
 if os.name == 'nt':
@@ -15,6 +16,7 @@ if os.name == 'nt':
 
 
 def package_dirs(directory):
+    """Find package directory in a given directory."""
     dirs = []
     for adir in os.listdir(directory):
         path = os.path.join(directory, adir)
@@ -29,8 +31,8 @@ def package_dirs(directory):
     return dirs
 
 
-plugin_dirs = package_dirs('swak/plugins')
-plugins = [adir.replace(os.path.sep, '.') for adir in plugin_dirs]
+std_plugin_dirs = package_dirs('swak/stdplugins')
+std_plugins = [adir.replace(os.path.sep, '.') for adir in std_plugin_dirs]
 
 setup(
     name='swak',
@@ -38,9 +40,9 @@ setup(
     author="JeongJu Kim",
     author_email='haje01@gmail.com',
     url="https://github.com/haje01/swak",
-    description="Multi-purpose Monitoring Agent in Python",
+    description="Multi-purpose Agent Platform",
     platforms=["any"],
-    packages=['swak', 'swak.plugins'] + plugins,
+    packages=['swak', 'swak.stdplugins'] + std_plugins,
     scripts=SCRIPTS,
     license=['MIT License'],
     install_requires=[
