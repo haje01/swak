@@ -45,12 +45,12 @@ class Counter(BaseInput):
 
 
 @click.command(help="Generate incremental numbers.")
-@click.option('--max', default=5, show_default=True, help="Maximum count to"
-              " emit.")
-@click.option('--field', default=1, show_default=True, help="Number of count"
-              " fields.")
-@click.option('--delay', default=0, show_default=True, help="Delay seconds"
-              " before next count.")
+@click.option('-m', '--max', default=5, show_default=True, help="Maximum count"
+              " to emit.")
+@click.option('-f', '--field', default=1, show_default=True, help="Number of "
+              "count fields.")
+@click.option('-d', '--delay', default=0.0, show_default=True, help="Delay "
+              "seconds before next count.")
 @click.pass_context
 def main(ctx, max, field, delay):
     """Plugin entry."""
