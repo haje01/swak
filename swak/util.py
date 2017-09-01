@@ -1,10 +1,7 @@
-"""Utility.
+"""This module implements utility functions."""
 
-*****
-:mod:`util`
-*****
-"""
 import os
+
 import sys
 from platform import platform
 import collections

@@ -1,10 +1,5 @@
-"""Select config file and parse.
+"""This module implements config."""
 
-*****
-:mod:`config`
-*****
-
-"""
 import os
 import sys
 import logging

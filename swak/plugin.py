@@ -1,4 +1,4 @@
-"""Plugin module."""
+"""This module implements plugin base."""
 
 import os
 import sys
@@ -215,7 +215,7 @@ BASE_CLASS_MAP = {
 def get_plugins_dir(standard, _home=None):
     """Return plugins directory path."""
     edir = get_exe_dir()
-    dirn = 'stdplugins' if standard else 'stdplugins'
+    dirn = 'stdplugins' if standard else 'plugins'
     return os.path.join(edir, dirn)
 
 
@@ -464,3 +464,67 @@ class DummyOutput(BaseOutput):
             self.envents[tag] = []
         else:
             self.events = defaultdict(list)
+
+
+def _get_full_name(prefix, class_name):
+    if prefix == "in":
+        name = "BaseInput"
+    elif prefix == "par":
+        name = "BaseParser"
+    elif prefix == "mod":
+        name = "BaseModifier"
+    elif prefix == "buf":
+        name = "BaseBuffer"
+    elif prefix == "out":
+        name = "BaseOutput"
+    if class_name:
+        return name
+    return name[4:].lower()
+
+
+def init_plugin_dir(prefixes, file_name, class_name, pdir):
+    """Init plugin directory.
+
+    Create following boilerplate files. (Plugin directory can have multiple
+        plugin files to accomplish single purpose.)
+    - One or more plugin type module
+    - __init__.py
+    - README.me file
+
+    Args:
+        prefixed (list): List of plugin prefixes
+        file_name (str): Plugin file name
+        class_name (str): Plugin class name
+        pdir (str): Plugin directory
+    """
+    from jinja2 import Environment, PackageLoader
+    env = Environment(loader=PackageLoader('swak', 'static/templates'))
+
+    base_dir = get_plugins_dir(False)
+    plugin_dir = os.path.join(base_dir, file_name)
+    os.mkdir(plugin_dir)
+
+    # create each type module
+    for prefix in prefixes:
+        fname = '{}_{}.py'.format(prefix, file_name)
+        module_file = os.path.join(plugin_dir, fname)
+        tpl = env.get_template('tmpl_module.py')
+        basen = _get_full_name(prefix, True)
+        typen = _get_full_name(prefix, False)
+        with open(module_file, 'wt') as f:
+            code = tpl.render(class_name=class_name, type_name=typen,
+                              base_name=basen)
+            f.write(code)
+
+    # create README
+    readme_file = os.path.join(plugin_dir, 'README.md')
+    with open(readme_file, 'wt') as f:
+        tpl = env.get_template('tmpl_readme.md')
+        code = tpl.render(class_name=class_name, type_name=typen,
+                          base_name=basen, file_name=file_name)
+        f.write(code)
+
+    # create __init__.py
+    init_file = os.path.join(plugin_dir, '__init__.py')
+    with open(init_file, 'wt') as f:
+        pass

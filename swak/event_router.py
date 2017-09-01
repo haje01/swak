@@ -1,4 +1,4 @@
-"""Event rounter."""
+"""This module implements event router."""
 import logging
 
 from swak.event import OneEventStream, MultiEventStream

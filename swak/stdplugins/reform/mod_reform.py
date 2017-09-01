@@ -1,4 +1,4 @@
-"""Reform: A modifier plugin."""
+"""This module implements modifier plugin of reform."""
 
 import re
 import socket
@@ -115,8 +115,8 @@ class Reform(BaseModifier):
             dels (list): List of key to delete.
         """
         for k, v in adds:
-            assert type(k) == str and "Key must be a string"
-            assert type(v) == str and "Value must be a string"
+            assert type(k) == str, "Key must be a string"
+            assert type(v) == str, "Value must be a string"
         self.adds = adds
         self.dels = dels
 

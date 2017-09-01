@@ -1,9 +1,4 @@
-"""Core.
-
-*****
-:mod:`core`
-*****
-"""
+"""This module implements core functions."""
 
 import re
 import logging

@@ -1,4 +1,4 @@
-"""Test event router."""
+"""This module implements event router test."""
 import time
 
 import pytest

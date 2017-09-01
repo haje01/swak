@@ -1,4 +1,5 @@
-"""Test core module."""
+"""This module implements core module test."""
+
 from __future__ import absolute_import
 
 import pytest

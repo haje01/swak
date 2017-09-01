@@ -1,4 +1,5 @@
-"""Match module."""
+"""This module implements event tag match."""
+
 import re
 
 

@@ -1,4 +1,4 @@
-"""Swak setup module."""
+"""This module implements setup process."""
 #!/usr/bin/env python
 import os
 from distutils.core import setup
@@ -62,6 +62,7 @@ setup(
             'pyinstaller',
             'tox',
             'sphinx',
+            'jinja2',
             'konlpy',
             'JPype1'
         ],

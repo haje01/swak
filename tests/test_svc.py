@@ -1,4 +1,4 @@
-"""Test Windows & Unix(Linux, OS X) service."""
+"""This module implements Windows & Unix(Linux, OS X) service test."""
 
 import os
 from subprocess import Popen, call
@@ -11,7 +11,7 @@ import pytest
 from swak.util import is_windows, get_winsvc_status
 from swak.config import select_and_parse, get_pid_path
 
-pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ , reason="This"
+pytestmark = pytest.mark.skipif('SWAK_BUILD' not in os.environ, reason="This"
                                 " test is for build mode.")
 
 WSVC_CUR_STATE = 1
@@ -38,6 +38,7 @@ SLEEP_TIME = 5  # Enough sleep time is necessary when vm is slow.
 
 @pytest.fixture(scope="function")
 def test_home():
+    """Test service home directory."""
     test_home = tempfile.gettempdir()
     cfg_path = os.path.join(test_home, 'config.yml')
     # delete previous cfg file
@@ -55,6 +56,7 @@ def test_home():
 
 @pytest.fixture(scope="function")
 def unix_svc(test_home, capfd):
+    """Init Unix service."""
     cenv = os.environ.copy()
     cenv.update(dict(SWAK_HOME=test_home))
 
@@ -80,6 +82,7 @@ def unix_svc(test_home, capfd):
 
 @pytest.fixture(scope="function")
 def win_svc(test_home):
+    """Init Windows service."""
     import win32service
 
     cenv = os.environ.copy()
@@ -131,16 +134,18 @@ def win_svc(test_home):
     p = Popen(WSVC_CMD_REMOVE, env=cenv)
     time.sleep(SLEEP_TIME)
     assert p.returncode is None
-    assert None == get_winsvc_status(svc_name)
+    assert None is get_winsvc_status(svc_name)
 
 
 @pytest.mark.skipif(is_windows(), reason="requires Unix OS")
 def test_svc_unix(unix_svc):
+    """Test Unix service."""
     pass
 
 
 @pytest.mark.skipif(not is_windows(), reason="requires Windows OS")
 def test_svc_windows(win_svc, capfd):
+    """Test Windows service."""
     cmd = [r'dist\swaksvc.exe', 'cli', 'list']
     call(cmd)
     out, err = capfd.readouterr()

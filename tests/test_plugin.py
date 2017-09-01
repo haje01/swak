@@ -1,9 +1,11 @@
-"""Test plugin."""
+"""This module implements plugin test."""
+
 from __future__ import absolute_import
 
 import os
 from subprocess import call
 from io import StringIO
+import shutil
 
 import pytest
 
@@ -29,7 +31,7 @@ def plugin_filter1(_dir):
 
 
 def test_plugin_cmd(capfd):
-    """Test plugin command."""
+    """Test plugin list & desc command."""
     cmd = [SWAK_CLI, '-vv', 'list']
     try:
         call(cmd)
@@ -54,13 +56,56 @@ def test_plugin_cmd(capfd):
     assert "Can not find" in err
 
 
+def test_plugin_init_cmd(capfd):
+    """Test plugin init command."""
+    # remove previous test pacakge.
+    base_dir = get_plugins_dir(False)
+    plugin_dir = os.path.join(base_dir, 'testfoo')
+    if os.path.isdir(plugin_dir):
+        shutil.rmtree(plugin_dir)
+
+    cmd = [SWAK_CLI, 'init', '--type', 'in', '--type', 'par', 'testfoo',
+           'TestFoo']
+    try:
+        call(cmd)
+    except FileNotFoundError:
+        return
+    out, err = capfd.readouterr()
+    assert err == ''
+
+    input_file = os.path.join(plugin_dir, 'in_testfoo.py')
+    assert os.path.isfile(input_file)
+    with open(input_file, 'rt') as f:
+        code = f.read()
+        assert "class TestFoo(BaseInput)" in code
+
+    parser_file = os.path.join(plugin_dir, 'par_testfoo.py')
+    assert os.path.isfile(parser_file)
+    with open(parser_file, 'rt') as f:
+        code = f.read()
+        assert "class TestFoo(BaseParser)" in code
+
+    readme_file = os.path.join(plugin_dir, 'README.md')
+    assert os.path.isfile(readme_file)
+    with open(readme_file, 'rt') as f:
+        text = f.read()
+        assert '# swak-testfoo' in text
+        assert "plugin package for Swak" in text
+
+    shutil.rmtree(plugin_dir)
+
+
 def test_plugin_util():
     """Test plugin util."""
+    # check standard plugin dir
     path = os.path.join(get_exe_dir(), 'stdplugins')
     assert path == get_plugins_dir(True)
-
-    plugin_infos = list(enumerate_plugins(None, plugin_filter))
+    plugin_infos = list(enumerate_plugins(True, None, plugin_filter))
     assert len(plugin_infos) > 0
+
+    # check external plugin dir
+    path = os.path.join(get_exe_dir(), 'plugins')
+    assert path == get_plugins_dir(False)
 
 
 def test_plugin_dump():

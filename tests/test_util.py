@@ -1,4 +1,5 @@
-"""Test util & config functions."""
+"""This module implements utility test."""
+
 from __future__ import absolute_import
 
 import os
@@ -9,7 +10,6 @@ import pytest
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
 from swak.util import init_home
-from swak.version import VERSION
 
 
 CFG = """
@@ -20,6 +20,7 @@ svc_dname: "Swak: Multi-Agent Service (Test)"
 
 @pytest.fixture(scope="function")
 def test_home():
+    """Test swak home utilities."""
     old_home = os.environ.get('SWAK_HOME')
 
     test_home = tempfile.gettempdir()
@@ -41,6 +42,7 @@ def test_home():
 
 
 def test_util_cfg(test_home):
+    """Test config utilities."""
     home = select_home(test_home)
     cpath = get_config_path()
     assert CFG_FNAME in cpath.replace(home, '').strip(os.sep)

@@ -1,4 +1,4 @@
-"""Filter: A modifier plugin."""
+"""This module implements modifier plugin of filter."""
 
 import re
 

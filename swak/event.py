@@ -1,4 +1,4 @@
-"""Event."""
+"""This module implements event classes."""
 
 
 class EventStream(object):
