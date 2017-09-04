@@ -13,7 +13,7 @@ from swak.exception import UnsupportedPython
 from swak.const import TEST_STREAM_TAG
 
 
-PREFIX = ['in_', 'par_', 'mod_', 'buf_', 'out_', 'cmd_']
+PREFIX = ['in', 'par', 'mod', 'buf', 'out']
 CHKSUM_FNAME = '_CHECKSUM_.txt'
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
@@ -203,13 +203,17 @@ class BaseCommand(Plugin):
 
 
 BASE_CLASS_MAP = {
-    'in_': BaseInput,
-    'par_': BaseParser,
-    'mod_': BaseModifier,
-    'buf_': BaseBuffer,
-    'out_': BaseOutput,
-    'cmd_': BaseCommand,
+    'in': BaseInput,
+    'par': BaseParser,
+    'mod': BaseModifier,
+    'buf': BaseBuffer,
+    'out': BaseOutput,
 }
+
+
+def _get_base_class_name(prefix):
+    cls = BASE_CLASS_MAP[prefix]
+    return cls.__name__
 
 
 def get_plugins_dir(standard, _home=None):
@@ -237,13 +241,15 @@ def enumerate_plugins(standard, _home=None, _filter=None):
         raise ValueError("Plugin directory '{}' is not exist.".format(pdir))
 
     for _dir in os.listdir(pdir):
-        if _dir.startswith('_'):
+        if os.path.isfile(_dir):
+            continue
+        if _dir[0] == '_' or _dir[0] == '.':
             continue
         if _filter is not None and not _filter(_dir):
             continue
 
         adir = os.path.join(pdir, _dir)
-        logging.debug("validate plugin {}".format(adir))
+        logging.debug("try to validate plugin {}".format(adir))
         pi = validate_plugin_info(adir)
         if pi is not None:
             yield pi
@@ -257,7 +263,7 @@ def validate_plugin_info(adir):
     1. The directory has a python script with a name of standard plugin module
         name:
 
-        plugin type prefix(`in`, `par`, `mod`, `buf`, `out`, `cmd`) + '_' +
+        plugin type prefix(`in`, `par`, `mod`, `buf`, `out`) + '_' +
         module name(snake case).
         ex) in_fake_data.py
 
@@ -272,22 +278,31 @@ def validate_plugin_info(adir):
     """
     for pypath in glob.glob(os.path.join(adir, '*.py')):
         fname = os.path.basename(pypath)
+        if fname.startswith('__'):
+            continue
         for pr in PREFIX:
             if not fname.startswith(pr):
                 continue
             logging.debug("found valid plugin module {}".format(fname))
             mod = load_module(fname, pypath)
             pclass = _infer_plugin_class(mod, pr, fname)
-            prefix = pr.replace('_', '.')
             cname = pclass.__name__
-            pname = '{}{}'.format(prefix, cname.lower())
+            pname = '{}.{}'.format(pr, cname.lower())
             dname = os.path.basename(adir)
-            cname = "{}{}.{}".format(pr, cname.lower(), cname)
+            cname = "{}.{}".format(pname, cname)
             return PluginInfo(fname, pname, dname, cname, mod.main.help, mod)
 
 
 def _infer_plugin_class(mod, pr, fname):
-    name = fname.replace(pr, '').split('.')[0]
+    """Infer plugin class name from module name.
+
+    Args:
+        mod (module): Plugin module
+        pr (str): Prefix
+        fname (str): Module file name
+    Returns:
+    """
+    name = fname.replace(pr + '_', '').split('.')[0]
 
     if pr in BASE_CLASS_MAP:
         bclass = BASE_CLASS_MAP[pr]
@@ -330,10 +345,11 @@ def load_module(name, path):
         raise UnsupportedPython()
 
 
-def dump_plugins_import(io, chksum=None, _filter=None):
+def dump_plugins_import(standard, io, chksum=None, _filter=None):
     """Enumerate all plugins and dump import code to io.
 
     Args:
+        standard (bool): Dump for standard plugin or not.
         io (IOBase): an IO instance where import code is written to.
         chksum (str): Explicitly given checksum.
         _filter (function): Filter function for plugins test.
@@ -341,10 +357,11 @@ def dump_plugins_import(io, chksum=None, _filter=None):
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
 
     plugins = []
-    for pi in enumerate_plugins(True, _filter=_filter):
+    import pdb; pdb.set_trace()  # breakpoint b5db2443 //
+    for pi in enumerate_plugins(standard, _filter=_filter):
         fname = os.path.splitext(pi.fname)[0]
-        io.write(u"from swak.stdplugins.{} import {}\n".format(pi.dname,
-                                                               fname))
+        base_name = 'swak.{}plugins'.format('std' if standard else '')
+        io.write(u"from {}.{} import {}\n".format(base_name, pi.dname, fname))
         plugins.append((pi.pname, fname, pi.cname))
 
     io.write(u'\nMODULE_MAP = {\n')
@@ -357,6 +374,7 @@ def calc_plugins_hash(plugin_infos):
     """Make plugins hash.
 
     Hash value is made by md5 algorithm with plugin module names.
+    If no plugin_infos exist, return 'NA'
 
     Args:
         plugin_infos: generator of PluginInfo
@@ -365,8 +383,12 @@ def calc_plugins_hash(plugin_infos):
         str: Hexadecimal hash value
     """
     m = hashlib.md5()
+    cnt = 0
     for pi in plugin_infos:
         m.update(pi.fname.encode('utf8'))
+        cnt += 1
+    if cnt == 0:
+        return 'NA'
     return m.hexdigest()
 
 
@@ -393,13 +415,15 @@ def get_plugins_chksum_path(standard):
     return os.path.join(get_plugins_dir(standard), CHKSUM_FNAME)
 
 
-def check_plugins_initpy(standard, plugin_infos):
+def check_plugins_initpy(standard, plugin_infos, force=False):
     """Create (std)plugins/__init__.py file if plugins checksum has been changed.
 
     Checksum is serialized to a dedicated file.
 
     Args:
+        standard (bool): Check for standard plugin or not.
         plugin_infos: Generator of PluginInfo
+        force (bool): Force recreate.
 
     Returns:
         bool: Whether file has been created or not.
@@ -411,23 +435,28 @@ def check_plugins_initpy(standard, plugin_infos):
     logging.debug("plugin initpy path: {}".format(path))
     chksum = calc_plugins_hash(plugin_infos)
     cpath = get_plugins_chksum_path(standard)
-    if not os.path.isfile(path):
-        logging.debug("{} does not exist.".format(path))
-        create = True
-    else:
-        if not os.path.isfile(cpath):
+
+    if not force:
+        if not os.path.isfile(path):
+            # __init__.py not exists
+            logging.debug("{} does not exist.".format(path))
             create = True
         else:
-            with open(cpath, 'rt') as f:
-                ochksum = f.read().strip()
-            logging.debug("plugins old chksum {}, new chksum"
-                          " {}".format(ochksum, chksum))
-            create = ochksum != chksum
+            # check sum file not exists
+            if not os.path.isfile(cpath):
+                create = True
+            else:
+                # checksum mismatch
+                with open(cpath, 'rt') as f:
+                    ochksum = f.read().strip()
+                logging.debug("plugins old chksum {}, new chksum"
+                              " {}".format(ochksum, chksum))
+                create = ochksum != chksum
 
-    if create:
+    if create or force:
         logging.debug("writing {}".format(path))
         with open(path, 'wt') as f:
-            dump_plugins_import(f, chksum)
+            dump_plugins_import(standard, f, chksum)
         py_compile.compile(path)
 
         logging.debug("writing {} - {}".format(cpath, chksum))
@@ -467,16 +496,7 @@ class DummyOutput(BaseOutput):
 
 
 def _get_full_name(prefix, class_name):
-    if prefix == "in":
-        name = "BaseInput"
-    elif prefix == "par":
-        name = "BaseParser"
-    elif prefix == "mod":
-        name = "BaseModifier"
-    elif prefix == "buf":
-        name = "BaseBuffer"
-    elif prefix == "out":
-        name = "BaseOutput"
+    name = _get_base_class_name(prefix)
     if class_name:
         return name
     return name[4:].lower()
@@ -508,7 +528,9 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     for prefix in prefixes:
         fname = '{}_{}.py'.format(prefix, file_name)
         module_file = os.path.join(plugin_dir, fname)
-        tpl = env.get_template('tmpl_module.py')
+        tmpl_name = 'tmpl_{}.py'.format(_get_base_class_name(prefix)[4:].
+                                        lower())
+        tpl = env.get_template(tmpl_name)
         basen = _get_full_name(prefix, True)
         typen = _get_full_name(prefix, False)
         with open(module_file, 'wt') as f:

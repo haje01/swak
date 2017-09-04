@@ -2,16 +2,16 @@
 
 import click
 
-from swak.plugin import {{base_name}}
+from swak.plugin import BaseBuffer
 
 
-class {{class_name}}({{base_name}}):
+class {{class_name}}(BaseBuffer):
     """{{class_name}} class."""
-{% if type_name == 'input' %}
-    input impl
-{% elif type_name == 'parser' %}
-    parser impl
-{% endif %}
+
+    def append(self, record):
+        """Append a record."""
+        raise NotImplemented()
+
 
 @click.command(help="PLUGIN HELP MESSAGE GOES HERE")
 @click.pass_context

@@ -67,6 +67,13 @@ def _create_plugin_from_cmd(cmd, args):
             plugin = mmap[cmd].main(args=args, standalone_mode=False)
             return plugin
 
+    import swak.plugins  # prevent dependency
+    mmap = swak.plugins.MODULE_MAP
+    for pname in mmap.keys():
+        if pname == cmd:
+            plugin = mmap[cmd].main(args=args, standalone_mode=False)
+            return plugin
+
 
 def build_test_event_router(cmds, _test=False):
     """Build event router for test commands.

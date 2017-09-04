@@ -4,6 +4,9 @@ Swak 플러그인 개발
 
 여기에서는 Swak 플러그인 개발에 대해 설명한다.
 
+.. important:: 플러그인은 표준(Standard) 플러그인과 외부(External) 플러그인으로 나눌 수 있다. 각각 Swak 소스 디렉토리의 ``stdplugins/`` 과 ``plugins/`` 디렉토리에 위치한다. Swak 코드와 함께 배포되는가의 차이일 뿐, 구조적으로는 동일하다.
+
+
 
 플러그인 규칙
 =============
@@ -20,7 +23,6 @@ Swak 플러그인 개발
 - 변경 플러그인: ``mod.``
 - 버퍼 플러그인: ``buf.``
 - 출력 플러그인: ``out.``
-- 명령 플러그인: ``cmd.``
 
 
 플러그인 이름
@@ -150,7 +152,7 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
       Init new plugin package.
 
     Options:
-      -t, --type [in|par|mod|buf|out|cmd]
+      -t, --type [in|par|mod|buf|out]
                                       Plugin module type prefix.  [default: mod]
       -d, --dir PATH                  Plugin directory  [default: SWAK_DIR/plugins]
       --help                          Show this message and exit.
@@ -168,7 +170,7 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
 
     swak init --type mod linenumber LineNumber
 
-그러면 ``plugins`` 디렉토리에 아래와 같은 파일들이 생성될 것이다.
+그러면 ``plugins/`` 디렉토리에 아래와 같은 파일들이 생성될 것이다.
 
 .. code-block:: shell
 

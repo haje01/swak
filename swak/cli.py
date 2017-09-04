@@ -15,7 +15,7 @@ from swak.core import parse_and_validate_test_cmds, run_test_cmds
 
 check_python_version()
 
-INIT_PREFIX = [p[:-1] for p in PREFIX]
+INIT_PREFIX = [p for p in PREFIX]
 PLUGIN_DIR = get_plugins_dir(False)
 
 
@@ -31,12 +31,19 @@ def main(ctx, verbose):
 if not getattr(sys, 'frozen', False):
     # provide refresh command
     @main.command(help="Search and update plugin information.")
+    @click.option('-f', '--force', is_flag=True, help="Remove existing "
+                  "information and refresh again.")
     @click.pass_context
-    def refresh(ctx):
+    def refresh(ctx, force):
         """Refresh plugin infomations."""
         verbosity = ctx.obj['verbosity']
         set_log_verbosity(verbosity)
-        check_plugins_initpy(True, enumerate_plugins(True))
+        _refresh(force)
+
+
+def _refresh(force=False):
+    check_plugins_initpy(True, enumerate_plugins(True), force)
+    check_plugins_initpy(False, enumerate_plugins(False), force)
 
 
 @main.command(help='Init new plugin package.')
@@ -54,23 +61,30 @@ def init(ctx, ptypes, pdir, file_name, class_name):
 
 
 @main.command(help="List known plugins.")
+@click.option('-r', '--refresh', is_flag=True, help="Refresh first then list.")
 @click.pass_context
-def list(ctx):
+def list(ctx, refresh):
     """List known plugins."""
-    plugins = prepare_cli(ctx)
+    if refresh:
+        _refresh()
+    stdex_plugins = prepare_cli(ctx)
 
-    mmap = plugins.MODULE_MAP
-    cnt = len(mmap)
-    mnames = sorted(mmap.keys())
-    plugins = []
-    for mname in mnames:
-        desc = mmap[mname].main.help
-        info = [mname, desc]
-        plugins.append(info)
+    for i in range(2):  # standard / external plugins
+        mmap = stdex_plugins[i].MODULE_MAP
+        cnt = len(mmap)
+        mnames = sorted(mmap.keys())
+        plugins = []
+        for mname in mnames:
+            desc = mmap[mname].main.help
+            info = [mname, desc]
+            plugins.append(info)
 
-    print("Swak has {} plugins:".format(cnt))
-    header = ['Plugin', 'Description']
-    print(tabulate(plugins, headers=header, tablefmt='psql'))
+        if i == 0:
+            print("Swak has {} standard plugins:".format(cnt))
+        else:
+            print("And {} external plugin(s):".format(cnt))
+        header = ['Plugin', 'Description']
+        print(tabulate(plugins, headers=header, tablefmt='psql'))
 
 
 @main.command(help="Show help message for a plugin.")
@@ -84,12 +98,14 @@ def desc(ctx, plugin):
     """
     plugins = prepare_cli(ctx)
 
-    mmap = plugins.MODULE_MAP
-    if plugin in mmap:
-        sys.argv[0] = plugin
-        mmap[plugin].main(args=['--help'])
-    else:
-        print("Can not find plugin '{}'".format(plugin), file=sys.stderr)
+    for i in range(2):  # standard / external plugins
+        mmap = plugins[i].MODULE_MAP
+        if plugin in mmap:
+            sys.argv[0] = plugin
+            mmap[plugin].main(args=['--help'])
+            return
+
+    print("Can not find plugin '{}'".format(plugin), file=sys.stderr)
 
 
 @main.command(help="Run '|' seperated test commands.")
@@ -112,6 +128,7 @@ def prepare_cli(ctx):
     - import plugins by load plugins/__init__.py module
 
     Returns:
+        module: stdplugins/__init__.py module
         module: plugins/__init__.py module
     """
     verbosity = ctx.obj['verbosity']
@@ -120,9 +137,12 @@ def prepare_cli(ctx):
     try:
         import swak.stdplugins
         swak.stdplugins.MODULE_MAP  # sanity check
+
+        import swak.plugins
+        swak.plugins.MODULE_MAP  # sanity check
     except Exception as e:
         print("Plugin information not exists. Try `refresh`.")
         logging.error(str(e))
         sys.exit(-1)
     else:
-        return swak.stdplugins
+        return (swak.stdplugins, swak.plugins)

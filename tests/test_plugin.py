@@ -7,12 +7,10 @@ from subprocess import call
 from io import StringIO
 import shutil
 
-import pytest
-
 from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir,\
     dump_plugins_import, calc_plugins_hash, get_plugins_initpy_path,\
-    remove_plugins_initpy, check_plugins_initpy
+    remove_plugins_initpy, check_plugins_initpy, PREFIX
 from swak.util import test_logconfig
 
 SWAK_CLI = 'swak.bat' if os.name == 'nt' else 'swak'
@@ -30,9 +28,14 @@ def plugin_filter1(_dir):
     return _dir in ['counter']
 
 
+def plugin_filter_ext(_dir):
+    """Plugin filter for external plugin test."""
+    return _dir in ['testfoo']
+
+
 def test_plugin_cmd(capfd):
     """Test plugin list & desc command."""
-    cmd = [SWAK_CLI, '-vv', 'list']
+    cmd = [SWAK_CLI, '-vv', 'list', '-r']
     try:
         call(cmd)
     except FileNotFoundError:
@@ -40,7 +43,7 @@ def test_plugin_cmd(capfd):
 
     out, err = capfd.readouterr()
     print(err)
-    assert 'Swak has 4 plugins' in out
+    assert 'Swak has 4 standard plugins' in out
 
     # after first command, plugins/__init__.py shall exist.
     assert os.path.isfile(get_plugins_initpy_path(True))
@@ -64,8 +67,8 @@ def test_plugin_init_cmd(capfd):
     if os.path.isdir(plugin_dir):
         shutil.rmtree(plugin_dir)
 
-    cmd = [SWAK_CLI, 'init', '--type', 'in', '--type', 'par', 'testfoo',
-           'TestFoo']
+    cmd = [SWAK_CLI, 'init', '--type', 'in', '--type', 'par', '--type', 'mod',
+           '--type', 'buf', '--type', 'out', 'testfoo', 'TestFoo']
     try:
         call(cmd)
     except FileNotFoundError:
@@ -73,17 +76,12 @@ def test_plugin_init_cmd(capfd):
     out, err = capfd.readouterr()
     assert err == ''
 
-    input_file = os.path.join(plugin_dir, 'in_testfoo.py')
-    assert os.path.isfile(input_file)
-    with open(input_file, 'rt') as f:
-        code = f.read()
-        assert "class TestFoo(BaseInput)" in code
-
-    parser_file = os.path.join(plugin_dir, 'par_testfoo.py')
-    assert os.path.isfile(parser_file)
-    with open(parser_file, 'rt') as f:
-        code = f.read()
-        assert "class TestFoo(BaseParser)" in code
+    for pr in PREFIX:
+        pfile = os.path.join(plugin_dir, '{}_testfoo.py'.format(pr))
+        assert os.path.isfile(pfile)
+        with open(pfile, 'rt') as f:
+            code = f.read()
+            assert "class TestFoo" in code
 
     readme_file = os.path.join(plugin_dir, 'README.md')
     assert os.path.isfile(readme_file)
@@ -91,6 +89,18 @@ def test_plugin_init_cmd(capfd):
         text = f.read()
         assert '# swak-testfoo' in text
         assert "plugin package for Swak" in text
+
+    # enumerate external plugins
+    plugin_infos = list(enumerate_plugins(False, _filter=plugin_filter_ext))
+    assert plugin_infos[0].dname == 'testfoo'
+
+    # desc command should find new external plugins
+    cmd = [SWAK_CLI, 'list']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert err == ''
+    assert 'in.testfoo' in out
+    assert 'par.testfoo' in out
 
     shutil.rmtree(plugin_dir)
 
@@ -123,18 +133,16 @@ MODULE_MAP = {
 """.replace('/', os.path.sep)
 
     sbuf = StringIO()
-    dump_plugins_import(sbuf, _filter=plugin_filter)
+    dump_plugins_import(True, sbuf, _filter=plugin_filter)
     assert dump == sbuf.getvalue().replace(get_exe_dir(), '')
     sbuf.close()
 
 
-@pytest.mark.skip(reason="Cause false import of plugins/__init__.py to other"
-                  " tests.")
 def test_plugin_initpy():
     """Test plugin __init__.py."""
     # test plugin checksum
     h = calc_plugins_hash(enumerate_plugins(None, plugin_filter1))
-    assert '9d4feaa6af4dd11e31572d6c1896d8b2' == h
+    assert '28d33e245258a58dd4897908a4c269e9' == h
     h = calc_plugins_hash(enumerate_plugins(None, plugin_filter))
     assert '7ed9a23f52202cd70253890a591bb96a'
 
@@ -159,3 +167,9 @@ def test_plugin_initpy():
                                                              plugin_filter))
     assert created
     assert chksum != chksum1
+
+    # test external plugins
+    created, chksum = check_plugins_initpy(False,
+                                           enumerate_plugins(False, None,
+                                                             plugin_filter))
+    assert created
