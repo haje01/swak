@@ -9,8 +9,8 @@ import click
 from tabulate import tabulate
 
 from swak.util import check_python_version, set_log_verbosity
-from swak.plugin import enumerate_plugins, check_plugins_initpy, PREFIX,\
-    get_plugins_dir, init_plugin_dir
+from swak.plugin import PREFIX, get_plugins_dir, init_plugin_dir,\
+    check_plugins_initpy, enumerate_plugins
 from swak.core import parse_and_validate_test_cmds, run_test_cmds
 
 check_python_version()
@@ -29,44 +29,37 @@ def main(ctx, verbose):
 
 # if not packeged into binary
 if not getattr(sys, 'frozen', False):
-    # provide refresh command
-    @main.command(help="Search and update plugin information.")
-    @click.option('-f', '--force', is_flag=True, help="Remove existing "
-                  "information and refresh again.")
+    # support init command
+    @main.command(help='Init new plugin package.')
+    @click.option('-t', '--type', "ptypes", type=click.Choice(INIT_PREFIX),
+                  default="mod", show_default=True, multiple=True,
+                  help="Plugin module type prefix.")
+    @click.option('-d', '--dir', 'pdir', type=click.Path(exists=True),
+                  default=PLUGIN_DIR, show_default=True, help="Plugin "
+                  "directory")
+    @click.argument('file_name')
+    @click.argument('class_name')
     @click.pass_context
-    def refresh(ctx, force):
-        """Refresh plugin infomations."""
-        verbosity = ctx.obj['verbosity']
-        set_log_verbosity(verbosity)
-        _refresh(force)
-
-
-def _refresh(force=False):
-    check_plugins_initpy(True, enumerate_plugins(True), force)
-    check_plugins_initpy(False, enumerate_plugins(False), force)
-
-
-@main.command(help='Init new plugin package.')
-@click.option('-t', '--type', "ptypes", type=click.Choice(INIT_PREFIX),
-              default="mod", show_default=True, multiple=True,
-              help="Plugin module type prefix.")
-@click.option('-d', '--dir', 'pdir', type=click.Path(exists=True),
-              default=PLUGIN_DIR, show_default=True, help="Plugin directory")
-@click.argument('file_name')
-@click.argument('class_name')
-@click.pass_context
-def init(ctx, ptypes, pdir, file_name, class_name):
-    """Init new plugin package."""
-    init_plugin_dir(ptypes, file_name, class_name, pdir)
+    def init(ctx, ptypes, file_name, class_name, pdir):
+        """Init new plugin package."""
+        stdex_plugins = prepare_cli(ctx)
+        for i in range(2):
+            mmap = stdex_plugins[i].MODULE_MAP
+            for ptype in ptypes:
+                pqname = '{}.{}'.format(ptype, file_name)
+                if pqname in mmap:
+                    ptypen = 'standard' if i == 0 else 'external'
+                    logging.error("Plugin '{}' already exists as {} plugin".
+                                  format(pqname, ptypen))
+                    sys.exit(-1)
+        # check duplicate plugin
+        init_plugin_dir(ptypes, file_name, class_name, pdir)
 
 
 @main.command(help="List known plugins.")
-@click.option('-r', '--refresh', is_flag=True, help="Refresh first then list.")
 @click.pass_context
-def list(ctx, refresh):
+def list(ctx):
     """List known plugins."""
-    if refresh:
-        _refresh()
     stdex_plugins = prepare_cli(ctx)
 
     for i in range(2):  # standard / external plugins
@@ -83,6 +76,7 @@ def list(ctx, refresh):
             print("Swak has {} standard plugins:".format(cnt))
         else:
             print("And {} external plugin(s):".format(cnt))
+
         header = ['Plugin', 'Description']
         print(tabulate(plugins, headers=header, tablefmt='psql'))
 
@@ -96,10 +90,10 @@ def desc(ctx, plugin):
     Args:
         plugin (str): Plugin name with prefix
     """
-    plugins = prepare_cli(ctx)
+    stdex_plugins = prepare_cli(ctx)
 
     for i in range(2):  # standard / external plugins
-        mmap = plugins[i].MODULE_MAP
+        mmap = stdex_plugins[i].MODULE_MAP
         if plugin in mmap:
             sys.argv[0] = plugin
             mmap[plugin].main(args=['--help'])
@@ -117,6 +111,7 @@ def run(ctx, commands):
     Args:
         commands (str): Test commands concated with '|'
     """
+    prepare_cli(ctx)
     cmds = parse_and_validate_test_cmds(commands)
     run_test_cmds(cmds)
 
@@ -133,6 +128,9 @@ def prepare_cli(ctx):
     """
     verbosity = ctx.obj['verbosity']
     set_log_verbosity(verbosity)
+
+    check_plugins_initpy(True, enumerate_plugins(True))
+    check_plugins_initpy(False, enumerate_plugins(False))
 
     try:
         import swak.stdplugins

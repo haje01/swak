@@ -35,7 +35,7 @@ def plugin_filter_ext(_dir):
 
 def test_plugin_cmd(capfd):
     """Test plugin list & desc command."""
-    cmd = [SWAK_CLI, '-vv', 'list', '-r']
+    cmd = [SWAK_CLI, '-vv', 'list']
     try:
         call(cmd)
     except FileNotFoundError:
@@ -102,6 +102,12 @@ def test_plugin_init_cmd(capfd):
     assert 'in.testfoo' in out
     assert 'par.testfoo' in out
 
+    # check duplicate plugin error
+    cmd = [SWAK_CLI, 'init', '--type', 'out', 'stdout', 'Stdout']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert 'already exists' in err
+
     shutil.rmtree(plugin_dir)
 
 
@@ -141,9 +147,9 @@ MODULE_MAP = {
 def test_plugin_initpy():
     """Test plugin __init__.py."""
     # test plugin checksum
-    h = calc_plugins_hash(enumerate_plugins(None, plugin_filter1))
-    assert '28d33e245258a58dd4897908a4c269e9' == h
-    h = calc_plugins_hash(enumerate_plugins(None, plugin_filter))
+    h = calc_plugins_hash(enumerate_plugins(True, plugin_filter1))
+    assert '94d7a4e72a88639e8a136ea821effcdb' == h
+    h = calc_plugins_hash(enumerate_plugins(True, plugin_filter))
     assert '7ed9a23f52202cd70253890a591bb96a'
 
     # test plugins/__init__.py creation

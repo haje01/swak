@@ -2,7 +2,7 @@
 
 import click
 
-from swak.plugin import BaesParser
+from swak.plugin import BaseParser
 
 
 class {{class_name}}(BaseParser):

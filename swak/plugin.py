@@ -250,8 +250,7 @@ def enumerate_plugins(standard, _home=None, _filter=None):
 
         adir = os.path.join(pdir, _dir)
         logging.debug("try to validate plugin {}".format(adir))
-        pi = validate_plugin_info(adir)
-        if pi is not None:
+        for pi in validate_plugin_info(adir):
             yield pi
 
 
@@ -273,9 +272,9 @@ def validate_plugin_info(adir):
         adir: Absolute directory path to test.
 
     Returns:
-        PluginInfo: If the plugin direcotry is valid.
-        None: If not.
+        list: List of PluginInfos if the plugin direcotry is valid.
     """
+    pis = []
     for pypath in glob.glob(os.path.join(adir, '*.py')):
         fname = os.path.basename(pypath)
         if fname.startswith('__'):
@@ -290,7 +289,9 @@ def validate_plugin_info(adir):
             pname = '{}.{}'.format(pr, cname.lower())
             dname = os.path.basename(adir)
             cname = "{}.{}".format(pname, cname)
-            return PluginInfo(fname, pname, dname, cname, mod.main.help, mod)
+            pi = PluginInfo(fname, pname, dname, cname, mod.main.help, mod)
+            pis.append(pi)
+    return pis
 
 
 def _infer_plugin_class(mod, pr, fname):
@@ -357,7 +358,6 @@ def dump_plugins_import(standard, io, chksum=None, _filter=None):
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
 
     plugins = []
-    import pdb; pdb.set_trace()  # breakpoint b5db2443 //
     for pi in enumerate_plugins(standard, _filter=_filter):
         fname = os.path.splitext(pi.fname)[0]
         base_name = 'swak.{}plugins'.format('std' if standard else '')
