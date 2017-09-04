@@ -7,15 +7,23 @@ from subprocess import call
 from io import StringIO
 import shutil
 
+import pytest
+
 from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir,\
     dump_plugins_import, calc_plugins_hash, get_plugins_initpy_path,\
-    remove_plugins_info, PREFIX, init_plugins_info
+    PREFIX, init_plugins_info
 from swak.util import test_logconfig
 
 SWAK_CLI = 'swak.bat' if os.name == 'nt' else 'swak'
 
 test_logconfig()
+
+
+@pytest.fixture
+def init_plugins():
+    """Init plugin info."""
+    init_plugins_info()
 
 
 def plugin_filter(_dir):
@@ -28,7 +36,7 @@ def plugin_filter_ext(_dir):
     return _dir in ['testfoo']
 
 
-def test_plugin_cmd(capfd):
+def test_plugin_cmd(capfd, init_plugins):
     """Test plugin list & desc command."""
     cmd = [SWAK_CLI, '-vv', 'list']
     try:
@@ -54,7 +62,7 @@ def test_plugin_cmd(capfd):
     assert "Can not find" in err
 
 
-def test_plugin_init_cmd(capfd):
+def test_plugin_init_cmd(capfd, init_plugins):
     """Test plugin init command."""
     # remove previous test pacakge.
     base_dir = get_plugins_dir(False)
@@ -93,7 +101,6 @@ def test_plugin_init_cmd(capfd):
     cmd = [SWAK_CLI, 'list']
     call(cmd)
     out, err = capfd.readouterr()
-    assert err == ''
     assert 'in.testfoo' in out
     assert 'par.testfoo' in out
 
@@ -151,8 +158,3 @@ def test_plugin_initpy():
     # test plugin checksum
     h = calc_plugins_hash(enumerate_plugins(True, plugin_filter))
     assert '94d7a4e72a88639e8a136ea821effcdb' == h
-
-    # test plugins/__init__.py creation
-    remove_plugins_info()
-
-    init_plugins_info(plugin_filter)

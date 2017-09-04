@@ -74,6 +74,8 @@ def _create_plugin_from_cmd(cmd, args):
             plugin = mmap[cmd].main(args=args, standalone_mode=False)
             return plugin
 
+    raise ValueError("Can not create plugin from '{}".format(cmd))
+
 
 def build_test_event_router(cmds, _test=False):
     """Build event router for test commands.

@@ -14,7 +14,6 @@ from swak.const import TEST_STREAM_TAG
 
 
 PREFIX = ['in', 'par', 'mod', 'buf', 'out']
-CHKSUM_FNAME = '_CHECKSUM_.txt'
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
                                        'desc', 'module'])
@@ -354,10 +353,12 @@ def dump_plugins_import(standard, io, _filter=None):
         io (IOBase): an IO instance where import code is written to.
         _filter (function): Filter function for plugins test.
     """
+    logging.debug("dump_plugins_import _filter {}".format(_filter))
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
 
     plugins = []
     for pi in enumerate_plugins(standard, _filter=_filter):
+        logging.debug(pi)
         fname = os.path.splitext(pi.fname)[0]
         base_name = 'swak.{}plugins'.format('std' if standard else '')
         io.write(u"from {}.{} import {}\n".format(base_name, pi.dname, fname))

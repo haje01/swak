@@ -26,10 +26,12 @@ class Pipeline(object):
 
     def add_modifier(self, modifier):
         """Add modifier."""
+        logging.debug("add_modifier {}".format(modifier))
         self.modifiers.append(modifier)
 
     def set_output(self, output):
         """Set output."""
+        logging.debug("set_output {}".format(output))
         self.output = output
 
     def emit_events(self, tag, es):
@@ -173,6 +175,8 @@ class EventRouter(object):
             pattern (str): Multiple Glob pattern seperated by space.
             collector
         """
+        logging.debug("add_rule pattern {} collector {}".format(pattern,
+                                                                collector))
         rule = Rule(pattern, collector)
         self.rules.append(rule)
 
@@ -201,10 +205,12 @@ class EventRouter(object):
         Returns:
             ``Pipeline``
         """
+        logging.debug("build_pipeline")
         pipeline = Pipeline(tag)
         for rule in self.rules:
             if not rule.match(tag):
                 continue
+            logging.debug("rule {}".format(rule))
             if isinstance(rule.collector, BaseModifier):
                 pipeline.add_modifier(rule.collector)
             else:
