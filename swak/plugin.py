@@ -346,13 +346,12 @@ def load_module(name, path):
         raise UnsupportedPython()
 
 
-def dump_plugins_import(standard, io, chksum=None, _filter=None):
+def dump_plugins_import(standard, io, _filter=None):
     """Enumerate all plugins and dump import code to io.
 
     Args:
         standard (bool): Dump for standard plugin or not.
         io (IOBase): an IO instance where import code is written to.
-        chksum (str): Explicitly given checksum.
         _filter (function): Filter function for plugins test.
     """
     io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
@@ -397,7 +396,13 @@ def get_plugins_initpy_path(standard):
     return os.path.join(get_plugins_dir(standard), '__init__.py')
 
 
-def remove_plugins_initpy(standard):
+def remove_plugins_info():
+    """Remove plugins information."""
+    _remove_plugins_initpy(True)
+    _remove_plugins_initpy(False)
+
+
+def _remove_plugins_initpy(standard):
     """Remove plugins/__init__.py file and checksum file."""
     def remove(path):
         if os.path.isfile(path):
@@ -407,63 +412,32 @@ def remove_plugins_initpy(standard):
             logging.debug("{} does not exist.".format(path))
 
     remove(get_plugins_initpy_path(standard))
-    remove(get_plugins_chksum_path(standard))
 
 
-def get_plugins_chksum_path(standard):
-    """Return plugin checksum path."""
-    return os.path.join(get_plugins_dir(standard), CHKSUM_FNAME)
+def init_plugins_info(_filter=None):
+    """Search and init plugins information at __init__.py."""
+    _create_plugins_initpy(True, _filter)
+    _create_plugins_initpy(False, _filter)
 
 
-def check_plugins_initpy(standard, plugin_infos, force=False):
-    """Create (std)plugins/__init__.py file if plugins checksum has been changed.
-
-    Checksum is serialized to a dedicated file.
+def _create_plugins_initpy(standard, _filter):
+    """Enummerate all legal plugins and create (std)plugins/__init__.py file.
 
     Args:
         standard (bool): Check for standard plugin or not.
-        plugin_infos: Generator of PluginInfo
-        force (bool): Force recreate.
+        _filter (func): Filter function for test.
 
     Returns:
-        bool: Whether file has been created or not.
         str: Plugins checksum
     """
-    logging.debug("check_plugins_initpy")
-    create = False
+    logging.debug("_create_plugins_initpy")
     path = get_plugins_initpy_path(standard)
     logging.debug("plugin initpy path: {}".format(path))
-    chksum = calc_plugins_hash(plugin_infos)
-    cpath = get_plugins_chksum_path(standard)
 
-    if not force:
-        if not os.path.isfile(path):
-            # __init__.py not exists
-            logging.debug("{} does not exist.".format(path))
-            create = True
-        else:
-            # check sum file not exists
-            if not os.path.isfile(cpath):
-                create = True
-            else:
-                # checksum mismatch
-                with open(cpath, 'rt') as f:
-                    ochksum = f.read().strip()
-                logging.debug("plugins old chksum {}, new chksum"
-                              " {}".format(ochksum, chksum))
-                create = ochksum != chksum
-
-    if create or force:
-        logging.debug("writing {}".format(path))
-        with open(path, 'wt') as f:
-            dump_plugins_import(standard, f, chksum)
-        py_compile.compile(path)
-
-        logging.debug("writing {} - {}".format(cpath, chksum))
-        with open(cpath, 'wt') as f:
-            f.write('{}\n'.format(chksum))
-
-    return create, chksum
+    logging.debug("writing {}".format(path))
+    with open(path, 'wt') as f:
+        dump_plugins_import(standard, f, _filter)
+    py_compile.compile(path)
 
 
 class DummyOutput(BaseOutput):

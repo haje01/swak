@@ -4,9 +4,11 @@ import time
 import pytest
 
 from swak.event_router import EventRouter
-from swak.plugin import DummyOutput
-from swak.stdplugins.filter.mod_filter import Filter
-from swak.stdplugins.reform.mod_reform import Reform
+from swak.plugin import DummyOutput, init_plugins_info
+
+init_plugins_info()
+from swak.stdplugins.filter.mod_filter import Filter  # NOQA
+from swak.stdplugins.reform.mod_reform import Reform  # NOQA
 
 
 @pytest.fixture()

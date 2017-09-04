@@ -10,7 +10,7 @@ from tabulate import tabulate
 
 from swak.util import check_python_version, set_log_verbosity
 from swak.plugin import PREFIX, get_plugins_dir, init_plugin_dir,\
-    check_plugins_initpy, enumerate_plugins
+    init_plugins_info
 from swak.core import parse_and_validate_test_cmds, run_test_cmds
 
 check_python_version()
@@ -129,8 +129,7 @@ def prepare_cli(ctx):
     verbosity = ctx.obj['verbosity']
     set_log_verbosity(verbosity)
 
-    check_plugins_initpy(True, enumerate_plugins(True))
-    check_plugins_initpy(False, enumerate_plugins(False))
+    init_plugins_info()
 
     try:
         import swak.stdplugins

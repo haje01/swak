@@ -10,7 +10,7 @@ import shutil
 from swak.config import get_exe_dir
 from swak.plugin import enumerate_plugins, get_plugins_dir,\
     dump_plugins_import, calc_plugins_hash, get_plugins_initpy_path,\
-    remove_plugins_initpy, check_plugins_initpy, PREFIX
+    remove_plugins_info, PREFIX, init_plugins_info
 from swak.util import test_logconfig
 
 SWAK_CLI = 'swak.bat' if os.name == 'nt' else 'swak'
@@ -21,11 +21,6 @@ test_logconfig()
 def plugin_filter(_dir):
     """Filter plugins."""
     return _dir in ['counter', 'stdout']
-
-
-def plugin_filter1(_dir):
-    """Filter plugins."""
-    return _dir in ['counter']
 
 
 def plugin_filter_ext(_dir):
@@ -110,6 +105,13 @@ def test_plugin_init_cmd(capfd):
 
     shutil.rmtree(plugin_dir)
 
+    # check after removing
+    cmd = [SWAK_CLI, 'list']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert err == ''
+    assert '0 external plugin' in out
+
 
 def test_plugin_util():
     """Test plugin util."""
@@ -147,35 +149,10 @@ MODULE_MAP = {
 def test_plugin_initpy():
     """Test plugin __init__.py."""
     # test plugin checksum
-    h = calc_plugins_hash(enumerate_plugins(True, plugin_filter1))
-    assert '94d7a4e72a88639e8a136ea821effcdb' == h
     h = calc_plugins_hash(enumerate_plugins(True, plugin_filter))
-    assert '7ed9a23f52202cd70253890a591bb96a'
+    assert '94d7a4e72a88639e8a136ea821effcdb' == h
 
     # test plugins/__init__.py creation
-    remove_plugins_initpy(True)
+    remove_plugins_info()
 
-    # enumerate 1 plugin and __init__.py has been created.
-    created, chksum1 = check_plugins_initpy(True,
-                                            enumerate_plugins(True, None,
-                                                              plugin_filter1))
-    assert created
-
-    # enumerate 1 plugin again and __init__.py hasn't been created.
-    created, _ = check_plugins_initpy(True,
-                                      enumerate_plugins(True, None,
-                                                        plugin_filter1))
-    assert not created
-
-    # enumerate 2 plugin and __init__.py has been created.
-    created, chksum = check_plugins_initpy(True,
-                                           enumerate_plugins(True, None,
-                                                             plugin_filter))
-    assert created
-    assert chksum != chksum1
-
-    # test external plugins
-    created, chksum = check_plugins_initpy(False,
-                                           enumerate_plugins(False, None,
-                                                             plugin_filter))
-    assert created
+    init_plugins_info(plugin_filter)
