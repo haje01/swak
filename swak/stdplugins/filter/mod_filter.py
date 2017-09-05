@@ -1,5 +1,4 @@
 """This module implements modifier plugin of filter."""
-
 import re
 
 import click

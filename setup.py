@@ -46,6 +46,7 @@ setup(
     scripts=SCRIPTS,
     license=['MIT License'],
     install_requires=[
+        'six',
         'click',
         'pyyaml',
         'future',

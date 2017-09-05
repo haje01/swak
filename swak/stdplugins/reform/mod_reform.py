@@ -4,6 +4,7 @@ import re
 import socket
 
 import click
+from six import string_types
 
 from swak.plugin import BaseModifier
 
@@ -115,8 +116,8 @@ class Reform(BaseModifier):
             dels (list): List of key to delete.
         """
         for k, v in adds:
-            assert type(k) == str, "Key must be a string"
-            assert type(v) == str, "Value must be a string"
+            assert isinstance(k, string_types), "Key must be a string"
+            assert isinstance(k, string_types), "Value must be a string"
         self.adds = adds
         self.dels = dels
 
