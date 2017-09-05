@@ -4,26 +4,17 @@ from __future__ import absolute_import
 
 import os
 from subprocess import call
-from io import StringIO
 import shutil
-
-import pytest
+import types
 
 from swak.config import get_exe_dir
-from swak.plugin import enumerate_plugins, get_plugins_dir,\
-    dump_plugins_import, calc_plugins_hash, get_plugins_initpy_path,\
-    PREFIX, init_plugins_info
+from swak.plugin import iter_plugins, get_plugins_dir, calc_plugins_hash,\
+    get_plugins_initpy_path, PREFIX, import_plugins_package
 from swak.util import test_logconfig
 
 SWAK_CLI = 'swak.bat' if os.name == 'nt' else 'swak'
 
 test_logconfig()
-
-
-@pytest.fixture
-def init_plugins():
-    """Init plugin info."""
-    init_plugins_info()
 
 
 def plugin_filter(_dir):
@@ -36,7 +27,7 @@ def plugin_filter_ext(_dir):
     return _dir in ['testfoo']
 
 
-def test_plugin_cmd(capfd, init_plugins):
+def test_plugin_cmd(capfd):
     """Test plugin list & desc command."""
     cmd = [SWAK_CLI, '-vv', 'list']
     try:
@@ -62,7 +53,7 @@ def test_plugin_cmd(capfd, init_plugins):
     assert "Can not find" in err
 
 
-def test_plugin_init_cmd(capfd, init_plugins):
+def test_plugin_init_cmd(capfd):
     """Test plugin init command."""
     # remove previous test pacakge.
     base_dir = get_plugins_dir(False)
@@ -94,7 +85,7 @@ def test_plugin_init_cmd(capfd, init_plugins):
         assert "plugin package for Swak" in text
 
     # enumerate external plugins
-    plugin_infos = list(enumerate_plugins(False, _filter=plugin_filter_ext))
+    plugin_infos = list(iter_plugins(False, _filter=plugin_filter_ext))
     assert plugin_infos[0].dname == 'testfoo'
 
     # desc command should find new external plugins
@@ -125,7 +116,7 @@ def test_plugin_util():
     # check standard plugin dir
     path = os.path.join(get_exe_dir(), 'stdplugins')
     assert path == get_plugins_dir(True)
-    plugin_infos = list(enumerate_plugins(True, None, plugin_filter))
+    plugin_infos = list(iter_plugins(True, None, plugin_filter))
     assert len(plugin_infos) > 0
 
     # check external plugin dir
@@ -133,28 +124,16 @@ def test_plugin_util():
     assert path == get_plugins_dir(False)
 
 
-def test_plugin_dump():
-    """Test plugin information dump."""
-    dump = """\
-# WARNING: Auto-generated code. Do not edit.
-
-from swak.stdplugins.counter import in_counter
-from swak.stdplugins.stdout import out_stdout
-
-MODULE_MAP = {
-    'in.counter': in_counter,
-    'out.stdout': out_stdout,
-}
-""".replace('/', os.path.sep)
-
-    sbuf = StringIO()
-    dump_plugins_import(True, sbuf, _filter=plugin_filter)
-    assert dump == sbuf.getvalue().replace(get_exe_dir(), '')
-    sbuf.close()
-
-
 def test_plugin_initpy():
     """Test plugin __init__.py."""
     # test plugin checksum
-    h = calc_plugins_hash(enumerate_plugins(True, plugin_filter))
+    h = calc_plugins_hash(iter_plugins(True, plugin_filter))
     assert '94d7a4e72a88639e8a136ea821effcdb' == h
+
+
+def test_plugin_import():
+    """Test import plugins from plugins base package."""
+    stdplugins = import_plugins_package(True)
+    assert isinstance(stdplugins, types.ModuleType)
+    __import__('stdplugins.counter')
+    __import__('stdplugins.filter')

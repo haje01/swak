@@ -1,12 +1,6 @@
-"""This module implements Swak {{type_name}} plugin of {{class_name}}."""
+{% extends "tmpl_base.py" %}
 
-import click
-
-from swak.plugin import BaseModifier
-
-
-class {{class_name}}(BaseModifier):
-    """{{class_name}} class."""
+{% block class_body %}
 
     def prepare_for_stream(self, tag, es):
         """Prepare to modify an event stream.
@@ -35,13 +29,4 @@ class {{class_name}}(BaseModifier):
         """
         raise NotImplemented()
 
-
-@click.command(help="PLUGIN HELP MESSAGE GOES HERE")
-@click.pass_context
-def main(ctx):
-    """Plugin entry."""
-    return {{class_name}}()
-
-
-if __name__ == '__main__':
-    main()
+{% endblock %}

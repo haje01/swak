@@ -6,7 +6,7 @@ import glob
 from collections import namedtuple, defaultdict
 import hashlib
 import logging
-import py_compile
+import types
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
@@ -211,8 +211,17 @@ BASE_CLASS_MAP = {
 
 
 def _get_base_class_name(prefix):
+    """Get base class name from prefix."""
     cls = BASE_CLASS_MAP[prefix]
     return cls.__name__
+
+
+def _get_full_name(prefix, class_name):
+    """Get class name for template rendering from prefix."""
+    name = _get_base_class_name(prefix)
+    if class_name:
+        return name
+    return name[4:].lower()
 
 
 def get_plugins_dir(standard, _home=None):
@@ -222,8 +231,8 @@ def get_plugins_dir(standard, _home=None):
     return os.path.join(edir, dirn)
 
 
-def enumerate_plugins(standard, _home=None, _filter=None):
-    """Enumerate plugin infos.
+def iter_plugins(standard, _home=None, _filter=None):
+    """Iterate valid plugin infos.
 
     While visiting each sub-directory of the plugin directory, yield plugin
     information if the directory conform plugin standard.
@@ -250,6 +259,7 @@ def enumerate_plugins(standard, _home=None, _filter=None):
         adir = os.path.join(pdir, _dir)
         logging.debug("try to validate plugin {}".format(adir))
         for pi in validate_plugin_info(adir):
+            logging.debug("  got plugin info {}".format(pi))
             yield pi
 
 
@@ -271,7 +281,7 @@ def validate_plugin_info(adir):
         adir: Absolute directory path to test.
 
     Returns:
-        list: List of PluginInfos if the plugin direcotry is valid.
+        list: List of PluginInfo for valid plugin
     """
     pis = []
     for pypath in glob.glob(os.path.join(adir, '*.py')):
@@ -301,6 +311,7 @@ def _infer_plugin_class(mod, pr, fname):
         pr (str): Prefix
         fname (str): Module file name
     Returns:
+        classobj
     """
     name = fname.replace(pr + '_', '').split('.')[0]
 
@@ -317,6 +328,8 @@ def _infer_plugin_class(mod, pr, fname):
                 return obj
         except TypeError:
             pass
+    logging.error("Can not infer class instance - mod {} pr {} fname {}".
+                  format(mod, pr, fname))
 
 
 def load_module(name, path):
@@ -343,31 +356,6 @@ def load_module(name, path):
         return mod
     else:
         raise UnsupportedPython()
-
-
-def dump_plugins_import(standard, io, _filter=None):
-    """Enumerate all plugins and dump import code to io.
-
-    Args:
-        standard (bool): Dump for standard plugin or not.
-        io (IOBase): an IO instance where import code is written to.
-        _filter (function): Filter function for plugins test.
-    """
-    logging.debug("dump_plugins_import _filter {}".format(_filter))
-    io.write(u"# WARNING: Auto-generated code. Do not edit.\n\n")
-
-    plugins = []
-    for pi in enumerate_plugins(standard, _filter=_filter):
-        logging.debug(pi)
-        fname = os.path.splitext(pi.fname)[0]
-        base_name = 'swak.{}plugins'.format('std' if standard else '')
-        io.write(u"from {}.{} import {}\n".format(base_name, pi.dname, fname))
-        plugins.append((pi.pname, fname, pi.cname))
-
-    io.write(u'\nMODULE_MAP = {\n')
-    for pl in plugins:
-        io.write(u"    '{}': {},\n".format(pl[0], pl[1]))
-    io.write(u'}\n')
 
 
 def calc_plugins_hash(plugin_infos):
@@ -415,32 +403,6 @@ def _remove_plugins_initpy(standard):
     remove(get_plugins_initpy_path(standard))
 
 
-def init_plugins_info(_filter=None):
-    """Search and init plugins information at __init__.py."""
-    _create_plugins_initpy(True, _filter)
-    _create_plugins_initpy(False, _filter)
-
-
-def _create_plugins_initpy(standard, _filter):
-    """Enummerate all legal plugins and create (std)plugins/__init__.py file.
-
-    Args:
-        standard (bool): Check for standard plugin or not.
-        _filter (func): Filter function for test.
-
-    Returns:
-        str: Plugins checksum
-    """
-    logging.debug("_create_plugins_initpy")
-    path = get_plugins_initpy_path(standard)
-    logging.debug("plugin initpy path: {}".format(path))
-
-    logging.debug("writing {}".format(path))
-    with open(path, 'wt') as f:
-        dump_plugins_import(standard, f, _filter)
-    py_compile.compile(path)
-
-
 class DummyOutput(BaseOutput):
     """Output plugin for test."""
 
@@ -468,13 +430,6 @@ class DummyOutput(BaseOutput):
             self.envents[tag] = []
         else:
             self.events = defaultdict(list)
-
-
-def _get_full_name(prefix, class_name):
-    name = _get_base_class_name(prefix)
-    if class_name:
-        return name
-    return name[4:].lower()
 
 
 def init_plugin_dir(prefixes, file_name, class_name, pdir):
@@ -525,3 +480,19 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     init_file = os.path.join(plugin_dir, '__init__.py')
     with open(init_file, 'wt') as f:
         pass
+
+
+def import_plugins_package(standard):
+    """Virtually import and return plugins base package.
+
+    Args:
+        standard (bool): True for standard plugins, False for external plugins
+
+    Returns:
+        module: Loaded module.
+    """
+    mod_name = 'stdplugins' if standard else 'plugins'
+    plugins = types.ModuleType(mod_name)
+    plugins.__path__ = [get_plugins_dir(standard)]
+    sys.modules[mod_name] = plugins
+    return plugins

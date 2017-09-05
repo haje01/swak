@@ -171,3 +171,17 @@ def set_log_verbosity(verbosity):
     handler = _query_stream_log_handler(logger)
     handler.setLevel(level)
     handler.setFormatter(LOG_FMT)
+
+
+def get_plugin_module_name(plugin_name):
+    """Get plugin module name from plugin full name.
+
+    Args:
+        plugin_name (str): plugin full name
+
+    Return:
+        str: Plugin module name
+    """
+    elm = plugin_name.split('.')
+    assert len(elm) > 1
+    return '{}_{}'.format(elm[0], '.'.join(elm[1:]))

@@ -3,11 +3,13 @@
 import re
 import logging
 import time
+import sys
 
 from swak.plugin import BaseInput
 from swak.event_router import EventRouter
-from swak.plugin import DummyOutput
+from swak.plugin import DummyOutput, import_plugins_package
 from swak.const import TEST_STREAM_TAG
+from swak.util import get_plugin_module_name
 
 
 cmd_ptrn = re.compile(r'\S*(?P<cmd>((in\.|par\.|mod\.|buf\.|out\.|cmd\.)\S+)'
@@ -50,31 +52,34 @@ def _parse_test_cmds(cmds):
             logging.error("Irregular command: '{}'".format(cmds))
 
 
-def _create_plugin_from_cmd(cmd, args):
-    """Create plugin from command.
+def _create_plugin_by_name(plugin_name, args):
+    """Create plugin by name.
 
     Args:
-        cmd (str): Command name.
-        args (list): Command arguments list
+        plugin_name (str): Plugin fullname
+        args (list): Command arguments to instantiate plugin object.
 
     Returns:
         Plugin module
     """
-    import swak.stdplugins  # prevent dependency
-    mmap = swak.stdplugins.MODULE_MAP
-    for pname in mmap.keys():
-        if pname == cmd:
-            plugin = mmap[cmd].main(args=args, standalone_mode=False)
-            return plugin
-
-    import swak.plugins  # prevent dependency
-    mmap = swak.plugins.MODULE_MAP
-    for pname in mmap.keys():
-        if pname == cmd:
-            plugin = mmap[cmd].main(args=args, standalone_mode=False)
-            return plugin
-
-    raise ValueError("Can not create plugin from '{}".format(cmd))
+    for i in range(2):
+        import_plugins_package(i == 0)
+        try:
+            elms = plugin_name.split('.')
+            package_name = '.'.join(elms[1:])
+            module_name = get_plugin_module_name(plugin_name)
+            tn = 'std' if i == 0 else ''
+            path = '{}plugins.{}.{}'.format(tn, package_name, module_name)
+            __import__(path)
+        except ImportError:
+            if i == 0:
+                pass  # for external plugins
+            else:
+                raise ValueError("Can not create plugin  '{}".
+                                 format(module_name))
+        else:
+            mod = sys.modules[path]
+            return mod.main(args=args, standalone_mode=False)
 
 
 def build_test_event_router(cmds, _test=False):
@@ -92,8 +97,8 @@ def build_test_event_router(cmds, _test=False):
     router = EventRouter(DummyOutput(echo=not _test))
     for i, cmd in enumerate(cmds):
         args = cmd[1:]
-        cmd = cmd[0]
-        plugin = _create_plugin_from_cmd(cmd, args)
+        pname = cmd[0]
+        plugin = _create_plugin_by_name(pname, args)
         if i == 0:
             assert isinstance(plugin, BaseInput)
             input_plugin = plugin

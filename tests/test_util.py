@@ -9,7 +9,7 @@ import pytest
 
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
-from swak.util import init_home
+from swak.util import init_home, get_plugin_module_name
 
 
 CFG = """
@@ -79,3 +79,8 @@ def test_util_cfg(test_home):
     init_home(home, cfg)
 
     os.unlink(path)
+
+
+def test_util_etc():
+    """Test small utilities."""
+    assert 'out_stdout.2' == get_plugin_module_name('out.stdout.2')

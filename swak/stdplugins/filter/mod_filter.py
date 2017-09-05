@@ -1,4 +1,5 @@
-"""This module implements modifier plugin of filter."""
+from __future__ import absolute_import
+"""This module implements modifier plugin of filter."""  # NOQA
 import re
 
 import click

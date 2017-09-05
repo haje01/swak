@@ -1,4 +1,5 @@
-"""This module implements modifier plugin of reform."""
+from __future__ import absolute_import
+"""This module implements modifier plugin of reform."""  # NOQA
 
 import re
 import socket

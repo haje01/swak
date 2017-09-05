@@ -1,24 +1,10 @@
 """This module implements Swak {{type_name}} plugin of {{class_name}}."""
+{% extends "tmpl_base.py" %}
 
-import click
-
-from swak.plugin import BaseParser
-
-
-class {{class_name}}(BaseParser):
-    """{{class_name}} class."""
+{% block class_body %}
 
     def parse(self):
         """Parse."""
         raise NotImplemented()
 
-
-@click.command(help="PLUGIN HELP MESSAGE GOES HERE")
-@click.pass_context
-def main(ctx):
-    """Plugin entry."""
-    return {{class_name}}()
-
-
-if __name__ == '__main__':
-    main()
+{% endblock %}

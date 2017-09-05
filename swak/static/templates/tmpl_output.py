@@ -1,12 +1,6 @@
-"""This module implements Swak {{type_name}} plugin of {{class_name}}."""
+{% extends "tmpl_base.py" %}
 
-import click
-
-from swak.plugin import BaseOutput
-
-
-class {{class_name}}(BaseOutput):
-    """{{class_name}} class."""
+{% block class_body %}
 
     def write_stream(self, tag, es):
         """Write event stream synchronously.
@@ -21,13 +15,4 @@ class {{class_name}}(BaseOutput):
         """Write a chunk from buffer."""
         raise NotImplemented()
 
-
-@click.command(help="PLUGIN HELP MESSAGE GOES HERE")
-@click.pass_context
-def main(ctx):
-    """Plugin entry."""
-    return {{class_name}}()
-
-
-if __name__ == '__main__':
-    main()
+{% endblock %}
