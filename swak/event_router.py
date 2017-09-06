@@ -175,8 +175,8 @@ class EventRouter(object):
             pattern (str): Multiple Glob pattern seperated by space.
             collector
         """
-        logging.debug("add_rule pattern {} collector {}".format(pattern,
-                                                                collector))
+        logging.debug("add_rule pattern {} collector {}".
+                      format(pattern, collector))
         rule = Rule(pattern, collector)
         self.rules.append(rule)
 

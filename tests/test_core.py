@@ -16,10 +16,10 @@ def test_core_test_cmd():
     with pytest.raises(ValueError):
         list(parse_and_validate_test_cmds("mod.reform"))
 
-    cmds = list(parse_and_validate_test_cmds('in.counter --max 4 --field 3'))
+    cmds = list(parse_and_validate_test_cmds('in.counter --count 4 --field 3'))
     assert len(cmds) == 1
     assert cmds[0][0] == 'in.counter'
-    assert cmds[0][1] == '--max'
+    assert cmds[0][1] == '--count'
     assert cmds[0][2] == '4'
     assert cmds[0][3] == '--field'
 

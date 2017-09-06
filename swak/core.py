@@ -53,10 +53,10 @@ def _parse_test_cmds(cmds):
 
 
 def _create_plugin_by_name(plugin_name, args):
-    """Create plugin by name.
+    """Create plugin by name for test command.
 
     Args:
-        plugin_name (str): Plugin fullname
+        plugin_name (str): Plugin full name
         args (list): Command arguments to instantiate plugin object.
 
     Returns:
@@ -75,15 +75,14 @@ def _create_plugin_by_name(plugin_name, args):
             if i == 0:
                 pass  # for external plugins
             else:
-                raise ValueError("Can not create plugin  '{}".
-                                 format(module_name))
+                raise ValueError("There is no plugin '{}'".format(plugin_name))
         else:
             mod = sys.modules[path]
             return mod.main(args=args, standalone_mode=False)
 
 
 def build_test_event_router(cmds, _test=False):
-    """Build event router for test commands.
+    """Build an event router for test commands.
 
     Args:
         cmds (list): Seperated test commands list.
