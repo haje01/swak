@@ -61,6 +61,7 @@ setup(
         'dev': [
             'pytest',
             'coverage',
+            'codecov',
             'pyinstaller',
             'tox',
             'sphinx',

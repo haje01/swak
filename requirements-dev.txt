@@ -1,6 +1,6 @@
 coverage
 pytest>=3.1
 pyinstaller
-codecov
 tox
 sphinx
+codecov
