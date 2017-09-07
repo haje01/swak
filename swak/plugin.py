@@ -437,6 +437,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
 
     Create following boilerplate files. (Plugin directory can have multiple
         plugin files to accomplish single purpose.)
+
     - One or more plugin type module
     - __init__.py
     - README.me file

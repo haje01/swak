@@ -76,6 +76,7 @@ def select_and_parse(_home=None):
 
     To resolve environment variables while parsing config file, this function
     takes following procedures.
+
         1. Parsing config file without resolving EnvVars
         2. Exposure some of config vars to EnvVars
         3. Resolve EnvVars in the original config, then parse it.
