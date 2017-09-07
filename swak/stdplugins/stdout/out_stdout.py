@@ -1,10 +1,11 @@
 """Stdout module."""
 from __future__ import print_function, absolute_import
 
+import json
+
 import click
 
 from swak.plugin import BaseOutput
-from swak.const import TEST_STREAM_TAG
 
 
 class Stdout(BaseOutput):
@@ -13,8 +14,7 @@ class Stdout(BaseOutput):
     def write_stream(self, tag, es):
         """Write event stream."""
         for time, record in es:
-            stag = '' if tag == TEST_STREAM_TAG else "tag: {}, ".format(tag)
-            print("{}time: {}, record: {}".format(stag, time, record))
+            print(json.dumps((tag, time, record)))
 
 
 @click.command(help="Output to standard output.")

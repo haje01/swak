@@ -7,12 +7,16 @@ Add, delete, overwrite record.
 
     Usage: mod.reform [OPTIONS]
 
-      Add, delete, overwrite record.
+      Add, delete and modify record.
 
     Options:
       -a, --add <TEXT TEXT>...  Add new key / value pair.
       -d, --del TEXT            Delete existing key / value pair by key.
       --help                    Show this message and exit.
+
+## Refer Record Value by Field Name.
+
+You can refer the value of a field by its name. For example, if the record is `{"name": "john", "score": 100}` then `${record["name"]}` is `"john"` and `${record["score"]}` is `100`.
 
 
 ## Predefined Variables
@@ -32,4 +36,14 @@ There are the following predefined variables.
 
 ## Examples
 
-    swak run 'in.counter | mod -a host "${hostname}" -a name "server-${hostaddr_parts[-1]}"'
+```
+    swak run 'in.counter | mod.reform -a f1_mod ${record[f1]}_mod -a host ${hostname} -a name server-${hostaddr_parts[-1]}'
+```
+
+Result:
+
+```
+["_test_", 1504687275.4991, {"host": "User.local", "f1": 1, "f1_mod": "1_mod", "name": "server-169"}]
+["_test_", 1504687275.503264, {"host": "User.local", "f1": 2, "f1_mod": "2_mod", "name": "server-169"}]
+["_test_", 1504687275.503934, {"host": "User.local", "f1": 3, "f1_mod": "3_mod", "name": "server-169"}]
+```

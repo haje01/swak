@@ -33,7 +33,7 @@ def parse_and_validate_test_cmds(cmds):
     for i, cmd in enumerate(cmds.split('|')):
         args = [arg.strip() for arg in cmd.split()]
         if len(args) == 0:
-            raise ValueError("Illegal test commands")
+            raise ValueError("Illegal test commands: {}".format(cmds))
         cmd = args[0]
         if i == 0 and not cmd.startswith('in.'):
             raise ValueError("Test command must starts with input plugin.")

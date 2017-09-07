@@ -1,7 +1,7 @@
 
-*********
-Swak 활용
-*********
+********
+시작하기
+********
 
 여기서는 Swak의 활용 예를 통해 설명하겠다. 먼저 기본 용어부터 설명하겠다.
 
@@ -37,24 +37,58 @@ Swak은 커맨드라인에서 다양한 명령을 실행할 수 있다.
 특정 플러그인의 도움말 보기
 ---------------------------
 
+특정 플러그인의 도움말을 보기 위해서 ``desc`` 명령을 사용한다.
+
 .. code-block:: shell
 
-    swak desc in.fakedata
+    swak desc in.counter
+
+아래와 같은 결과가 나온다.
+
+.. code-block:: shell
+
+    Usage: in.counter [OPTIONS]
+
+      Generate incremental numbers.
+
+    Options:
+      -c, --count INTEGER  Count to emit.  [default: 3]
+      -f, --field INTEGER  Count of fields.  [default: 1]
+      -d, --delay FLOAT    Delay seconds before next count.  [default: 0.0]
+      --help               Show this message and exit.
 
 
-간단히 테스트하기
------------------
+테스트 커맨드로 간단히 테스트하기
+---------------------------------
 
 Swak은 정식 설정파일을 작성하기 전에 플러그인의 기능을 테스트할 수 있는 **테스트 커맨드** 를 지원한다. 테스트 커맨드는 유닉스 쉘 명령어 형식으로 사용한다. 다음의 예를 보자.
 
 .. code-block:: shell
 
-    swak run 'in.fakedata --type people | out.stdout'
+    swak run 'in.counter | out.stdout'
 
 파이프 기호 ``|`` 를 통해 플러그인이 연쇄적으로 동작한다. 예는 아래와 같은 일을 한다.
 
-1. ``in.fackedata`` 플러그인으로 가짜 데이터를 생성
+1. ``in.counter`` 플러그인으로 카운트 데이터를 생성
 2. 표준 출력으로 출력
+
+실행 결과는 아래와 같다
+
+.. code-block:: shell
+
+    ["_test_", 1504687495.505614, {"f1": 1}]
+    ["_test_", 1504687495.505723, {"f1": 2}]
+    ["_test_", 1504687495.505755, {"f1": 3}]
+
+첫 번째 값은 테스트 커맨드의 스트림 태그, 두 번째 값은 emit 시간, 그리고 마지막 값은 레코드이다.
+
+.. note:: 마지막의 ``out.stdout`` 은 생략해도 된다. 즉 아래도 같은 결과가 나온다.
+
+    .. code-block:: shell
+
+        swak run 'in.counter'
+
+
 
 설정 파일
 =========
@@ -72,8 +106,8 @@ Swak은 정식 설정파일을 작성하기 전에 플러그인의 기능을 테
 
     tags:
       foo:  # 이벤트 태그
-        # 가짜 데이터 생성
-        - in.fakedata -type people
+        # 카운트 데이터 생성
+        - in.counter -f 2
         # 표준 출력으로 이벤트 보냄
         - out.stdout
 
@@ -81,7 +115,7 @@ Swak은 정식 설정파일을 작성하기 전에 플러그인의 기능을 테
 
 1. ``tags`` 아래 다양한 이벤트 태그를 선언한다.
 2. ``foo`` 는 이벤트 태그로, 이벤트는 태그별로 처리된다.
-3. ``in.fakedata`` 플러그인을 통해 생성된 가짜 데이터는 같은 태그의 다음 플러그인으로 보내진다.
+3. ``in.counter`` 플러그인을 통해 생성된 카운트 데이터는 같은 태그의 다음 플러그인으로 보내진다.
 4. 출력 플러그인 ``out.stdout`` 은 받은 데이터를 표준 출력으로 보낸다.
 
 좀 더 복잡한 예

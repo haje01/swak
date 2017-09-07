@@ -7,6 +7,7 @@ from collections import namedtuple, defaultdict
 import hashlib
 import logging
 import types
+import json
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
@@ -420,9 +421,8 @@ class DummyOutput(BaseOutput):
         """Write event stream."""
         for time, record in es:
             self.events[tag].append((time, record))
-            stag = '' if tag == TEST_STREAM_TAG else "tag: {}, ".format(tag)
             if self.echo:
-                print("{}time: {}, record: {}".format(stag, time, record))
+                print(json.dumps((tag, time, record)))
 
     def reset(self, tag=None):
         """Reset events."""

@@ -57,8 +57,9 @@ def test_reform_normalize():
 
 def test_reform_expand(def_output):
     """Test expand syntax."""
-    # testpipeline placeholder expand
+    # test add fields by record field & predefined variable.
     adds = [
+        ("f2", "${record[f1]}_2"),
         ("host", "${hostname}"),
         ("addr", "${hostaddr}"),
         ("firsttag", "${tag_parts[0]}"),
@@ -69,7 +70,7 @@ def test_reform_expand(def_output):
     reform = Reform(adds, [])
     router = EventRouter(def_output)
     router.add_rule("a.b.c", reform)
-    router.emit("a.b.c", 0, {})
+    router.emit("a.b.c", 0, dict(f1="1"))
     assert "host" in def_output.events['a.b.c'][0][1]
     hostname = socket.gethostname()
     hostaddr = socket.gethostbyname(hostname)
@@ -77,6 +78,8 @@ def test_reform_expand(def_output):
     first2addr = "{}.{}".format(addr_parts[0], addr_parts[1])
     last2addr = "{}.{}".format(addr_parts[-2], addr_parts[-1])
     record = def_output.events['a.b.c'][0][1]
+
+    assert record['f2'] == '1_2'
     assert record['host'] == hostname
     assert record['addr'] == hostaddr
     assert record['firsttag'] == 'a'

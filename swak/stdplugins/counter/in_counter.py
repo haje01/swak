@@ -43,7 +43,7 @@ class Counter(BaseInput):
 
 
 @click.command(help="Generate incremental numbers.")
-@click.option('-c', '--count', default=5, show_default=True, help="Count to "
+@click.option('-c', '--count', default=3, show_default=True, help="Count to "
               "emit.")
 @click.option('-f', '--field', default=1, show_default=True, help="Count of "
               "fields.")
