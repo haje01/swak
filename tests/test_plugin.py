@@ -19,12 +19,12 @@ test_logconfig()
 
 def plugin_filter(_dir):
     """Filter plugins."""
-    return _dir in ['counter', 'stdout']
+    return _dir in ['scounter', 'stdout']
 
 
 def plugin_filter_ext(_dir):
     """Plugin filter for external plugin test."""
-    return _dir in ['testfoo']
+    return _dir in ['swak-testfoo']
 
 
 def test_plugin_cmd(capfd):
@@ -57,7 +57,7 @@ def test_plugin_init_cmd(capfd):
     """Test plugin init command."""
     # remove previous test pacakge.
     base_dir = get_plugins_dir(False)
-    plugin_dir = os.path.join(base_dir, 'testfoo')
+    plugin_dir = os.path.join(base_dir, 'swak-testfoo')
     if os.path.isdir(plugin_dir):
         shutil.rmtree(plugin_dir)
 
@@ -86,7 +86,7 @@ def test_plugin_init_cmd(capfd):
 
     # enumerate external plugins
     plugin_infos = list(iter_plugins(False, _filter=plugin_filter_ext))
-    assert plugin_infos[0].dname == 'testfoo'
+    assert plugin_infos[0].dname == 'swak-testfoo'
 
     # desc command should find new external plugins
     cmd = [SWAK_CLI, 'list']

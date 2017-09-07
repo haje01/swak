@@ -11,7 +11,6 @@ import json
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
-from swak.const import TEST_STREAM_TAG
 
 
 PREFIX = ['in', 'par', 'mod', 'buf', 'out']
@@ -452,7 +451,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     env = Environment(loader=PackageLoader('swak', 'static/templates'))
 
     base_dir = get_plugins_dir(False)
-    plugin_dir = os.path.join(base_dir, file_name)
+    plugin_dir = os.path.join(base_dir, 'swak-' + file_name)
     os.mkdir(plugin_dir)
 
     # create each type module
