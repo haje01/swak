@@ -51,6 +51,7 @@ setup(
         'pyyaml',
         'future',
         'tabulate',
+        'jinja2',
     ],
     dependency_links=[
         'http://github.com/serverdensity/python-daemon/master#egg='
@@ -63,7 +64,6 @@ setup(
             'pyinstaller',
             'tox',
             'sphinx',
-            'jinja2',
             'konlpy',
             'JPype1'
         ],
