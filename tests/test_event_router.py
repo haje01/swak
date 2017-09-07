@@ -6,8 +6,8 @@ import pytest
 from swak.event_router import EventRouter
 from swak.plugin import DummyOutput
 
-from swak.stdplugins.filter.mod_filter import Filter  # NOQA
-from swak.stdplugins.reform.mod_reform import Reform  # NOQA
+from swak.stdplugins.filter.mod_filter import Filter
+from swak.stdplugins.reform.mod_reform import Reform
 
 
 @pytest.fixture()

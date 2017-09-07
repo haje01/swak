@@ -33,8 +33,8 @@ def test_core_test_cmd():
         build_test_event_router(parse_and_validate_test_cmds('in.counter --foo'
                                                              ' 3'))
 
-    cmds = parse_and_validate_test_cmds('in.counter | mod.reform -a host '
-                                        '${hostname} -a tag ${tag} -d tag')
+    cmds = parse_and_validate_test_cmds('in.counter | mod.reform -w host '
+                                        '${hostname} -w tag ${tag} -d tag')
     router = run_test_cmds(cmds)
     record = router.default_output.events[TEST_STREAM_TAG][0][1]
     assert len(record) == 2

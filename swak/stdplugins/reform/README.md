@@ -1,22 +1,24 @@
 # swak-reform
 
 This is a reform modifier for Swak.
-Add, delete, overwrite record.
+You can write new field(key / value pair), update or delete existing field.
 
 ## Usage
 
-    Usage: mod.reform [OPTIONS]
+'''
+Usage: mod.reform [OPTIONS]
 
-      Add, delete and modify record.
+  Write or delete record field.
 
-    Options:
-      -a, --add <TEXT TEXT>...  Add new key / value pair.
-      -d, --del TEXT            Delete existing key / value pair by key.
-      --help                    Show this message and exit.
+Options:
+  -w, --write <TEXT TEXT>...  Write key / value pair.
+  -d, --delete TEXT           Delete existing key / value pair by key.
+  --help                      Show this message and exit.
+'''
 
 ## Refer Record Value by Field Name.
 
-You can refer the value of a field by its name. For example, if the record is `{"name": "john", "score": 100}` then `${record["name"]}` is `"john"` and `${record["score"]}` is `100`.
+You can refer the value of a field by its name. For example, if the record is `{"name": "john", "score": 100}` then `${record[name]}` is `"john"` and `${record[score]}` is `100`.
 
 
 ## Predefined Variables
@@ -25,7 +27,7 @@ You can use predefined variables in value.
 There are the following predefined variables.
 
 - `${time}` Current event's time.
-- `${record["KEY"]}` Current event's record. (like dictionary)
+- `${record[KEY]}` Refer field value of current record. (like dictionary)
 - `${tag}` Event tag
 - `${tag_parts[N]}` Refers Nth part of the seperated tag. (like zero based array)
 - `${hostname}` Host name

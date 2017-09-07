@@ -1,5 +1,5 @@
-from __future__ import absolute_import
-"""This module implements modifier plugin of reform."""  # NOQA
+from __future__ import absolute_import  # NOQA
+"""This module implements modifier plugin of reform."""
 
 import re
 import socket
@@ -109,18 +109,18 @@ def _make_default_placeholders():
 class Reform(BaseModifier):
     """Reform class."""
 
-    def __init__(self, adds, dels=[]):
+    def __init__(self, writes, deletes=[]):
         """Init.
 
         Args:
-            adds (list): List of (key, value) tuple to add.
-            dels (list): List of key to delete.
+            writes (list): List of (key, value) tuple to add.
+            deletes (list): List of key to delete.
         """
-        for k, v in adds:
+        for k, v in writes:
             assert isinstance(k, string_types), "Key must be a string"
             assert isinstance(k, string_types), "Value must be a string"
-        self.adds = adds
-        self.dels = dels
+        self.writes = writes
+        self.deletes = deletes
 
     def prepare_for_stream(self, tag, es):
         """Prepare to modify an event stream.
@@ -163,23 +163,23 @@ class Reform(BaseModifier):
         assert type(record) is dict
         self.placeholders['time'] = time
         self.placeholders['record'] = record
-        for key, val in self.adds:
+        for key, val in self.writes:
             record[key] = _expand(_normalize(val), self.placeholders)
 
-        for key in self.dels:
+        for key in self.deletes:
             del record[key]
 
         return time, record
 
 
-@click.command(help="Add, delete, overwrite record field.")
-@click.option('-a', '--add', "adds", type=(str, str), multiple=True,
-              help="Add new key / value pair.")
-@click.option('-d', '--del', "dels", type=str, multiple=True,
+@click.command(help="Write or delete record field.")
+@click.option('-w', '--write', "writes", type=(str, str), multiple=True,
+              help="Write key / value pair.")
+@click.option('-d', '--delete', "deletes", type=str, multiple=True,
               help="Delete existing key / value pair by key.")
-def main(adds, dels):
+def main(writes, deletes):
     """Plugin entry."""
-    return Reform(adds, dels)
+    return Reform(writes, deletes)
 
 
 if __name__ == '__main__':

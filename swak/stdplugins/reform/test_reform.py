@@ -23,8 +23,8 @@ def test_event_router_util():
 
 def test_reform_basic(def_output):
     """Test modifier basic."""
-    adds = [('k1', 'v1'), ('k2', 'v2')]
-    reform = Reform(adds, [])
+    writes = [('k1', 'v1'), ('k2', 'v2')]
+    reform = Reform(writes, [])
 
     # add field
     router = EventRouter(def_output)
@@ -58,7 +58,8 @@ def test_reform_normalize():
 def test_reform_expand(def_output):
     """Test expand syntax."""
     # test add fields by record field & predefined variable.
-    adds = [
+    writes = [
+        ("f1", "${record[f1]}_mod"),
         ("f2", "${record[f1]}_2"),
         ("host", "${hostname}"),
         ("addr", "${hostaddr}"),
@@ -67,7 +68,7 @@ def test_reform_expand(def_output):
         ("first2addr", "${hostaddr_parts[0]}.${hostaddr_parts[1]}"),
         ("last2addr", "${hostaddr_parts[-2]}.${hostaddr_parts[-1]}")
     ]
-    reform = Reform(adds, [])
+    reform = Reform(writes, [])
     router = EventRouter(def_output)
     router.add_rule("a.b.c", reform)
     router.emit("a.b.c", 0, dict(f1="1"))
@@ -79,7 +80,8 @@ def test_reform_expand(def_output):
     last2addr = "{}.{}".format(addr_parts[-2], addr_parts[-1])
     record = def_output.events['a.b.c'][0][1]
 
-    assert record['f2'] == '1_2'
+    assert record['f1'] == '1_mod'
+    assert record['f2'] == '1_mod_2'
     assert record['host'] == hostname
     assert record['addr'] == hostaddr
     assert record['firsttag'] == 'a'
