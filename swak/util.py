@@ -72,7 +72,7 @@ def update_dict(d, u):
         u (dict): Referential dictionary
 
     Returns:
-        dict: dictionary ``d``
+        dict: Update dictionary ``d``
 
     """
     for k, v in u.items():
@@ -151,12 +151,23 @@ def check_python_version():
 
 
 def _log_level_from_verbosity(verbosity):
+    """Get log level from verbosity count."""
     if verbosity == 0:
         return 40
     elif verbosity == 1:
         return 20
     elif verbosity >= 2:
         return 10
+
+
+def _verbosity_from_log_level(level):
+    """Get log level from verbosity."""
+    if level == 40:
+        return 0
+    elif level == 20:
+        return 1
+    elif level == 10:
+        return 2
 
 
 def set_log_verbosity(verbosity):

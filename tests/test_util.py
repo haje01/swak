@@ -3,13 +3,16 @@
 from __future__ import absolute_import
 
 import os
+import sys
 import tempfile
+import logging
 
 import pytest
 
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
-from swak.util import init_home, get_plugin_module_name
+from swak.util import init_home, get_plugin_module_name, update_dict,\
+    check_python_version, set_log_verbosity, _verbosity_from_log_level
 
 
 CFG = """
@@ -84,3 +87,20 @@ def test_util_cfg(test_home):
 def test_util_etc():
     """Test small utilities."""
     assert 'out_stdout.2' == get_plugin_module_name('out.stdout.2')
+
+    d1 = dict(a=1, b=2, d=dict(A=1, B=3))
+    d2 = dict(b=3, c=4, d=dict(A=2))
+    rv = update_dict(d1, d2)
+    assert rv == dict(a=1, b=3, c=4, d=dict(A=2, B=3))
+
+    vi = sys.version_info
+    rv = check_python_version()
+    assert rv == vi.major
+
+    logger = logging.getLogger()
+    org_level = logger.getEffectiveLevel()
+    org_verbosity = _verbosity_from_log_level(org_level)
+    set_log_verbosity(0)
+    new_level = logger.getEffectiveLevel()
+    assert new_level == 40
+    set_log_verbosity(org_verbosity)
