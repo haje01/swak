@@ -8,7 +8,7 @@ import shutil
 import types
 
 from swak.config import get_exe_dir
-from swak.plugin import iter_plugins, get_plugins_dir, calc_plugins_hash,\
+from swak.plugin import iter_plugins, get_plugins_dir,\
     get_plugins_initpy_path, PREFIX, import_plugins_package
 from swak.util import test_logconfig
 
@@ -37,7 +37,7 @@ def test_plugin_cmd(capfd):
 
     out, err = capfd.readouterr()
     print(err)
-    assert 'Swak has 4 standard plugins' in out
+    assert 'standard plugins' in out
 
     # after first command, plugins/__init__.py shall exist.
     assert os.path.isfile(get_plugins_initpy_path(True))
@@ -84,6 +84,12 @@ def test_plugin_init_cmd(capfd):
         assert '# swak-testfoo' in text
         assert "plugin package for Swak" in text
 
+    test_file = os.path.join(plugin_dir, 'test_testfoo.py')
+    assert os.path.isfile(test_file)
+    with open(test_file, 'rt') as f:
+        code = f.read()
+        assert 'test_testfoo' in code
+
     # enumerate external plugins
     plugin_infos = list(iter_plugins(False, _filter=plugin_filter_ext))
     assert plugin_infos[0].dname == 'swak-testfoo'
@@ -122,13 +128,6 @@ def test_plugin_util():
     # check external plugin dir
     path = os.path.join(get_exe_dir(), 'plugins')
     assert path == get_plugins_dir(False)
-
-
-def test_plugin_initpy():
-    """Test plugin __init__.py."""
-    # test plugin checksum
-    h = calc_plugins_hash(iter_plugins(True, plugin_filter))
-    assert '94d7a4e72a88639e8a136ea821effcdb' == h
 
 
 def test_plugin_import():

@@ -439,7 +439,8 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
 
     - One or more plugin type module
     - __init__.py
-    - README.me file
+    - README.md file
+    - test_(file_name).py file
 
     Args:
         prefixed (list): List of plugin prefixes
@@ -474,6 +475,13 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
         tpl = env.get_template('tmpl_readme.md')
         code = tpl.render(class_name=class_name, type_name=typen,
                           base_name=basen, file_name=file_name)
+        f.write(code)
+
+    # create test file
+    test_file = os.path.join(plugin_dir, 'test_{}.py'.format(file_name))
+    with open(test_file, 'wt') as f:
+        tpl = env.get_template('tmpl_unittest.py')
+        code = tpl.render(class_name=class_name, type_name=typen)
         f.write(code)
 
     # create __init__.py
