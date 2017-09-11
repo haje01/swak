@@ -1,5 +1,4 @@
 """This module implements plugin test."""
-
 from __future__ import absolute_import
 
 import os
@@ -9,7 +8,8 @@ import types
 
 from swak.config import get_exe_dir
 from swak.plugin import iter_plugins, get_plugins_dir,\
-    get_plugins_initpy_path, PREFIX, import_plugins_package
+    get_plugins_initpy_path, PREFIX, import_plugins_package, TextInput,\
+    Parser
 from swak.util import test_logconfig
 
 SWAK_CLI = 'swak.bat' if os.name == 'nt' else 'swak'
@@ -136,3 +136,35 @@ def test_plugin_import():
     assert isinstance(stdplugins, types.ModuleType)
     __import__('stdplugins.counter')
     __import__('stdplugins.filter')
+
+
+def test_plugin_basic(router):
+    """Test plugins basic features."""
+    class FooInput(TextInput):
+        def read_lines(self):
+            yield "john 1"
+            yield "jane 2"
+            yield "smith 3"
+
+    class FooParser(Parser):
+        def parse(self, line):
+            name, rank = line.split()
+            return dict(name=name, rank=rank)
+
+    parser = FooParser()
+    parser.set_router(router)
+    dtinput = FooInput()
+    dtinput.set_router(router)
+    dtinput.set_parser(parser)
+    dtinput.set_tag("test")
+
+    def filter(line):
+        return 'j' in line
+
+    dtinput.set_filter_func(filter)
+    dtinput.read()
+
+    events = router.def_output.events['test']
+    assert len(events) == 2
+    assert events[0][1]['name'] == 'john'
+    assert events[1][1]['name'] == 'jane'

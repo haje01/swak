@@ -24,7 +24,7 @@ def test_core_test_cmd():
     assert cmds[0][3] == '--field'
 
     router = run_test_cmds(cmds, True)
-    records = router.default_output.events[TEST_STREAM_TAG]
+    records = router.def_output.events[TEST_STREAM_TAG]
     assert len(records) == 4
     record = records[0][1]
     assert record == dict(f1=1, f2=1, f3=1)
@@ -36,7 +36,7 @@ def test_core_test_cmd():
     cmds = parse_and_validate_test_cmds('in.counter | mod.reform -w host '
                                         '${hostname} -w tag ${tag} -d tag')
     router = run_test_cmds(cmds)
-    record = router.default_output.events[TEST_STREAM_TAG][0][1]
+    record = router.def_output.events[TEST_STREAM_TAG][0][1]
     assert len(record) == 2
     assert 'host' in record      # inserted
     assert 'tag' not in record   # deleted (overrided)

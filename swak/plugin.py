@@ -4,10 +4,10 @@ import os
 import sys
 import glob
 from collections import namedtuple, defaultdict
-import hashlib
 import logging
 import types
 import json
+import time as mtime
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
@@ -24,7 +24,12 @@ class Plugin(object):
 
     def __init__(self):
         """Init."""
+        self.router = None
         self.started = self.terminated = False
+
+    def set_router(self, router):
+        """Set router for the plugin."""
+        self.router = router
 
     def start(self):
         """Start plugin.
@@ -55,34 +60,120 @@ class Plugin(object):
         self.terminated = True
 
 
-class BaseInput(Plugin):
-    """Base class for input plugin.
-
-    Implementation of following functions is required:
-
-        ``read``
-    """
+class Input(Plugin):
+    """Base class for input plugin."""
 
     def __init__(self):
-        """Init."""
-        super(BaseInput, self).__init__()
-        self.filter_fn = None
+        """Init.
+
+        Args:
+            tag (str): An event tag.
+        """
+        super(Input, self).__init__()
+        self.tag = None
+
+    def set_tag(self, tag):
+        """Set tag."""
+        self.tag = tag
 
     def read(self):
-        """Read data from source.
+        """Read input from source and emit to event router."""
+        raise NotImplementedError()
 
-        It is implemented in the following format.
+    def emit(self, record):
+        """Emit a record.
 
-        1. Read the line-delimited text from the source.
-        2. If the ``encoding`` is specified, convert it to ``utf8`` text.
-        3. Separate text by new line,
-        4. Filter lines if filter function exists.
-        5. Yield them. If this is an input plugin for data of a known type,
-           such as ``syslog``, it shall parse itself and return the record,
-           otherwise it will just return the line.
-
+        Args:
+            record (dict)
         """
-        raise NotImplemented()
+        assert self.router is not None, "Plugin needs a router."
+        assert self.tag is not None, "Input plugin needs a event tag."
+        time = mtime.time()
+        self.router.emit(self.tag, time, record)
+
+
+class RecordInput(Input):
+    """Base class for input plugin which emits record.
+
+    This if usually for a generative input plugin which generate data and
+        **emit** record directly to the event router. (no following parser is
+        needed.)
+
+    Function to be implemented:
+
+        ``read_record``
+    """
+
+    def read(self):
+        """Read records and emit them to the router."""
+        for record in self.generate_records():
+            self.emit(record)
+
+    def generate_records(self):
+        """Yield multiple records.
+
+        Yields:
+            dict: A record
+        """
+        raise NotImplementedError()
+
+
+class TextInput(Input):
+    """Base class for input plugin which reads text and emits line.
+
+    This is usally for a plugin which reads text from source, seperate it by
+        lines and **feed** them to the following parser.
+
+    Function to be implemented:
+
+        ``read_line``
+    """
+
+    def __init__(self, encoding=None):
+        """Init.
+
+        Args:
+            encoding (str): String encoding for non-utf8 string.
+        """
+        super(Input, self).__init__()
+        self.parser = None
+        self.filter_fn = None
+        self.encoding = None
+
+    def set_parser(self, parser):
+        """Set parser for this TextInput plugin."""
+        self.parser = parser
+
+    def set_encoding(self, encoding):
+        """Set encoding of input source.
+
+        Args:
+            encoding (str): Encoding of input source.
+        """
+        self.encoding = encoding
+
+    def read(self):
+        """Read data from source, parse and emit results to the router."""
+        assert self.parser is not None, "Text input plugin needs a parser."
+        for line in self.read_lines():
+            if line is None:
+                break
+            if self.encoding is not None:
+                line = line.decode(self.encoding)
+            if self.filter_fn is not None:
+                if not self.filter_fn(line):
+                    continue
+
+            record = self.parser.parse(line)
+            self.emit(record)
+
+    def read_lines(self):
+        """Read lines.
+
+        Yields:
+            str: A line
+        """
+        raise NotImplementedError()
 
     def filter(self, line):
         """Filter unparsed raw line.
@@ -105,7 +196,7 @@ class BaseInput(Plugin):
         self.filter_fn = func
 
 
-class BaseParser(Plugin):
+class Parser(Plugin):
     """Base class for parser plugin.
 
     Following methods should be implemented:
@@ -113,12 +204,19 @@ class BaseParser(Plugin):
 
     """
 
-    def parse(self):
-        """Parse."""
+    def parse(self, line):
+        """Parse.
+
+        Args:
+            line (str): Line to parse.
+
+        Returns:
+            dict: Parsed result.
+        """
         raise NotImplemented()
 
 
-class BaseModifier(Plugin):
+class Modifier(Plugin):
     """Base class for modify plugin.
 
     Following methods should be implemented:
@@ -153,7 +251,7 @@ class BaseModifier(Plugin):
         raise NotImplemented()
 
 
-class BaseBuffer(Plugin):
+class Buffer(Plugin):
     """Base class for buffer plugin.
 
     Following methods should be implemented:
@@ -166,7 +264,7 @@ class BaseBuffer(Plugin):
         raise NotImplemented()
 
 
-class BaseOutput(Plugin):
+class Output(Plugin):
     """Base class for output plugin.
 
     Following methods should be implemented:
@@ -188,25 +286,12 @@ class BaseOutput(Plugin):
         raise NotImplemented()
 
 
-class BaseCommand(Plugin):
-    """Base class for command plugin.
-
-    Following methods should be implemented:
-        execute
-
-    """
-
-    def execute(self):
-        """Execute command."""
-        raise NotImplemented()
-
-
 BASE_CLASS_MAP = {
-    'in': BaseInput,
-    'par': BaseParser,
-    'mod': BaseModifier,
-    'buf': BaseBuffer,
-    'out': BaseOutput,
+    'in': Input,
+    'par': Parser,
+    'mod': Modifier,
+    'buf': Buffer,
+    'out': Output,
 }
 
 
@@ -358,28 +443,6 @@ def load_module(name, path):
         raise UnsupportedPython()
 
 
-def calc_plugins_hash(plugin_infos):
-    """Make plugins hash.
-
-    Hash value is made by md5 algorithm with plugin module names.
-    If no plugin_infos exist, return 'NA'
-
-    Args:
-        plugin_infos: generator of PluginInfo
-
-    Returns:
-        str: Hexadecimal hash value
-    """
-    m = hashlib.md5()
-    cnt = 0
-    for pi in plugin_infos:
-        m.update(pi.fname.encode('utf8'))
-        cnt += 1
-    if cnt == 0:
-        return 'NA'
-    return m.hexdigest()
-
-
 def get_plugins_initpy_path(standard):
     """Return path of plugins/__init__.py."""
     return os.path.join(get_plugins_dir(standard), '__init__.py')
@@ -403,7 +466,7 @@ def _remove_plugins_initpy(standard):
     remove(get_plugins_initpy_path(standard))
 
 
-class DummyOutput(BaseOutput):
+class DummyOutput(Output):
     """Output plugin for test."""
 
     def __init__(self, echo=False):
@@ -459,8 +522,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     for prefix in prefixes:
         fname = '{}_{}.py'.format(prefix, file_name)
         module_file = os.path.join(plugin_dir, fname)
-        tmpl_name = 'tmpl_{}.py'.format(_get_base_class_name(prefix)[4:].
-                                        lower())
+        tmpl_name = 'tmpl_{}.py'.format(_get_base_class_name(prefix).lower())
         tpl = env.get_template(tmpl_name)
         basen = _get_full_name(prefix, True)
         typen = _get_full_name(prefix, False)

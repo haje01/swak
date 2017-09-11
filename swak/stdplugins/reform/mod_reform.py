@@ -7,7 +7,7 @@ import socket
 import click
 from six import string_types
 
-from swak.plugin import BaseModifier
+from swak.plugin import Modifier
 
 # Syntax patterns
 ptrn_tag_parts = re.compile(r'{tag_parts\[(-?\d)\]}')
@@ -49,7 +49,7 @@ def _normalize(expr):
     Args:
         expr (str): Value expression
 
-    Return:
+    Returns:
         str: Formalized string
     """
     expr = ptrn_variable.sub('%[%[\\1%]%]', expr)
@@ -106,7 +106,7 @@ def _make_default_placeholders():
     return pholder
 
 
-class Reform(BaseModifier):
+class Reform(Modifier):
     """Reform class."""
 
     def __init__(self, writes, deletes=[]):

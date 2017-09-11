@@ -5,10 +5,10 @@ import json
 
 import click
 
-from swak.plugin import BaseOutput
+from swak.plugin import Output
 
 
-class Stdout(BaseOutput):
+class Stdout(Output):
     """Stdout class."""
 
     def write_stream(self, tag, es):

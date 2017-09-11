@@ -11,12 +11,6 @@ from swak.stdplugins.reform.mod_reform import Reform
 
 
 @pytest.fixture()
-def def_output():
-    """Create default output and returns it."""
-    return DummyOutput()
-
-
-@pytest.fixture()
 def filter():
     """Create filter plugin and returns it."""
     return Filter([("k", "V")])

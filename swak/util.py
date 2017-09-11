@@ -190,7 +190,7 @@ def get_plugin_module_name(plugin_name):
     Args:
         plugin_name (str): plugin full name
 
-    Return:
+    Returns:
         str: Plugin module name
     """
     elm = plugin_name.split('.')

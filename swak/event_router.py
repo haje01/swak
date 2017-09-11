@@ -3,7 +3,7 @@ import logging
 
 from swak.event import OneEventStream, MultiEventStream
 from swak.match import MatchPattern, OrMatchPattern
-from swak.plugin import BaseModifier
+from swak.plugin import Modifier, Output
 from swak.config import select_and_parse
 
 _, cfg = select_and_parse()
@@ -128,16 +128,17 @@ class EventRouter(object):
     Collector is either of Output, Modifier.
     """
 
-    def __init__(self, default_output):
+    def __init__(self, def_output):
         """init.
 
         Args:
-            default_output (BaseOutput): Output plugin
+            def_output (Output): Default output plugin
         """
         super(EventRouter, self).__init__()
         self.rules = []
         self.match_cache = {}
-        self.default_output = default_output
+        assert isinstance(def_output, Output)
+        self.def_output = def_output
 
     def emit(self, tag, time, record):
         """Emit one event.
@@ -173,7 +174,7 @@ class EventRouter(object):
 
         Args:
             pattern (str): Multiple Glob pattern seperated by space.
-            collector
+            collector (Plugin): Input or Modifier or Output plugin
         """
         logging.debug("add_rule pattern {} collector {}".
                       format(pattern, collector))
@@ -211,11 +212,11 @@ class EventRouter(object):
             if not rule.match(tag):
                 continue
             logging.debug("rule {}".format(rule))
-            if isinstance(rule.collector, BaseModifier):
+            if isinstance(rule.collector, Modifier):
                 pipeline.add_modifier(rule.collector)
-            else:
+            elif isinstance(rule.collector, Output):
                 pipeline.set_output(rule.collector)
                 return pipeline
 
-        pipeline.set_output(self.default_output)
+        pipeline.set_output(self.def_output)
         return pipeline

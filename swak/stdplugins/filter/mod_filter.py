@@ -4,7 +4,7 @@ import re
 
 import click
 
-from swak.plugin import BaseModifier
+from swak.plugin import Modifier
 
 
 def make_effective_patterns(ptrns):
@@ -18,7 +18,7 @@ def make_effective_patterns(ptrns):
     return result
 
 
-class Filter(BaseModifier):
+class Filter(Modifier):
     """Filter class."""
 
     def __init__(self, includes, excludes=[]):

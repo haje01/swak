@@ -4,10 +4,10 @@ import time
 
 import click
 
-from swak.plugin import BaseInput
+from swak.plugin import Input
 
 
-class Counter(BaseInput):
+class Counter(Input):
     """Counter input plugin class."""
 
     def __init__(self, count, field, delay):

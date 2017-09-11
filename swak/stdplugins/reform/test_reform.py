@@ -2,18 +2,9 @@
 
 import socket
 
-import pytest
-
-from swak.plugin import DummyOutput
 from swak.event_router import EventRouter
 
 from .mod_reform import Reform, _tag_suffix, _normalize
-
-
-@pytest.fixture()
-def def_output():
-    """Create default output and returns it."""
-    return DummyOutput()
 
 
 def test_event_router_util():
@@ -22,7 +13,7 @@ def test_event_router_util():
 
 
 def test_reform_basic(def_output):
-    """Test modifier basic."""
+    """Test basic features of reform plugin."""
     writes = [('k1', 'v1'), ('k2', 'v2')]
     reform = Reform(writes, [])
 

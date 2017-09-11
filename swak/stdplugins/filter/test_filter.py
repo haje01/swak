@@ -42,7 +42,7 @@ def emit_to_new_router(doutput, modifiers):
 
 
 def test_filter_basic(def_output):
-    """Test filter basic."""
+    """Test basic features of filter plugin."""
     # test include
     includes = [("k1", "a")]
     filter = Filter(includes)

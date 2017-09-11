@@ -5,7 +5,7 @@ import logging
 import time
 import sys
 
-from swak.plugin import BaseInput
+from swak.plugin import Input
 from swak.event_router import EventRouter
 from swak.plugin import DummyOutput, import_plugins_package
 from swak.const import TEST_STREAM_TAG
@@ -89,7 +89,7 @@ def build_test_event_router(cmds, _test=False):
         _test (bool): Test mode
 
     Returns:
-        BaseInput: Starting input plugin
+        Input: Starting input plugin
         EventRouter
     """
     input_plugin = None
@@ -99,7 +99,7 @@ def build_test_event_router(cmds, _test=False):
         pname = cmd[0]
         plugin = _create_plugin_by_name(pname, args)
         if i == 0:
-            assert isinstance(plugin, BaseInput)
+            assert isinstance(plugin, Input)
             input_plugin = plugin
         else:
             router.add_rule(TEST_STREAM_TAG, plugin)
@@ -114,7 +114,7 @@ def run_test_cmds(cmds, _test=False):
         cmds (list): Parsed command list
         _test (bool): Test mode
 
-    Return:
+    Returns:
         EventRouter: To test result.
     """
     input_plugin, router = build_test_event_router(cmds, _test)
