@@ -45,30 +45,6 @@ setup(
     packages=['swak', 'swak.stdplugins'] + std_plugins,
     scripts=SCRIPTS,
     license=['MIT License'],
-    install_requires=[
-        'six',
-        'click',
-        'pyyaml',
-        'future',
-        'tabulate',
-        'jinja2',
-    ],
-    dependency_links=[
-        'http://github.com/serverdensity/python-daemon/master#egg='
-        'python_daemon'
-    ],
-    extras_require={
-        'dev': [
-            'pytest',
-            'coverage',
-            'codecov',
-            'pyinstaller',
-            'tox',
-            'sphinx',
-            'konlpy',
-            'JPype1'
-        ],
-    },
     keywords=['system'],
     classifiers=[
         'License :: OSI Approved :: MIT License',

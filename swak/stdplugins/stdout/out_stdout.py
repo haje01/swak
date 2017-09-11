@@ -14,7 +14,7 @@ class Stdout(Output):
     def write_stream(self, tag, es):
         """Write event stream."""
         for time, record in es:
-            print(json.dumps((tag, time, record)))
+            print("{}\t{}\t{}".format(time, tag, json.dumps(record)))
 
 
 @click.command(help="Output to standard output.")

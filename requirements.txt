@@ -1,7 +1,10 @@
-six
-click
--e git://github.com/serverdensity/python-daemon.git#egg=python-daemon
-pyyaml
-future
-tabulate
-jinja2
+click==6.7
+future==0.16.0
+Jinja2==2.9.6
+MarkupSafe==1.0
+PyInstaller==3.2.1
+PyYAML==3.12
+six==1.10.0
+-e git+https://github.com/serverdensity/python-daemon@843cb593f4f942c70155be3a5e41c18734c96662#egg=python_daemon
+tabulate==0.7.7
+pytz==2017.2

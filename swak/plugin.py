@@ -484,7 +484,7 @@ class DummyOutput(Output):
         for time, record in es:
             self.events[tag].append((time, record))
             if self.echo:
-                print(json.dumps((tag, time, record)))
+                print("{}\t{}\t{}".format(time, tag, json.dumps(record)))
 
     def reset(self, tag=None):
         """Reset events."""

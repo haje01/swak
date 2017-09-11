@@ -111,8 +111,8 @@ def desc(ctx, plugin):
 @main.command(help="Run '|' seperated test commands.")
 @click.argument('commands')
 @click.pass_context
-def run(ctx, commands):
-    """Run commands for test.
+def test(ctx, commands):
+    """Run test commands.
 
     Args:
         commands (str): Test commands concated with '|'
