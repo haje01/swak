@@ -26,7 +26,7 @@ Swak 소개
     git clone https://github.com/haje01/swak.git
     cd swak
     pip install -r requirements.txt
-    pip intall .
+    pip intall . -e
 
 
 플러그인 구조

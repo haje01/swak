@@ -4,10 +4,10 @@ import time
 
 import click
 
-from swak.plugin import Input
+from swak.plugin import RecordInput
 
 
-class Counter(Input):
+class Counter(RecordInput):
     """Counter input plugin class."""
 
     def __init__(self, count, field, delay):
@@ -23,8 +23,8 @@ class Counter(Input):
         self.field = field
         self.delay = delay
 
-    def read(self):
-        """Read data from source.
+    def generate_records(self):
+        """Yield multiple records.
 
         Yields:
             dict
