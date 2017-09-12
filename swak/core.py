@@ -2,12 +2,10 @@
 
 import re
 import logging
-import time
 import sys
 
-from swak.plugin import Input
 from swak.event_router import EventRouter
-from swak.plugin import DummyOutput, import_plugins_package
+from swak.plugin import Input, DummyOutput, import_plugins_package
 from swak.const import TEST_STREAM_TAG
 from swak.util import get_plugin_module_name
 
@@ -98,6 +96,10 @@ def build_test_event_router(cmds, _test=False):
         args = cmd[1:]
         pname = cmd[0]
         plugin = _create_plugin_by_name(pname, args)
+        plugin.set_router(router)
+        if isinstance(plugin, Input):
+            plugin.set_tag(TEST_STREAM_TAG)
+
         if i == 0:
             assert isinstance(plugin, Input)
             input_plugin = plugin
@@ -118,14 +120,5 @@ def run_test_cmds(cmds, _test=False):
         EventRouter: To test result.
     """
     input_plugin, router = build_test_event_router(cmds, _test)
-    # pline.validate()
-    for data in input_plugin.read():
-        t = time.time()
-        if type(data) is str:
-            # text
-            raise NotImplemented()
-        else:
-            # record
-            router.emit(TEST_STREAM_TAG, t, data)
-
+    input_plugin.read()
     return router

@@ -3,7 +3,6 @@ import time
 
 import pytest
 
-from swak.event_router import EventRouter
 from swak.plugin import DummyOutput
 
 from swak.stdplugins.filter.mod_filter import Filter
@@ -22,39 +21,43 @@ def output():
     return DummyOutput()
 
 
-def test_event_router_pipeline(def_output):
+def test_event_router_pipeline(router):
     """Test event router cache."""
-    router = EventRouter(def_output)
     assert len(router.match_cache) == 0
     router.emit("a.b.c", 0, {"k": "v"})
     assert len(router.match_cache) == 1
 
 
-def test_event_router_basic(def_output, filter, output):
+def test_event_router_basic(router):
     """Test event router."""
     # router with only default output.
-    router = EventRouter(def_output)
     router.emit("test", time.time(), {"k": "v"})
-    assert len(def_output.events['test']) == 1
+    assert len(router.def_output.events['test']) == 1
 
-    # router with an output
-    def_output.reset()
-    router = EventRouter(def_output)
+
+def test_event_router_basic2(router, output):
+    """Test router with an output."""
     router.add_rule("test", output)
     router.emit("test", time.time(), {"k": "v"})
     assert len(output.events['test']) == 1
 
-    # router with modifier & output.
-    output.reset()
+
+def test_event_router_basic3(router, output, filter):
+    """Test router with modifier & output."""
     assert len(output.events['test']) == 0
-    router = EventRouter(def_output)
     router.add_rule("test", filter)
     router.add_rule("test", output)
     router.emit("test", time.time(), {"k": "v"})
+    # the record filtered out.
     assert len(output.events['test']) == 0
 
+    # unmatched event goes to default output
+    router.emit("foo", time.time(), {"k": "v"})
+    assert 'foo' in router.def_output.events
+    assert 'foo' not in output.events
 
-def test_event_router_complex(def_output):
+
+def test_event_router_complex(router):
     r"""Test V shaped event router.
 
     a     b
@@ -64,25 +67,25 @@ def test_event_router_complex(def_output):
     reform_a = Reform([('a', "1")])
     reform_b = Reform([('b', "2")])
     reform_c = Reform([('c', "3")])
-    router = EventRouter(def_output)
+
     router.add_rule("a", reform_a)
     router.add_rule("b", reform_b)
     router.add_rule("*", reform_c)
 
     # Pipeline: a -> c
-    def_output.reset()
+    router.def_output.reset()
     router.emit("a", 0, {})
-    record = def_output.events["a"][0][1]
+    record = router.def_output.events["a"][0][1]
     assert dict(a="1", c="3") == record
 
     # Pipeline: b -> c
-    def_output.reset()
+    router.def_output.reset()
     router.emit("b", 0, {})
-    record = def_output.events["b"][0][1]
+    record = router.def_output.events["b"][0][1]
     assert dict(b="2", c="3") == record
 
     # Pipeline: c
-    def_output.reset()
+    router.def_output.reset()
     router.emit("c", 0, {})
-    record = def_output.events["c"][0][1]
+    record = router.def_output.events["c"][0][1]
     assert dict(c="3") == record

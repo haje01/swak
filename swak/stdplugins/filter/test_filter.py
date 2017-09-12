@@ -1,17 +1,8 @@
 """Test filter plugin."""
 
-import pytest
-
 from swak.event_router import EventRouter
-from swak.plugin import DummyOutput
 
 from .mod_filter import Filter
-
-
-@pytest.fixture()
-def def_output():
-    """Create default output and returns it."""
-    return DummyOutput()
 
 
 def init_event_router(doutput, modifiers):
