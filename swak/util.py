@@ -196,3 +196,22 @@ def get_plugin_module_name(plugin_name):
     elm = plugin_name.split('.')
     assert len(elm) > 1
     return '{}_{}'.format(elm[0], '.'.join(elm[1:]))
+
+
+def which_exe(program):
+    """Find executable location."""
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None

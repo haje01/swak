@@ -11,6 +11,7 @@ import time as mtime
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
+from swak.const import PLUGIN_PREFIX
 
 
 PREFIX = ['in', 'par', 'mod', 'buf', 'out']
@@ -519,7 +520,8 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     env = Environment(loader=PackageLoader('swak', 'static/templates'))
 
     base_dir = get_plugins_dir(False)
-    plugin_dir = os.path.join(base_dir, 'swak-' + file_name)
+    plugin_dir = os.path.join(base_dir, '{}-{}'.format(PLUGIN_PREFIX,
+                                                       file_name))
     os.mkdir(plugin_dir)
 
     # create each type module
@@ -539,8 +541,9 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     readme_file = os.path.join(plugin_dir, 'README.md')
     with open(readme_file, 'wt') as f:
         tpl = env.get_template('tmpl_readme.md')
-        code = tpl.render(class_name=class_name, type_name=typen,
-                          base_name=basen, file_name=file_name)
+        code = tpl.render(plugin_prefix=PLUGIN_PREFIX, class_name=class_name,
+                          type_name=typen, base_name=basen,
+                          file_name=file_name)
         f.write(code)
 
     # create test file

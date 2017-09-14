@@ -1,4 +1,4 @@
-# swak-{{file_name}}
+# {{plugin_prefix}}-{{file_name}}
 
 This is a {{type_name}} plugin package for Swak.
 

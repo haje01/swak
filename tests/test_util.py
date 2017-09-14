@@ -12,7 +12,8 @@ import pytest
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
 from swak.util import init_home, get_plugin_module_name, update_dict,\
-    check_python_version, set_log_verbosity, _verbosity_from_log_level
+    check_python_version, set_log_verbosity, _verbosity_from_log_level,\
+    which_exe
 
 
 CFG = """
@@ -104,3 +105,5 @@ def test_util_etc():
     new_level = logger.getEffectiveLevel()
     assert new_level == 40
     set_log_verbosity(org_verbosity)
+
+    assert which_exe('date') is not None
