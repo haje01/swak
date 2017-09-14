@@ -30,7 +30,7 @@ class Dummy(RecordInput):
             yield self.record
 
 
-@click.command(help="Generates user input as dummy event.")
+@click.command(help="Generate user input as dummy event.")
 @click.argument('record')
 @click.option('-c', '--count', help="Counter to repeat dummy record.")
 @click.pass_context

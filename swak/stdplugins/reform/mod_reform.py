@@ -172,7 +172,7 @@ class Reform(Modifier):
         return time, record
 
 
-@click.command(help="Write or delete record field.")
+@click.command(help="Write or delete record fields.")
 @click.option('-w', '--write', "writes", type=(str, str), multiple=True,
               help="Write key / value pair.")
 @click.option('-d', '--delete', "deletes", type=str, multiple=True,

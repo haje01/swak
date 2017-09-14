@@ -272,6 +272,10 @@ class Output(Plugin):
 
     """
 
+    def __init__(self):
+        """Init."""
+        super(Output, self).__init__()
+
     def write_stream(self, tag, es):
         """Write event stream synchronously.
 
@@ -306,7 +310,7 @@ def _get_full_name(prefix, class_name):
     name = _get_base_class_name(prefix)
     if class_name:
         return name
-    return name[4:].lower()
+    return name.lower()
 
 
 def get_plugins_dir(standard, _home=None):
