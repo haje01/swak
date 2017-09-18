@@ -104,19 +104,19 @@ Swak은 정식 설정파일을 작성하기 전에 플러그인의 기능을 테
 
 .. code-block:: yaml
 
-    tags:
-      foo:  # 이벤트 태그
-        # 카운트 데이터 생성
-        - in.counter -f 2
-        # 표준 출력으로 이벤트 보냄
-        - out.stdout
+    sources:
+        - in.counter --tag test # 'test' 이벤트 스트림으로 카운트 이벤트 보냄
+
+    matches:
+        test:  # 'test' 이벤트 스트림의 이벤트를
+            - out.stdout  # 표준 출력에 출력
 
 위의 스크립트는 다음과 같은 식으로 이해하면 된다.
 
-1. ``tags`` 아래 다양한 이벤트 태그를 선언한다.
-2. ``foo`` 는 이벤트 태그로, 이벤트는 태그별로 처리된다.
-3. ``in.counter`` 플러그인을 통해 생성된 카운트 데이터는 같은 태그의 다음 플러그인으로 보내진다.
-4. 출력 플러그인 ``out.stdout`` 은 받은 데이터를 표준 출력으로 보낸다.
+1. ``sources`` 아래 다양한 입력 플러그인들을 선언한다.
+2. ``in.counter`` 에서 발생한 이벤트의 태그를 ``--tag test`` 로 지정한다.
+3. ``matches`` 아래 다양한 태그를 위한 처리 플러그인이 정의된다.
+4. ``test`` 태그로 보내진 이벤트를 ``out.stdout`` 플러그인을 통해 표준 출력으로 보낸다.
 
 좀 더 복잡한 예
 ---------------
@@ -125,10 +125,12 @@ Swak은 정식 설정파일을 작성하기 전에 플러그인의 기능을 테
 
 .. code-block:: yaml
 
-    tags:
-      foo:  # 이벤트 태그
-        # 주석행을 제거하며 대상 파일 테일링
-        - in.filetail --path C:\myprj\logs\mylog.txt --posdir C:\swak_temp\pos --encoding: cp949 --exclude ^\S*#.*
+    sources:
+      # 주석행을 제거하며 대상 파일 테일링하고 'test' 이벤트 스트림으로 보냄.
+      - in.filetail --tag test --path C:\myprj\logs\mylog.txt --posdir C:\swak_temp\p
+
+    matches:
+      test:  # 이벤트 태그
         # 커스텀 포맷 파서
         - par.mylog
         # 5분 단위로 버퍼링
@@ -149,28 +151,18 @@ Swak은 정식 설정파일을 작성하기 전에 플러그인의 기능을 테
 
 .. code-block:: yaml
 
-    tags:
-      detect:
-        - out.exec --cmd "/usr/bin/r /etc/detect_abuse.r" --out /tmp/detected.tsv
+    sources:
+      - in.counter --tag started
 
-      collect:
-        - in.mysqltail --ip 127.0.0.1 --db logdb --table logtbl
-        - buf.file size --lines 100 --tag detect
+    matches:
+      started:
+        - mod.reform -w host ${hostname} --tag modified
 
-이 경우는 이 경우는 ``detect`` 태그에 인풋 플러그인이 없기에, ``collect`` 태그 부터 실행된다. 다음과 같은 순서이다.
+      modified:
+        - out.stdout
 
-1. ``in.mysqltail``
-2. ``buf.file``
-3. ``out.exec``
 
-하나씩 살펴보자.
-
-1. 먼저 ``collect`` 태그의 ``in.mysqltail`` 플러그인이 지정된 MySQL DB의 테이블에서 추가되는 행을 태그로 보낸다.
-2. ``buf.file size`` 는 태그의 내용을 파일 버퍼에 쌓아두다가, 지정한 행 수가 되었을 때 모아서(청크) 다음 플러그인으로 전달해 지나친 IO 사용을 막아준다. 전달시에는 새로운 태그 ``detect`` 를 지정한다.
-3. ``detect`` 태그에서 ``out.exec`` 플러그인은 버퍼링된 청크를 받고
-4. 지정된 별도 프로세스에서 처리한 후, 그 결과를 출력 파일에 저장한다.
-
-.. note:: 각 태그는 입력 플러그인이 있다면 등장 순서대로 시작되고, 없다면 매칭되는 이벤트가 있을 때 시작된다.
+이 경우는 ``in.counter`` 에서 생성된 이벤트가 ``started`` 태그를 통해 ``mod.reform`` 에서 처리되고, 다시 ``modified`` 태그로 ``out.stdout`` 플러그인에 전달된다.
 
 
 설정 파일 테스트
