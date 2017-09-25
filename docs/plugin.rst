@@ -66,6 +66,16 @@
 
 .. tip:: 입력과 출력 플러그인은 각각 시작과 끝에 처리되지만, 나머지 종류의 플러그인 들은 꼭 이 순서대로 처리되는 것은 아니다. 새로운 태그 지정을 통해 다양한 순서로 처리될 수 있다.
 
+플러그인의 인자 검증
+--------------------
+
+플러그인 객체가 생성될 때 잘못된 인자 또는 논리적인 오류를 일으키는 인자가 나올 수 있다. 이런 경우 플러그인의 생성자에서 확인을 하고 문제가 있는 경우 예외를 발생시키도록 한다.
+
+.. note:: Stackoverflow의 `관련 아티클 <http://https://stackoverflow.com/questions/8919952/python-practices-is-there-a-better-way-to-check-constructor-parameters>`_ 을 참고하자.
+
+
+.. _stackoverflow: http://
+
 플러그인의 리소스 관리
 ----------------------
 
