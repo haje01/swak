@@ -26,7 +26,7 @@ class Plugin(object):
     def __init__(self):
         """Init."""
         self.router = None
-        self.started = self.terminated = False
+        self.started = self.shutdowned = False
 
     def set_router(self, router):
         """Set router for the plugin."""
@@ -39,26 +39,28 @@ class Plugin(object):
         setting. Creation of resources such as files and threads to be used in
         the plug-in is created here.
         """
+        assert not self.started
         self.started = True
 
     def stop(self):
         """Stop plugin.
 
-        This method is called when the task is preparing to terminate. You
+        This method is called when the task is preparing to shutdown. You
         should do simple things that do not fail, such as setting a thread
         stop flag.
 
         """
+        assert self.started
         self.started = False
 
-    def terminate(self):
-        """Terminate plugin.
+    def shutdown(self):
+        """Shutdown plugin.
 
-        This method is called when the task is completely terminated. Here you
+        This method is called when the task is completely shutdown. Here you
         can close or remove any files, threads, etc. that you had created in
         ``start``.
         """
-        self.terminated = True
+        self.shutdowned = True
 
 
 class Input(Plugin):
@@ -72,6 +74,7 @@ class Input(Plugin):
         """
         super(Input, self).__init__()
         self.tag = None
+        self.encoding = None
 
     def set_tag(self, tag):
         """Set tag."""
@@ -91,6 +94,14 @@ class Input(Plugin):
         assert self.tag is not None, "Input plugin needs a event tag."
         time = mtime.time()
         self.router.emit(self.tag, time, record)
+
+    def set_encoding(self, encoding):
+        """Set encoding of input source.
+
+        Args:
+            encoding (str): Encoding of input source.
+        """
+        self.encoding = encoding
 
 
 class RecordInput(Input):
@@ -130,28 +141,15 @@ class TextInput(Input):
         ``read_line``
     """
 
-    def __init__(self, encoding=None):
-        """Init.
-
-        Args:
-            encoding (str): String encoding for non-utf8 string.
-        """
-        super(Input, self).__init__()
+    def __init__(self):
+        """Init."""
+        super(TextInput, self).__init__()
         self.parser = None
         self.filter_fn = None
-        self.encoding = None
 
     def set_parser(self, parser):
         """Set parser for this TextInput plugin."""
         self.parser = parser
-
-    def set_encoding(self, encoding):
-        """Set encoding of input source.
-
-        Args:
-            encoding (str): Encoding of input source.
-        """
-        self.encoding = encoding
 
     def read(self):
         """Read data from source, parse and emit results to the router."""
@@ -257,12 +255,54 @@ class Buffer(Plugin):
 
     Following methods should be implemented:
         append
-
     """
 
-    def append(self, record):
-        """Append a record."""
+    def __init__(self):
+        """Init."""
+        self.recv_queue = None
+        self.tag = None
+
+    def set_tag(self, tag):
+        """Set tag."""
+        self.tag = tag
+
+    def set_recv_queue(self, recv_queue):
+        """Set recv queue.
+
+        Receive event streams from input thread.
+
+        Args:
+            recv_queue (Queue): recv queue
+        """
+        self.recv_queue = recv_queue
+
+    @property
+    def connected_with_output_proxy(self):
+        """Return whether this buffer connected with output proxy or not."""
+        return self.recv_queue is not None
+
+    def read_queue(self):
+        """Read from receive queue.
+
+        This must be called within output thread.
+        """
+        assert self.recv_queue is not None
+        es = self.recv_queue.get()
+        self.append(es)
+
+    def append(self, es):
+        """Append event stream to buffer.
+
+        If matches flush condition, will call ``flush`` with chunk
+
+        Args:
+            es (EventStream): Event stream.
+        """
         raise NotImplemented()
+
+    def flush(self, chunk):
+        """Flush chunk into the output."""
+        assert self.output
 
 
 class Output(Plugin):
@@ -276,8 +316,45 @@ class Output(Plugin):
     def __init__(self):
         """Init."""
         super(Output, self).__init__()
+        self.send_queue = None
+        self.buffer = None
+
+    def set_buffer(self, buffer):
+        """Set output bufer."""
+        self.buffer = buffer
+
+    def set_send_queue(self, send_queue):
+        """Set send queue.
+
+        It means this plugin works as output proxy in an input thread. the
+            queue will be consumed by an output thread's buffer.
+
+        Args:
+            send_queue (Queue): queue of event streams.
+        """
+        self.send_queue = send_queue
+
+    @property
+    def is_proxy(self):
+        """Return whether this is an output proxy or not."""
+        return self.send_queue is not None
 
     def write_stream(self, tag, es):
+        """Write event stream to queue or directly to output target.
+
+        If send queue exists, this acts as output proxy, putting event stream
+            to the queue.
+
+        Args:
+            tag (str): Event tag.
+            es (EventStream): Event stream.
+        """
+        if self.send_queue is None:
+            self._write_stream(self, tag, es)
+        else:
+            self.send_queue.put(es)
+
+    def _write_stream(self, tag, es):
         """Write event stream synchronously.
 
         Args:
@@ -286,13 +363,15 @@ class Output(Plugin):
         """
         raise NotImplemented()
 
-    def write_chunk(self, chunk):
+    def _write_chunk(self, chunk):
         """Write a chunk from buffer."""
         raise NotImplemented()
 
 
 BASE_CLASS_MAP = {
     'in': Input,
+    'intxt': TextInput,
+    'inrec': RecordInput,
     'par': Parser,
     'mod': Modifier,
     'buf': Buffer,
@@ -511,7 +590,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     - test_(file_name).py file
 
     Args:
-        prefixed (list): List of plugin prefixes
+        prefixes (list): List of plugin prefixes
         file_name (str): Plugin file name
         class_name (str): Plugin class name
         pdir (str): Plugin directory
@@ -524,14 +603,18 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
                                                        file_name))
     os.mkdir(plugin_dir)
 
+    def base_input_prefix(prefix):
+        return 'in' if prefix in ['intxt', 'inrec'] else prefix
+
     # create each type module
-    for prefix in prefixes:
+    for _prefix in prefixes:
+        prefix = base_input_prefix(_prefix)
         fname = '{}_{}.py'.format(prefix, file_name)
         module_file = os.path.join(plugin_dir, fname)
-        tmpl_name = 'tmpl_{}.py'.format(_get_base_class_name(prefix).lower())
+        tmpl_name = 'tmpl_{}.py'.format(_get_base_class_name(_prefix).lower())
         tpl = env.get_template(tmpl_name)
-        basen = _get_full_name(prefix, True)
-        typen = _get_full_name(prefix, False)
+        basen = _get_full_name(_prefix, True)
+        typen = _get_full_name(_prefix, False)
         with open(module_file, 'wt') as f:
             code = tpl.render(class_name=class_name, type_name=typen,
                               base_name=basen)
@@ -550,7 +633,10 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     test_file = os.path.join(plugin_dir, 'test_{}.py'.format(file_name))
     with open(test_file, 'wt') as f:
         tpl = env.get_template('tmpl_unittest.py')
-        code = tpl.render(class_name=class_name, type_name=typen)
+        typens = [_get_full_name(pr, False) for pr in prefixes]
+        prefixes = [base_input_prefix(pr) for pr in prefixes]
+        code = tpl.render(class_name=class_name, prefixes=prefixes,
+                          type_names=typens, file_name=file_name)
         f.write(code)
 
     # create __init__.py

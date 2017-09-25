@@ -10,5 +10,7 @@ def test_counter_basic(router):
     counter.set_tag("test")
 
     router.add_rule("test", counter)
+    counter.start()
+    assert counter.started
     counter.read()
     assert len(router.def_output.events['test']) == 3

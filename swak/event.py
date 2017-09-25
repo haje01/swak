@@ -93,3 +93,7 @@ class MultiEventStream(EventStream):
     def next(self):
         """Iterate next for Python2."""
         return self.__next__()
+
+    def __len__(self):
+        """Length of events."""
+        return len(self.records)

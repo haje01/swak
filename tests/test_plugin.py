@@ -93,7 +93,7 @@ def test_plugin_init_cmd(capfd):
     if os.path.isdir(plugin_dir):
         shutil.rmtree(plugin_dir)
 
-    cmd = [SWAK_CLI, 'init', '--type', 'in', '--type', 'par', '--type', 'mod',
+    cmd = [SWAK_CLI, 'init', '--type', 'intxt', '--type', 'par', '--type', 'mod',
            '--type', 'buf', '--type', 'out', 'testfoo', 'TestFoo']
     try:
         call(cmd)
@@ -133,11 +133,18 @@ def test_plugin_init_cmd(capfd):
     assert 'in.testfoo' in out
     assert 'par.testfoo' in out
 
-    # check duplicate plugin error
+    # check duplicated plugin error
     cmd = [SWAK_CLI, 'init', '--type', 'out', 'stdout', 'Stdout']
     call(cmd)
     out, err = capfd.readouterr()
     assert 'already exists' in err
+
+    # check duplicate input type error
+    cmd = [SWAK_CLI, 'init', '--type', 'intxt', '--type', 'inrec', 'boo',
+           'Boo']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert 'are mutually exclusive' in err
 
     shutil.rmtree(plugin_dir)
 
@@ -194,6 +201,8 @@ def test_plugin_basic(router):
         return 'j' in line
 
     dtinput.set_filter_func(filter)
+    dtinput.start()
+    assert dtinput.started
     dtinput.read()
 
     events = router.def_output.events['test']

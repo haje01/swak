@@ -8,6 +8,7 @@ from swak.plugin import {{base_name}}
 
 class {{class_name}}({{base_name}}):
     """{{class_name}} class."""{% block class_body %}{% endblock %}
+
 @click.command(help="PLUGIN HELP MESSAGE GOES HERE")
 @click.pass_context
 def main(ctx):

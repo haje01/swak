@@ -89,3 +89,9 @@ def test_event_router_complex(router):
     router.emit("c", 0, {})
     record = router.def_output.events["c"][0][1]
     assert dict(c="3") == record
+
+    # Check generated pipeline structure
+    assert {'a', 'b', 'c'} == set(router.match_cache.keys())
+    assert len(router.match_cache['a'].modifiers) == 2
+    assert len(router.match_cache['b'].modifiers) == 2
+    assert len(router.match_cache['c'].modifiers) == 1

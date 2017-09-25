@@ -11,6 +11,8 @@ def test_dummy_basic(router):
     dummy.set_tag("test")
 
     router.add_rule("test", dummy)
+    dummy.start()
+    assert dummy.started
     dummy.read()
     events = router.def_output.events['test']
     assert len(events) == 3

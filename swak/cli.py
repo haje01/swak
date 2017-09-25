@@ -15,8 +15,9 @@ from swak.core import parse_and_validate_test_cmds, run_test_cmds
 
 check_python_version()
 
-INIT_PREFIX = [p for p in PREFIX]
 PLUGIN_DIR = get_plugins_dir(False)
+
+INIT_PREFIX = ['intxt', 'inrec'] + [p for p in PREFIX[1:]]
 
 
 @click.group()
@@ -54,6 +55,12 @@ if not getattr(sys, 'frozen', False):
                     logging.error("Plugin '{}' already exists as {} plugin".
                                   format(pfname, ptypen))
                     sys.exit(-1)
+
+        # check duplicate input types
+        if 'intxt' in ptypes and 'inrec' in ptypes:
+            logging.error("Text input & Record input plugins are mutually "
+                          "exclusive.")
+            sys.exit(-1)
 
         init_plugin_dir(ptypes, file_name, class_name, pdir)
 

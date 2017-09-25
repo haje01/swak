@@ -1,17 +1,11 @@
-"""Test {{class_name}} plugin."""
+"""Test {{type_names|join(', ')}} plugin{%if type_names|length > 1%}s{%endif%} of {{class_name}}."""
 
-import pytest
+from swak import stdplugins as stp
 
-from swak.plugin import DummyOutput
-from swak.event_router import EventRouter
+{% if prefixes|length == 1 %}from .{{prefixes[0]}}_{{file_name}} import {{class_name}}
+{% else %}{% for pr in prefixes %}import .{{pr}}_{{file_name}}.{{class_name}}
+{% endfor %}{% endif %}
 
-
-@pytest.fixture()
-def def_output():
-    """Create default output and returns it."""
-    return DummyOutput()
-
-
-def test_{{class_name|lower}}_basic(def_output):
-    """Test basic features of {{class_name}} plugin."""
+def test_{{class_name|lower}}_basic(router):
+    """Test basic features of {{class_name}}."""
     pass

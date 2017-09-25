@@ -14,7 +14,7 @@ Swak 문서
     quickstart.rst
     deploy.rst
     dev.rst
-    plugins.rst
+    stdplugins.rst
 
 
 .. toctree::

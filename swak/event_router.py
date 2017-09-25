@@ -118,6 +118,14 @@ class Rule(object):
         self.collector
 
 
+class Thread(object):
+    """Thread class for plugins."""
+
+    def __init__(self):
+        """Init."""
+        super(Thread, self).__init__()
+
+
 class EventRouter(object):
     """EvnetRouter is responsible to route events to a collector.
 
@@ -220,3 +228,6 @@ class EventRouter(object):
 
         pipeline.set_output(self.def_output)
         return pipeline
+
+    def build_threads(self):
+        pass
