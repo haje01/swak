@@ -3,7 +3,7 @@
 import os
 import sys
 import glob
-from collections import namedtuple, defaultdict
+from collections import namedtuple, defaultdict, deque
 import logging
 import types
 import json
@@ -12,9 +12,10 @@ import time as mtime
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 from swak.const import PLUGIN_PREFIX
+from swak.chunk import Chunk
 
 
-PREFIX = ['in', 'par', 'mod', 'buf', 'out']
+PREFIX = ['in', 'par', 'mod', 'for', 'buf', 'out']
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
                                        'desc', 'module'])
@@ -250,6 +251,18 @@ class Modifier(Plugin):
         raise NotImplemented()
 
 
+class Formatter(Plugin):
+    """Base class for formatter plugin.
+
+    Following methods should be implemented:
+        call
+    """
+
+    def format(self, tag, time, record):
+        """Format given data."""
+        raise NotImplemented()
+
+
 class Buffer(Plugin):
     """Base class for buffer plugin.
 
@@ -257,10 +270,17 @@ class Buffer(Plugin):
         append
     """
 
-    def __init__(self):
-        """Init."""
+    def __init__(self, binary):
+        """Init.
+
+        Args:
+            binary (bool): Store data as binary or not.
+        """
+        self.binary = binary
         self.recv_queue = None
         self.tag = None
+        self.chunks = deque([Chunk(binary)])
+        self.num_flush = 0
 
     def set_tag(self, tag):
         """Set tag."""
@@ -290,6 +310,11 @@ class Buffer(Plugin):
         es = self.recv_queue.get()
         self.append(es)
 
+    @property
+    def num_chunk(self):
+        """Return number of chunks."""
+        return len(self.chunks)
+
     def append(self, es):
         """Append event stream to buffer.
 
@@ -298,11 +323,14 @@ class Buffer(Plugin):
         Args:
             es (EventStream): Event stream.
         """
+        chunk = self.chunks[-1]
+        chunk.append()
         raise NotImplemented()
 
     def flush(self, chunk):
         """Flush chunk into the output."""
         assert self.output
+        self.num_flush += 1
 
 
 class Output(Plugin):

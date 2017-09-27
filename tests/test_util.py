@@ -13,7 +13,7 @@ from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
 from swak.util import init_home, get_plugin_module_name, update_dict,\
     check_python_version, set_log_verbosity, _verbosity_from_log_level,\
-    which_exe
+    which_exe, size_value, time_value
 
 
 CFG = """
@@ -107,3 +107,33 @@ def test_util_etc():
     set_log_verbosity(org_verbosity)
 
     assert which_exe('date') is not None
+
+
+def test_util_value():
+    """Test size & time value conversion."""
+    assert None is size_value(None)
+    assert 1 == size_value('1')
+    assert 1024 == size_value('1k')
+    assert 1024 == size_value('1K')
+    assert 1024 ** 2 == size_value('1m')
+    assert 1024 ** 2 == size_value('1M')
+    assert 1024 ** 3 == size_value('1g')
+    assert 1024 ** 3 == size_value('1G')
+    assert 1024 ** 4 == size_value('1t')
+    assert 1024 ** 4 == size_value('1T')
+    with pytest.raises(ValueError):
+        size_value('asdf')
+
+    assert None is size_value(None)
+    assert 1 == time_value('1')
+    assert 1.1 == time_value('1.1')
+    assert 1 == time_value('1s')
+    assert 1 == time_value('1S')
+    assert 60 == time_value('1m')
+    assert 60 == time_value('1M')
+    assert 60 * 60 == time_value('1h')
+    assert 60 * 60 == time_value('1H')
+    assert 60 * 60 * 24 == time_value('1d')
+    assert 60 * 60 * 24 == time_value('1D')
+    with pytest.raises(ValueError):
+        size_value('asdf')
