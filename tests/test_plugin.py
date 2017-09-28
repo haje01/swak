@@ -31,7 +31,7 @@ def plugin_filter_ext(_dir):
 
 
 def test_plugin_cmd(capfd):
-    """Test plugin list & desc command."""
+    """Test CLI list & desc commands."""
     cmd = [SWAK_CLI, '-vv', 'list']
     try:
         call(cmd)
@@ -47,13 +47,20 @@ def test_plugin_cmd(capfd):
 
     cmd = [SWAK_CLI, 'desc', 'in.counter']
     call(cmd)
-    out, err = capfd.readouterr()
     assert "Generate incremental numbers" in out
 
     cmd = [SWAK_CLI, 'desc', 'in.notexist']
     call(cmd)
     out, err = capfd.readouterr()
     assert "Can not find" in err
+
+
+def test_plugin_test_cmd(capfd):
+    """Test CLI test command."""
+    cmd = [SWAK_CLI, 'test', 'in.counter | out.stdout format -z Asia/Seoul']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert '+09:00' in out
 
 
 @pytest.mark.skipif(which_exe('git') is None, reason="requires git")
@@ -86,15 +93,15 @@ def test_plugin_clone(capfd):
 
 
 def test_plugin_init_cmd(capfd):
-    """Test plugin init command."""
+    """Test CLI init command."""
     # remove previous test pacakge.
     base_dir = get_plugins_dir(False)
     plugin_dir = os.path.join(base_dir, '{}-testfoo'.format(PLUGIN_PREFIX))
     if os.path.isdir(plugin_dir):
         shutil.rmtree(plugin_dir)
 
-    cmd = [SWAK_CLI, 'init', '--type', 'intxt', '--type', 'par', '--type', 'mod',
-           '--type', 'buf', '--type', 'out', 'testfoo', 'TestFoo']
+    cmd = [SWAK_CLI, 'init', '--type', 'intxt', '--type', 'par', '--type',
+           'mod', '--type', 'out', 'testfoo', 'TestFoo']
     try:
         call(cmd)
     except FileNotFoundError:

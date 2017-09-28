@@ -5,6 +5,6 @@
 
     def parse(self):
         """Parse."""
-        raise NotImplemented()
+        raise NotImplementedError()
 
 {% endblock %}

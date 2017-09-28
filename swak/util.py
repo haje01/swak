@@ -1,8 +1,8 @@
 """This module implements utility functions."""
 
 import os
-
 import sys
+import re
 from platform import platform
 import collections
 import errno
@@ -14,6 +14,16 @@ test_logger_inited = False
 
 LOG_FMT = logging.Formatter('%(levelname)s [%(filename)s:%(lineno)d]'
                             ' %(message)s')
+
+size_ptrn_k = re.compile('(\d+)k', re.I)
+size_ptrn_m = re.compile('(\d+)m', re.I)
+size_ptrn_g = re.compile('(\d+)g', re.I)
+size_ptrn_t = re.compile('(\d+)t', re.I)
+
+time_ptrn_s = re.compile('(\d+)s', re.I)
+time_ptrn_m = re.compile('(\d+)m', re.I)
+time_ptrn_h = re.compile('(\d+)h', re.I)
+time_ptrn_d = re.compile('(\d+)d', re.I)
 
 
 def make_dirs(adir):
@@ -215,3 +225,79 @@ def which_exe(program):
                 return exe_file
 
     return None
+
+
+def size_value(sval):
+    """Convert suffixed size string to a value.
+
+    k = kilo bytes
+    m = mega bytes
+    g = giga bytes
+    t = tera bytes
+
+    Args:
+        sval (str): Size expression with suffix
+
+    Returns:
+        int: Bytes
+
+    Raises:
+        ValueError: If conversion failed.
+    """
+    if sval is None:
+        return None
+
+    match = size_ptrn_k.match(sval)
+    if match is not None:
+        return int(match.groups()[0]) * 1024
+    match = size_ptrn_m.match(sval)
+    if match is not None:
+        return int(match.groups()[0]) * (1024 ** 2)
+    match = size_ptrn_g.match(sval)
+    if match is not None:
+        return int(match.groups()[0]) * (1024 ** 3)
+    match = size_ptrn_t.match(sval)
+    if match is not None:
+        return int(match.groups()[0]) * (1024 ** 4)
+    try:
+        return int(sval)
+    except ValueError:
+        raise ValueError("Can not convert '{}' into bytes".format(sval))
+
+
+def time_value(sval):
+    """Convert suffixed time string to seconds value.
+
+    s = seconds
+    m = minutes
+    h = hours
+    d = days
+
+    Args:
+        sval (str): Time expression with suffix
+
+    Returns:
+        float: Time in seconds with millisecond.
+
+    Raises:
+        ValueError: If conversion failed.
+    """
+    if sval is None:
+        return None
+
+    match = time_ptrn_s.match(sval)
+    if match is not None:
+        return int(match.groups()[0])
+    match = time_ptrn_m.match(sval)
+    if match is not None:
+        return int(match.groups()[0]) * 60
+    match = time_ptrn_h.match(sval)
+    if match is not None:
+        return int(match.groups()[0]) * 60 * 60
+    match = time_ptrn_d.match(sval)
+    if match is not None:
+        return int(match.groups()[0]) * 60 * 60 * 24
+    try:
+        return float(sval)
+    except ValueError:
+        raise ValueError("Can not convert '{}' into seconds".format(sval))
