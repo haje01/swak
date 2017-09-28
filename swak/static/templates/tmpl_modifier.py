@@ -27,6 +27,6 @@
             If removed
                 None
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
 {% endblock %}

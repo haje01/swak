@@ -9,10 +9,10 @@
             tag (str): Event tag.
             es (EventStream): Event stream.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def write_chunk(self, chunk):
         """Write a chunk from buffer."""
-        raise NotImplemented()
+        raise NotImplementedError()
 
 {% endblock %}

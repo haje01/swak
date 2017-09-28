@@ -3,7 +3,7 @@
 import os
 import sys
 import glob
-from collections import namedtuple, defaultdict, deque
+from collections import namedtuple, defaultdict
 import logging
 import types
 import json
@@ -12,10 +12,11 @@ import time as mtime
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 from swak.const import PLUGIN_PREFIX
-from swak.chunk import Chunk
+from swak.formatter import StdoutFormatter
+from swak.buffer import SizedBuffer
 
 
-PREFIX = ['in', 'par', 'mod', 'for', 'buf', 'out']
+PREFIX = ['in', 'par', 'mod', 'out']
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
                                        'desc', 'module'])
@@ -213,7 +214,7 @@ class Parser(Plugin):
         Returns:
             dict: Parsed result.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 class Modifier(Plugin):
@@ -248,89 +249,7 @@ class Modifier(Plugin):
             If removed
                 None
         """
-        raise NotImplemented()
-
-
-class Formatter(Plugin):
-    """Base class for formatter plugin.
-
-    Following methods should be implemented:
-        call
-    """
-
-    def format(self, tag, time, record):
-        """Format given data."""
-        raise NotImplemented()
-
-
-class Buffer(Plugin):
-    """Base class for buffer plugin.
-
-    Following methods should be implemented:
-        append
-    """
-
-    def __init__(self, binary):
-        """Init.
-
-        Args:
-            binary (bool): Store data as binary or not.
-        """
-        self.binary = binary
-        self.recv_queue = None
-        self.tag = None
-        self.chunks = deque([Chunk(binary)])
-        self.num_flush = 0
-
-    def set_tag(self, tag):
-        """Set tag."""
-        self.tag = tag
-
-    def set_recv_queue(self, recv_queue):
-        """Set recv queue.
-
-        Receive event streams from input thread.
-
-        Args:
-            recv_queue (Queue): recv queue
-        """
-        self.recv_queue = recv_queue
-
-    @property
-    def connected_with_output_proxy(self):
-        """Return whether this buffer connected with output proxy or not."""
-        return self.recv_queue is not None
-
-    def read_queue(self):
-        """Read from receive queue.
-
-        This must be called within output thread.
-        """
-        assert self.recv_queue is not None
-        es = self.recv_queue.get()
-        self.append(es)
-
-    @property
-    def num_chunk(self):
-        """Return number of chunks."""
-        return len(self.chunks)
-
-    def append(self, es):
-        """Append event stream to buffer.
-
-        If matches flush condition, will call ``flush`` with chunk
-
-        Args:
-            es (EventStream): Event stream.
-        """
-        chunk = self.chunks[-1]
-        chunk.append()
-        raise NotImplemented()
-
-    def flush(self, chunk):
-        """Flush chunk into the output."""
-        assert self.output
-        self.num_flush += 1
+        raise NotImplementedError()
 
 
 class Output(Plugin):
@@ -341,11 +260,18 @@ class Output(Plugin):
 
     """
 
-    def __init__(self):
-        """Init."""
+    def __init__(self, formatter, abuffer):
+        """Init.
+
+        Args:
+            formatter (Formatter): Swak formatter for this output.
+            abuffer (Buffer): Swak buffer for this output.
+        """
         super(Output, self).__init__()
+        self.formatter = formatter
+        self.buffer = abuffer
         self.send_queue = None
-        self.buffer = None
+        self.recv_queues = []
 
     def set_buffer(self, buffer):
         """Set output bufer."""
@@ -360,6 +286,8 @@ class Output(Plugin):
         Args:
             send_queue (Queue): queue of event streams.
         """
+        assert len(self.recv_queues) > 0, "Can not send and receive at the"\
+            " same time"
         self.send_queue = send_queue
 
     @property
@@ -367,8 +295,8 @@ class Output(Plugin):
         """Return whether this is an output proxy or not."""
         return self.send_queue is not None
 
-    def write_stream(self, tag, es):
-        """Write event stream to queue or directly to output target.
+    def emit_events(self, tag, es):
+        """Emit event stream to queue or directly to output target.
 
         If send queue exists, this acts as output proxy, putting event stream
             to the queue.
@@ -378,22 +306,45 @@ class Output(Plugin):
             es (EventStream): Event stream.
         """
         if self.send_queue is None:
-            self._write_stream(self, tag, es)
+            # no send_queue exists, which means single thread.
+            self.handle_stream(tag, es)
         else:
+            # send_queue exists, which means two threads for input & output.
             self.send_queue.put(es)
 
-    def _write_stream(self, tag, es):
-        """Write event stream synchronously.
+    def handle_stream(self, tag, es):
+        """Handle event stream from emit events.
+
+        Format each event and write it to buffer.
 
         Args:
-            tag (str): Event tag.
-            es (EventStream): Event stream.
+            tag (str)
+            es (EventStream)
         """
-        raise NotImplemented()
+        for time, record in es:
+            formatted = self.formatter.format(tag, time, record)
+            self.buffer.append(formatted)
 
-    def _write_chunk(self, chunk):
-        """Write a chunk from buffer."""
-        raise NotImplemented()
+    def append_recv_queue(self, queue):
+        """Append receive queue."""
+        assert self.send_queue is None, "Can not send and receive at the same"\
+            "time."
+        assert queue not in self.recv_queues, "The queue has already been "\
+            "appended."
+        self.recv_queues.append(queue)
+
+    def read_queues(self):
+        """Read from receive queues.
+
+        This is to be called within output thread.
+        """
+        for tag, queue in self.recv_queues.items():
+            es = queue.get()
+            self.handle_stream(tag, es)
+
+    def write(self, bulk):
+        """Write bulk from a chunk of own buffer."""
+        raise NotImplementedError()
 
 
 BASE_CLASS_MAP = {
@@ -402,7 +353,6 @@ BASE_CLASS_MAP = {
     'inrec': RecordInput,
     'par': Parser,
     'mod': Modifier,
-    'buf': Buffer,
     'out': Output,
 }
 
@@ -587,7 +537,9 @@ class DummyOutput(Output):
         Args:
             echo: Whether print output or not.
         """
-        super(DummyOutput, self).__init__()
+        formatter = StdoutFormatter()
+        abuffer = SizedBuffer(self, True, True, 1, None, None, None, None)
+        super(DummyOutput, self).__init__(formatter, abuffer)
         self.events = defaultdict(list)
         self.echo = echo
 
