@@ -16,6 +16,8 @@ def test_stdout_basic(router, capfd):
     router.add_rule("test", counter)
     router.add_rule("test", stdout)
     counter.read()
+    router.flush()
+
     out, err = capfd.readouterr()
     lines = out.strip().split('\n')
     assert len(lines) == 3

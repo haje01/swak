@@ -121,4 +121,5 @@ def run_test_cmds(cmds, _test=False):
     """
     input_plugin, router = build_test_event_router(cmds, _test)
     input_plugin.read()
+    router.shutdown()
     return router

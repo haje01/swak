@@ -95,8 +95,10 @@ def list(ctx):
 
 @main.command(help="Show help message for a plugin.")
 @click.argument('plugin')
+@click.option('-s', '--sub-command', 'subcmd', help="Show help for a "
+              "subcommand of the plugin")
 @click.pass_context
-def desc(ctx, plugin):
+def desc(ctx, plugin, subcmd):
     """Show help message for a plugin.
 
     Args:
@@ -109,7 +111,11 @@ def desc(ctx, plugin):
             if pi.pname != plugin:
                 continue
             sys.argv[0] = plugin
-            pi.module.main(args=['--help'])
+            if subcmd is None:
+                args = ['--help']
+            else:
+                args = [subcmd, '--help']
+            pi.module.main(args=args)
             return
 
     print("Can not find plugin '{}'".format(plugin), file=sys.stderr)

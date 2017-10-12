@@ -6,7 +6,7 @@ import click
 
 from swak.plugin import Output
 from swak.formatter import Formatter, StdoutFormatter
-from swak.buffer import SizedBuffer
+from swak.buffer import MemoryBuffer
 
 
 class Stdout(Output):
@@ -21,11 +21,11 @@ class Stdout(Output):
         """
         formatter = formatter if formatter is not None else StdoutFormatter()
         if abuffer is None:
-            abuffer = SizedBuffer(self, True, True, 1, None, None, None, None)
+            abuffer = MemoryBuffer(self, True, 1, 1)
         super(Stdout, self).__init__(formatter, abuffer)
 
-    def write(self, bulk):
-        """Write bulk from a chunk of own buffer."""
+    def _write(self, bulk):
+        """Write a bulk."""
         sys.stdout.buffer.write(bulk)
         sys.stdout.buffer.write(b'\n')
 
@@ -55,7 +55,7 @@ def process_components(components):
     return Stdout(_formatter)
 
 
-@main.command(help="Setting StdoutFormatter.")
+@main.command('formatter', help="Setting formatter for this output.")
 @click.option('-z', '--timezone', default="UTC", show_default=True,
               help="Timezone for format.")
 def formatter(timezone):

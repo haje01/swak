@@ -18,9 +18,10 @@ def test_reform_basic(router):
     # add field
     router.add_rule("test", reform)
     router.emit("test", 0, {})
-    assert len(router.def_output.events['test'][0][1]) == 2
-    assert 'k1' in router.def_output.events['test'][0][1]
-    assert 'k2' in router.def_output.events['test'][0][1]
+    router.flush()
+    assert len(router.def_output.bulks) == 1
+    assert 'k1' in router.def_output.bulks[0]
+    assert 'k2' in router.def_output.bulks[0]
 
 
 def test_reform_basic2(router):
@@ -30,8 +31,9 @@ def test_reform_basic2(router):
     router.add_rule("test", reform)
     records = {'k1': 'v1', 'k2': 'v2'}
     router.emit("test", 0, records)
-    assert len(router.def_output.events['test'][0][1]) == 1
-    assert 'k1' not in router.def_output.events['test'][0][1]
+    router.flush()
+    assert len(router.def_output.bulks) == 1
+    assert 'k1' not in router.def_output.bulks[0]
 
 
 def test_reform_normalize():
@@ -59,13 +61,15 @@ def test_reform_expand(router):
     reform = Reform(writes, [])
     router.add_rule("a.b.c", reform)
     router.emit("a.b.c", 0, dict(f1="1"))
-    assert "host" in router.def_output.events['a.b.c'][0][1]
+    router.flush()
+    assert "host" in router.def_output.bulks[0]
     hostname = socket.gethostname()
     hostaddr = socket.gethostbyname(hostname)
     addr_parts = hostaddr.split('.')
     first2addr = "{}.{}".format(addr_parts[0], addr_parts[1])
     last2addr = "{}.{}".format(addr_parts[-2], addr_parts[-1])
-    record = router.def_output.events['a.b.c'][0][1]
+    dtime, tag, record = router.def_output.bulks[0].split('\t')
+    record = eval(record)
 
     assert record['f1'] == '1_mod'
     assert record['f2'] == '1_mod_2'

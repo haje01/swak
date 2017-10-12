@@ -7,7 +7,6 @@ import click
 
 from swak.core import parse_and_validate_test_cmds,\
     run_test_cmds, build_test_event_router
-from swak.const import TEST_STREAM_TAG
 
 
 def test_core_test_cmd():
@@ -24,9 +23,10 @@ def test_core_test_cmd():
     assert cmds[0][3] == '--field'
 
     router = run_test_cmds(cmds, True)
-    records = router.def_output.events[TEST_STREAM_TAG]
-    assert len(records) == 4
-    record = records[0][1]
+    bulks = router.def_output.bulks
+    assert len(bulks) == 4
+    _, _, record = bulks[0].split('\t')
+    record = eval(record)
     assert record == dict(f1=1, f2=1, f3=1)
 
     with pytest.raises(click.exceptions.UsageError):
@@ -35,8 +35,9 @@ def test_core_test_cmd():
 
     cmds = parse_and_validate_test_cmds('in.counter | mod.reform -w host '
                                         '${hostname} -w tag ${tag} -d tag')
-    router = run_test_cmds(cmds)
-    record = router.def_output.events[TEST_STREAM_TAG][0][1]
+    router = run_test_cmds(cmds, True)
+    _, _, record = router.def_output.bulks[0].split('\t')
+    record = eval(record)
     assert len(record) == 2
     assert 'host' in record      # inserted
     assert 'tag' not in record   # deleted (overrided)

@@ -11,9 +11,10 @@ def test_dummy_basic(router):
     dummy.set_tag("test")
 
     router.add_rule("test", dummy)
-    dummy.start()
+    router.start()
     assert dummy.started
     dummy.read()
-    events = router.def_output.events['test']
-    assert len(events) == 3
-    assert events[0][1]['name'] == 'john'
+    router.flush()
+    bulks = router.def_output.bulks
+    assert len(bulks) == 3
+    assert 'john' in bulks[0]

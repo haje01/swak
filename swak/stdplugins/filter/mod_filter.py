@@ -31,16 +31,16 @@ class Filter(Modifier):
         self.includes = make_effective_patterns(includes)
         self.excludes = make_effective_patterns(excludes)
 
-    def modify(self, tag, time, record):
+    def modify(self, tag, utime, record):
         """Modify an event by filtering.
 
-        To include, all inclusive conditions must be true,
         To exclude, one true condition is enough.
+        To include, all inclusive conditions must be true,
         Exclusive conditions override inclusive conditions.
 
         Args:
             tag (str): Event tag
-            time (float): Event time
+            utime (float): Evnt time stamp.
             record (dict): Event record
 
         Returns:
@@ -52,22 +52,19 @@ class Filter(Modifier):
                 None
         """
         if not self.includes and not self.excludes:
-            return time, record
+            return utime, record
 
         for key, regexp in self.excludes.items():
             if key in record:
                 if regexp.search(record[key]) is not None:
                     return None
 
-        num_include = len(self.includes)
-        num_match = 0
         for key, regexp in self.includes.items():
             if key not in record:
                 return None
-            if regexp.search(record[key]) is not None:
-                num_match += 1
-        if num_include == num_match:
-            return time, record
+            if regexp.search(record[key]) is None:
+                return None
+        return utime, record
 
 
 @click.command(help="Filter events by regular expression.")

@@ -11,12 +11,12 @@
         """
         pass
 
-    def modify(self, tag, time, record):
+    def modify(self, tag, utime, record):
         """Modify an event.
 
         Args:
             tag (str): Event tag
-            time (float): Event time
+            utime (float): Event time stamp.
             record (dict): Event record
 
         Returns:

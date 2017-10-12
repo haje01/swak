@@ -69,16 +69,16 @@ class Pipeline(object):
         # modify each records
         times = []
         records = []
-        for time, record in es:
+        for utime, record in es:
             skip = False
             for mod in self.modifiers:
-                result = mod.modify(tag, time, record)
+                result = mod.modify(tag, utime, record)
                 if result is None:
                     skip = True
                     break
-                time, record = result
+                utime, record = result
             if not skip:
-                times.append(time)
+                times.append(utime)
                 records.append(record)
         return MultiEventStream(times, records)
 
@@ -148,15 +148,15 @@ class EventRouter(object):
         assert isinstance(def_output, Output)
         self.def_output = def_output
 
-    def emit(self, tag, time, record):
+    def emit(self, tag, utime, record):
         """Emit one event.
 
         Args:
-            tag (str): Event tag
-            time (float): Emit time
+            tag (str): Event tag.
+            utime (float): Emit time stamp.
             record (dict): A record.
         """
-        self.emit_stream(tag, OneEventStream(time, record))
+        self.emit_stream(tag, OneEventStream(utime, record))
 
     def emit_stream(self, tag, es):
         """Emit stream with tag.
@@ -176,6 +176,28 @@ class EventRouter(object):
                 raise
             logging.error(e)
             return False
+
+    def iter_plugins(self):
+        """Iterate all plugins."""
+        for rule in self.rules:
+            yield rule.collector
+        yield self.def_output
+
+    def start(self):
+        """Start plugins in the router."""
+        for plugin in self.iter_plugins():
+            plugin.start()
+
+    def flush(self):
+        """Flush all output plugins."""
+        for plugin in self.iter_plugins():
+            if isinstance(plugin, Output):
+                plugin.flush()
+
+    def shutdown(self):
+        """Shutdown plugins in the router."""
+        for plugin in self.iter_plugins():
+            plugin.shutdown()
 
     def add_rule(self, pattern, collector):
         """Add new rule.

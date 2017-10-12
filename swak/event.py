@@ -12,15 +12,15 @@ class EventStream(object):
 class OneEventStream(EventStream):
     """EventStream class."""
 
-    def __init__(self, time, record):
+    def __init__(self, utime, record):
         """init.
 
         Args:
-            time (float): emit time.
+            utime (float): emit time stamp.
             record (dict): record to emit.
         """
         super(OneEventStream, self).__init__()
-        self.time = time
+        self.utime = utime
         assert type(record) is dict
         self.record = record
 
@@ -33,7 +33,7 @@ class OneEventStream(EventStream):
         """Iterate next."""
         if self.iter_n == 0:
             self.iter_n += 1
-            return self.time, self.record
+            return self.utime, self.record
         raise StopIteration()
 
     def next(self):
@@ -84,9 +84,9 @@ class MultiEventStream(EventStream):
     def __next__(self):
         """Iterate next."""
         if self.iter_n < self.iter_max:
-            time, record = self.times[self.iter_n], self.records[self.iter_n]
+            utime, record = self.times[self.iter_n], self.records[self.iter_n]
             self.iter_n += 1
-            return time, record
+            return utime, record
         else:
             raise StopIteration()
 

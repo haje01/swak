@@ -3,17 +3,16 @@
 import os
 import sys
 import glob
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 import logging
 import types
-import json
-import time as mtime
+import time
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 from swak.const import PLUGIN_PREFIX
 from swak.formatter import StdoutFormatter
-from swak.buffer import SizedBuffer
+from swak.buffer import MemoryBuffer
 
 
 PREFIX = ['in', 'par', 'mod', 'out']
@@ -55,6 +54,10 @@ class Plugin(object):
         assert self.started
         self.started = False
 
+    def before_shutdown(self):
+        """Handle things before shutdown."""
+        pass
+
     def shutdown(self):
         """Shutdown plugin.
 
@@ -62,6 +65,7 @@ class Plugin(object):
         can close or remove any files, threads, etc. that you had created in
         ``start``.
         """
+        self.before_shutdown()
         self.shutdowned = True
 
 
@@ -94,8 +98,8 @@ class Input(Plugin):
         """
         assert self.router is not None, "Plugin needs a router."
         assert self.tag is not None, "Input plugin needs a event tag."
-        time = mtime.time()
-        self.router.emit(self.tag, time, record)
+        utime = time.time()
+        self.router.emit(self.tag, utime, record)
 
     def set_encoding(self, encoding):
         """Set encoding of input source.
@@ -233,12 +237,12 @@ class Modifier(Plugin):
         """
         pass
 
-    def modify(self, tag, time, record):
+    def modify(self, tag, utime, record):
         """Modify an event.
 
         Args:
             tag (str): Event tag
-            time (float): Event time
+            utime (float): Event time stamp.
             record (dict): Event record
 
         Returns:
@@ -272,6 +276,16 @@ class Output(Plugin):
         self.buffer = abuffer
         self.send_queue = None
         self.recv_queues = []
+
+    def before_shutdown(self):
+        """Handle things before shutdown."""
+        if self.buffer.flush_at_shutdown is not None:
+            self.flush()
+
+    def flush(self):
+        """Flushing buffer."""
+        assert self.buffer is not None
+        self.buffer.flushing()
 
     def set_buffer(self, buffer):
         """Set output bufer."""
@@ -321,8 +335,9 @@ class Output(Plugin):
             tag (str)
             es (EventStream)
         """
-        for time, record in es:
-            formatted = self.formatter.format(tag, time, record)
+        for utime, record in es:
+            dtime = self.formatter.timestamp_to_datetime(utime)
+            formatted = self.formatter.format(tag, dtime, record)
             self.buffer.append(formatted)
 
     def append_recv_queue(self, queue):
@@ -343,7 +358,19 @@ class Output(Plugin):
             self.handle_stream(tag, es)
 
     def write(self, bulk):
-        """Write bulk from a chunk of own buffer."""
+        """Write a bulk.
+
+        Make sure the bulk is empty and do nothing if it is empty.
+
+        Args:
+            bulk: A bulk from a chunk.
+        """
+        if len(bulk) == 0:
+            return
+        self._write(bulk)
+
+    def _write(self, bulk):
+        """Write a bulk."""
         raise NotImplementedError()
 
 
@@ -538,24 +565,24 @@ class DummyOutput(Output):
             echo: Whether print output or not.
         """
         formatter = StdoutFormatter()
-        abuffer = SizedBuffer(self, True, True, 1, None, None, None, None)
+        abuffer = MemoryBuffer(self, False, 1, 1)
         super(DummyOutput, self).__init__(formatter, abuffer)
-        self.events = defaultdict(list)
+        self.bulks = []
         self.echo = echo
 
-    def write_stream(self, tag, es):
-        """Write event stream."""
-        for time, record in es:
-            self.events[tag].append((time, record))
-            if self.echo:
-                print("{}\t{}\t{}".format(time, tag, json.dumps(record)))
+    def _write(self, bulk):
+        """Write a bulk.
 
-    def reset(self, tag=None):
+        Dummy output saves the bulk for test purpose.
+        """
+        if self.echo:
+            sys.stdout.buffer.write(bulk)
+            sys.stdout.buffer.write(b'\n')
+        self.bulks.append(bulk)
+
+    def reset(self):
         """Reset events."""
-        if tag is not None:
-            self.envents[tag] = []
-        else:
-            self.events = defaultdict(list)
+        self.bulks = []
 
 
 def init_plugin_dir(prefixes, file_name, class_name, pdir):

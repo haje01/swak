@@ -146,14 +146,14 @@ class Reform(Modifier):
         placeholders['tag_suffix'] = _tag_suffix(tag_parts)
         self.placeholders = placeholders
 
-    def modify(self, tag, time, record):
+    def modify(self, tag, utime, record):
         """Modify an event by modifying.
 
         If adds & dels conflicts, deleting key wins.
 
         Args:
             tag (str): Event tag
-            time (float): Event time
+            utime (float): Event time stamp.
             record (dict): Event record
 
         Returns:
@@ -161,7 +161,7 @@ class Reform(Modifier):
             record: Modified record
         """
         assert type(record) is dict
-        self.placeholders['time'] = time
+        self.placeholders['time'] = utime
         self.placeholders['record'] = record
         for key, val in self.writes:
             record[key] = _expand(_normalize(val), self.placeholders)
@@ -169,7 +169,7 @@ class Reform(Modifier):
         for key in self.deletes:
             del record[key]
 
-        return time, record
+        return utime, record
 
 
 @click.command(help="Write or delete record fields.")

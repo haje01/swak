@@ -54,10 +54,16 @@ def test_plugin_cmd(capfd):
     out, err = capfd.readouterr()
     assert "Can not find" in err
 
+    # desc for sub-command
+    cmd = [SWAK_CLI, 'desc', 'out.stdout', '-s', 'formatter']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert '--timezone' in out
+
 
 def test_plugin_test_cmd(capfd):
     """Test CLI test command."""
-    cmd = [SWAK_CLI, 'test', 'in.counter | out.stdout format -z Asia/Seoul']
+    cmd = [SWAK_CLI, 'test', 'in.counter | out.stdout formatter -z Asia/Seoul']
     call(cmd)
     out, err = capfd.readouterr()
     assert '+09:00' in out
@@ -211,8 +217,9 @@ def test_plugin_basic(router):
     dtinput.start()
     assert dtinput.started
     dtinput.read()
+    router.flush()
 
-    events = router.def_output.events['test']
-    assert len(events) == 2
-    assert events[0][1]['name'] == 'john'
-    assert events[1][1]['name'] == 'jane'
+    bulks = router.def_output.bulks
+    assert len(bulks) == 2
+    assert "'name': 'john'" in bulks[0].split('\t')[2]
+    assert "'name': 'jane'" in bulks[1].split('\t')[2]
