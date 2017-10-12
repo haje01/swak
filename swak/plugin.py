@@ -589,8 +589,7 @@ class DummyOutput(Output):
         Dummy output saves the bulk for test purpose.
         """
         if self.echo:
-            sys.stdout.buffer.write(bulk)
-            sys.stdout.buffer.write(b'\n')
+            print(bulk)
         self.bulks.append(bulk)
 
     def reset(self):

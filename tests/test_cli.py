@@ -67,6 +67,13 @@ def test_cli_basic(capfd):
 
 def test_cli_test(capfd):
     """Test CLI test command."""
+    # test with default output
+    cmd = [SWAK_CLI, 'test', 'i.counter']
+    call(cmd)
+    out, err = capfd.readouterr()
+    assert len(err) == 0
+
+    # test with stdout
     cmd = [SWAK_CLI, 'test', 'i.counter | o.stdout f.stdout -z Asia/Seoul']
     call(cmd)
     out, err = capfd.readouterr()

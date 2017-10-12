@@ -1,6 +1,5 @@
 """Stdout module."""
 from __future__ import print_function, absolute_import
-import sys
 
 import click
 
@@ -21,13 +20,12 @@ class Stdout(Output):
         """
         formatter = formatter if formatter is not None else StdoutFormatter()
         if abuffer is None:
-            abuffer = MemoryBuffer(self, True, 1, 1)
+            abuffer = MemoryBuffer(self, False, 1, 1)
         super(Stdout, self).__init__(formatter, abuffer)
 
     def _write(self, bulk):
         """Write a bulk."""
-        sys.stdout.buffer.write(bulk)
-        sys.stdout.buffer.write(b'\n')
+        print(bulk)
 
 
 @click.group(chain=True, invoke_without_command=True,
