@@ -1,8 +1,8 @@
 """Test stdout plugin."""
 
-from swak.stdplugins.counter.in_counter import Counter
+from swak.stdplugins.counter.i_counter import Counter
 
-from .out_stdout import Stdout
+from .o_stdout import Stdout
 
 
 def test_stdout_basic(router, capfd):

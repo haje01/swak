@@ -2,4 +2,4 @@
 
 TIME_KEY = '_time'
 TEST_STREAM_TAG = 'test'
-PLUGIN_PREFIX = 'swak-plugin'
+PLUGINDIR_PREFIX = 'swak_plugin'

@@ -42,7 +42,7 @@ setup(
     url="https://github.com/haje01/swak",
     description="Multi-purpose Agent Platform",
     platforms=["any"],
-    packages=['swak', 'swak.stdplugins'] + std_plugins,
+    packages=['swak', 'swak.stdplugins', 'swak.plugins'] + std_plugins,
     scripts=SCRIPTS,
     license=['MIT License'],
     keywords=['system'],

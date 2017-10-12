@@ -87,7 +87,7 @@ def test_util_cfg(test_home):
 
 def test_util_etc():
     """Test small utilities."""
-    assert 'out_stdout.2' == get_plugin_module_name('out.stdout.2')
+    assert 'o_stdout.2' == get_plugin_module_name('o.stdout.2')
 
     d1 = dict(a=1, b=2, d=dict(A=1, B=3))
     d2 = dict(b=3, c=4, d=dict(A=2))

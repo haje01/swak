@@ -1,6 +1,6 @@
 """Test counter plugin."""
 
-from .in_counter import Counter
+from .i_counter import Counter
 
 
 def test_counter_basic(router):

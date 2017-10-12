@@ -1,6 +1,6 @@
 """Test Dummy plugin."""
 
-from .in_dummy import Dummy
+from .i_dummy import Dummy
 
 
 def test_dummy_basic(router):

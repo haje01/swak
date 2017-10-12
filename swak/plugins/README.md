@@ -1,3 +1,3 @@
-External plugin repository will be cloned to this directory.
+# swak-plugin-stdout
 
-Swak related code shall not exist here.
+표준 출력

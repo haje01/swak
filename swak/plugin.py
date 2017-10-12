@@ -10,12 +10,12 @@ import time
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
-from swak.const import PLUGIN_PREFIX
+from swak.const import PLUGINDIR_PREFIX
 from swak.formatter import StdoutFormatter
 from swak.buffer import MemoryBuffer
 
 
-PREFIX = ['in', 'par', 'mod', 'out']
+PREFIX = ['i', 'p', 'm', 'o']
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
                                        'desc', 'module'])
@@ -358,7 +358,7 @@ class Output(Plugin):
             self.handle_stream(tag, es)
 
     def write(self, bulk):
-        """Write a bulk.
+        """Write a bulk.o
 
         Make sure the bulk is empty and do nothing if it is empty.
 
@@ -375,12 +375,12 @@ class Output(Plugin):
 
 
 BASE_CLASS_MAP = {
-    'in': Input,
-    'intxt': TextInput,
-    'inrec': RecordInput,
-    'par': Parser,
-    'mod': Modifier,
-    'out': Output,
+    'i': Input,
+    'it': TextInput,
+    'ir': RecordInput,
+    'p': Parser,
+    'm': Modifier,
+    'o': Output,
 }
 
 
@@ -405,7 +405,7 @@ def get_plugins_dir(standard, _home=None):
     return os.path.join(edir, dirn)
 
 
-def iter_plugins(standard, _home=None, _filter=None):
+def iter_plugins(standard, _home=None, _filter=None, warn=True):
     """Iterate valid plugin infos.
 
     While visiting each sub-directory of the plugin directory, yield plugin
@@ -414,6 +414,7 @@ def iter_plugins(standard, _home=None, _filter=None):
     Args:
         _home (str): Explict home directory. Defaults to None.
         _filter (function): filter plugins for test.
+        warn (bool): Warning if a directory does not suitable for plugin.
 
     Returns:
         PluginInfo:
@@ -432,7 +433,13 @@ def iter_plugins(standard, _home=None, _filter=None):
 
         adir = os.path.join(pdir, _dir)
         logging.debug("try to validate plugin {}".format(adir))
-        for pi in validate_plugin_info(adir):
+
+        plugin_infos = validate_plugin_info(adir)
+        if len(plugin_infos) == 0 and warn:
+            logging.warning("'{}' is not a proper plugin directory.")
+            return
+
+        for pi in plugin_infos:
             logging.debug("  got plugin info {}".format(pi))
             yield pi
 
@@ -440,24 +447,24 @@ def iter_plugins(standard, _home=None, _filter=None):
 def validate_plugin_info(adir):
     """Check a directory whether it conforms plugin rules.
 
-    Valid plugin rules:
+    Rule:
+      It is a valid plugin directory, if it has files with swak plugin module
+        style name, it is:
 
-    1. The directory has a python script with a name of standard plugin module
-        name:
-
-        plugin type prefix(`in`, `par`, `mod`, `buf`, `out`) + '_' +
-        module name(snake case).
-        ex) in_fake_data.py
-
-    2. TODO
+      starts with prefix(`i`, `p`, `m`, `b`, `o`) + '_' + module name
+          (snake case).
+        ex) i_fake_data.py
 
     Args:
         adir: Absolute directory path to test.
 
     Returns:
-        list: List of PluginInfo for valid plugin
+        list: List of PluginInfo. if this directory does not have one,
+            it will be empty.
     """
     pis = []
+    if 'memory' in adir:
+        pass
     for pypath in glob.glob(os.path.join(adir, '*.py')):
         fname = os.path.basename(pypath)
         if fname.startswith('__'):
@@ -468,12 +475,18 @@ def validate_plugin_info(adir):
             logging.debug("found valid plugin module {}".format(fname))
             mod = load_module(fname, pypath)
             pclass = _infer_plugin_class(mod, pr, fname)
+            if pclass is None:
+                # has invalid class, break immediately to report
+                break
             cname = pclass.__name__
             pname = '{}.{}'.format(pr, cname.lower())
             dname = os.path.basename(adir)
             cname = "{}.{}".format(pname, cname)
             pi = PluginInfo(fname, pname, dname, cname, mod.main.help, mod)
             pis.append(pi)
+
+    if len(pis) == 0:
+        logging.error("{} is not valid plugin directory".format(adir))
     return pis
 
 
@@ -502,8 +515,8 @@ def _infer_plugin_class(mod, pr, fname):
                 return obj
         except TypeError:
             pass
-    logging.error("Can not infer class instance - mod {} pr {} fname {}".
-                  format(mod, pr, fname))
+    logging.error("Can not infer class instance - module {} prefix {} "
+                  "filename {}".format(mod, pr, fname))
 
 
 def load_module(name, path):
@@ -606,12 +619,12 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     env = Environment(loader=PackageLoader('swak', 'static/templates'))
 
     base_dir = get_plugins_dir(False)
-    plugin_dir = os.path.join(base_dir, '{}-{}'.format(PLUGIN_PREFIX,
+    plugin_dir = os.path.join(base_dir, '{}_{}'.format(PLUGINDIR_PREFIX,
                                                        file_name))
     os.mkdir(plugin_dir)
 
     def base_input_prefix(prefix):
-        return 'in' if prefix in ['intxt', 'inrec'] else prefix
+        return 'i' if prefix in ['it', 'ir'] else prefix
 
     # create each type module
     for _prefix in prefixes:
@@ -631,9 +644,9 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     readme_file = os.path.join(plugin_dir, 'README.md')
     with open(readme_file, 'wt') as f:
         tpl = env.get_template('tmpl_readme.md')
-        code = tpl.render(plugin_prefix=PLUGIN_PREFIX, class_name=class_name,
-                          type_name=typen, base_name=basen,
-                          file_name=file_name)
+        code = tpl.render(plugin_prefix=PLUGINDIR_PREFIX,
+                          class_name=class_name, type_name=typen,
+                          base_name=basen, file_name=file_name)
         f.write(code)
 
     # create test file

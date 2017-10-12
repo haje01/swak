@@ -17,10 +17,10 @@
 
 플러그인은 크게 입력, 파서, 변경, 버퍼, 출력 그리고 명령 플러그인의 다섯가지 타입으로 나뉜다. 각 타입별 플러그인은 다음과 같은 접두사를 갖는다.
 
-- 입력 플러그인: ``in.``
-- 파서 플러그인: ``par.``
-- 변경 플러그인: ``mod.``
-- 출력 플러그인: ``out.``
+- 입력 플러그인: ``i.``
+- 파서 플러그인: ``p.``
+- 변경 플러그인: ``m.``
+- 출력 플러그인: ``o.``
 
 
 플러그인 이름
@@ -58,8 +58,8 @@
 
 플러그인의 처리 단계 별로 다음 사항을 주의하자:
 
-- 임의의 날(raw) 텍스트를 읽어 라인을 반환하는 ``in.tail`` 같은 입력 플러그인 뒤에는, 반드시 파서 플러그인이 와야 한다.
-- 알려진 형식의 텍스트를 읽어들이는 ``in.syslog`` 같은 입력 플러그인은, 자체적으로 파싱하여 레코드를 반환해야한다. 당연히 뒤에 파서가 올 필요가 없다.
+- 임의의 날(raw) 텍스트를 읽어 라인을 반환하는 ``i.filetail`` 같은 입력 플러그인 뒤에는, 반드시 파서 플러그인이 와야 한다.
+- 알려진 형식의 텍스트를 읽어들이는 ``i.syslog`` 같은 입력 플러그인은, 자체적으로 파싱하여 레코드를 반환해야한다. 당연히 뒤에 파서가 올 필요가 없다.
 - 파서 이후의 데이터는 모두 레코드 형식이다.
 - 변경 플러그인(Modifier)은 파싱된 레코드에 변경을 가한다.
 
@@ -133,7 +133,7 @@
 다음과 같은 포매터 클래스가 있다.
 
 ``StdoutFormatter``
-  ``out.stdout`` 플러그인에서 사용하는 형식으로, tag datetime record 형식으로 출력된다.
+  ``o.stdout`` 플러그인에서 사용하는 형식으로, tag datetime record 형식으로 출력된다.
 
 ``DsvFormatter``
   Delimiter Seperated Values의 약자로, CSV나 TSV 형식으로 출력할 때 사용한다.
@@ -142,7 +142,7 @@
   JSON 형식으로 출력할 때 사용한다.
 
 ``MessagePackFormatter``
-  `MessagePack <http://msgpack.org>`_ 형식으로 ``out.fluentd`` 플러그인에서 사용된다.
+  `MessagePack <http://msgpack.org>`_ 형식으로 ``o.fluentd`` 플러그인에서 사용된다.
 
 모든 포매터 플러그인은 다음과 같은 공통 기능을 갖는다.
 
@@ -291,14 +291,14 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 .. code-block:: yaml
 
     sources:
-      - in.file -f file1 --tag file1  # 입력 스레드 1에서 실행
-      - in.file -f file2 --tag file2  # 입력 스레드 2에서 실행
+      - i.file -f file1 --tag file1  # 입력 스레드 1에서 실행
+      - i.file -f file2 --tag file2  # 입력 스레드 2에서 실행
 
     matches:
       "file1":
-        - out.file -f out1  # 입력 스레드 1에서 실행
+        - o.file -f out1  # 입력 스레드 1에서 실행
       "file2":
-        - out.file -f out2  # 입력 스레드 2에서 실행
+        - o.file -f out2  # 입력 스레드 2에서 실행
 
 
 ``file1`` 과 ``file2`` 을 위해 모두 두 개의 스레드가 할당된다.
@@ -315,12 +315,12 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 .. code-block:: yaml
 
     sources:
-      - in.file -f file1 --tag file  # 입력 스레드 1에서 실행
-      - in.file -f file2 --tag file  # 입력 스레드 2에서 실행
+      - i.file -f file1 --tag file  # 입력 스레드 1에서 실행
+      - i.file -f file2 --tag file  # 입력 스레드 2에서 실행
 
     matches:
       "file":
-        - out.file -f out  # 출력 스레드 3에서 실행
+        - o.file -f out  # 출력 스레드 3에서 실행
 
 
 ``file1`` 과 ``file2`` 의 입력을 위해 두 개, 그리고 ``file`` 에 결합된 출력을 위해 한 개, 모두 세 개의 스레드가 필요하다.
@@ -334,13 +334,13 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 .. code-block:: yaml
 
     sources:
-      - in.file -f file1 --tag file  # 입력 스레드 1에서 실행
-      - in.file -f file2 --tag file  # 입력 스레드 2에서 실행
+      - i.file -f file1 --tag file  # 입력 스레드 1에서 실행
+      - i.file -f file2 --tag file  # 입력 스레드 2에서 실행
 
     matches:
       "file":
         - par.myparser     # 입력 스레드 1, 2에서 각각 실행
-        - out.file -f out  # 출력 스레드 3에서 실행
+        - o.file -f out  # 출력 스레드 3에서 실행
 
 
 ``file1`` 과 ``file2`` 의 파싱 과정이 필요한데, 그것은 각 입력 플러그인과 같은 스레드 아래에서 수행되고, 그 결과가 출력 스레드에 모여서 출력된다.
@@ -350,14 +350,14 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 .. code-block:: yaml
 
     sources:
-      - in.file -f file1 --tag file  # 입력 스레드 1에서 실행
-      - in.file -f file2 --tag file  # 입력 스레드 2에서 실행
+      - i.file -f file1 --tag file  # 입력 스레드 1에서 실행
+      - i.file -f file2 --tag file  # 입력 스레드 2에서 실행
 
     matches:
       "file":
         - par.myparser     # 입력 스레드 1, 2에서 각각 실행
         - buf.file         # 출력 스레드 3에서 실행
-        - out.file -f out  # 출력 스레드 3에서 실행
+        - o.file -f out  # 출력 스레드 3에서 실행
 
 
 버퍼 플러그인은 출력과 같은 스레드에서 실행된다.
@@ -528,14 +528,14 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
       Init new plugin package.
 
     Options:
-      -t, --type [intxt|inrec|par|mod|buf|out]
+      -t, --type [it|ir|p|m|b|o]
                                       Plugin module type prefix.  [default: mod]
       -d, --dir PATH                  Plugin directory  [default: SWAK_DIR/plugins]
       --help                          Show this message and exit.
 
 플러그인의 타입은 위에서 소개한 플러그인 접두어로 지정한다. (하나 이상의 타입을 지정할 수 있다.)
 
-.. note:: 입력 플러그인의 경우 두가지 타입이 있다. ``intxt``는 텍스트 라인을 반환하고, ``inrec``는 딕셔너리 형태의 레코드를 반환한다.
+.. note:: 입력 플러그인의 경우 두가지 타입이 있다. ``it``는 텍스트 라인을 반환하고, ``ir``는 딕셔너리 형태의 레코드를 반환한다.
 
 
 
@@ -828,7 +828,7 @@ Swak는 파이썬 2.7와 3.5를 지원한다.
 
 여기서 Swak의 플러그인 패키지는 GitHub을 통해서 관리되는 것으로 가정하며, 다음과 같은 규칙을 따라야 한다.
 
-- GitHub의 저장소(Repository) 이름은 ``swak-plugin-`` 으로 시작한다.
+- GitHub의 저장소(Repository) 이름은 ``swak_plugin_`` 으로 시작한다.
 - 정해진 규칙에 맞게 문서화 되어야 한다.
 - 버전 정보를 갖는다.
 - 플러그인이 의존하는 패키지가 있는 경우 ``requirements.txt`` 파일을 만들고 명시한다. (의존 패키지가 없다면 만들지 않는다.)
@@ -838,7 +838,7 @@ Swak는 파이썬 2.7와 3.5를 지원한다.
 
 각 플러그인 패키지는 ``README.md`` 파일에 문서화를 해야한다. `GitHub 마크다운 형식  <https://guides.github.com/features/mastering-markdown/>`_ 에 맞게 다음과 같이 작성한다.
 
-- 처음에 H1(``#``)으로 ``swak-plugin-NAME`` 형식으로 플러그인의 이름 헤더가 온다.
+- 처음에 H1(``#``)으로 ``swak_plugin_NAME`` 형식으로 플러그인의 이름 헤더가 온다.
     - 본문으로 플러그인에 대한 간단한 설명을 한다.
 - 그 아래 H2(``##``)로 사용예(``Usage``) 헤더가 온다.
     - 본문으로 Swak CLI에서 플러그인 설명(desc) 출력을 캡쳐해 보여준다.
@@ -851,7 +851,7 @@ Swak는 파이썬 2.7와 3.5를 지원한다.
 
 .. code-block:: markdown
 
-    # swak-plugin-NAME
+    # swak_plugin_NAME
 
     ## Usage
 
@@ -885,11 +885,11 @@ Swak는 파이썬 2.7와 3.5를 지원한다.
 
 각 행마다 행번호를 붙여주는 간단한 출력용 플러그인 ``linenumber`` 을 예제로 알아보자.
 
-1. 먼저 GitHub에서 ``swak-plugin-linenumber`` 라는 빈 저장소를 만든다. (이때 원하는 라이센스를 선택하고 ``README.md`` 생성을 체크한다.)
+1. 먼저 GitHub에서 ``swak_plugin_linenumber`` 라는 빈 저장소를 만든다. (이때 원하는 라이센스를 선택하고 ``README.md`` 생성을 체크한다.)
 2. Swak의 ``plugins`` 디렉토리로 이동한다.
 3. 저장소를 ``clone`` 한다.::
 
-    git clone https://github.com/GitHub계정/swak-plugin-linenumber.git
+    git clone https://github.com/GitHub계정/swak_plugin_linenumber.git
 
 4. ``main.py`` 파일을 만들고 플러그인 코드를 작성한다.
 5. 테스트용 설정 파일 ``cfg-test.yml`` 을 작성한다.

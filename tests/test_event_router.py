@@ -5,8 +5,8 @@ import pytest
 
 from swak.plugin import DummyOutput
 
-from swak.stdplugins.filter.mod_filter import Filter
-from swak.stdplugins.reform.mod_reform import Reform
+from swak.stdplugins.filter.m_filter import Filter
+from swak.stdplugins.reform.m_reform import Reform
 
 
 @pytest.fixture()

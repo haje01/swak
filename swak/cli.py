@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import re
 import sys
 import logging
 
@@ -17,7 +18,8 @@ check_python_version()
 
 PLUGIN_DIR = get_plugins_dir(False)
 
-INIT_PREFIX = ['intxt', 'inrec'] + [p for p in PREFIX[1:]]
+INIT_PREFIX = ['it', 'ir'] + [p for p in PREFIX[1:]]
+ptrn_classnm = re.compile('[A-Z][a-zA-Z0-9_]+')
 
 
 @click.group()
@@ -28,12 +30,25 @@ def main(ctx, verbose):
     ctx.obj['verbosity'] = verbose
 
 
+def validate_init_args(file_name, class_name):
+    """Validate file & class name for init command."""
+    for pr in PREFIX:
+        if file_name.startswith('{}_'.format(pr)):
+            logging.error("FILE_NAME should not contain plugin prefix. ({}_)"
+                          .format(pr))
+            return False
+    if ptrn_classnm.match(class_name) is None:
+        logging.error("{} is not suitable class name style.")
+        return False
+    return True
+
+
 # if not packeged into binary
 if not getattr(sys, 'frozen', False):
     # support init command
     @main.command(help='Init new plugin package.')
     @click.option('-t', '--type', "ptypes", type=click.Choice(INIT_PREFIX),
-                  default="mod", show_default=True, multiple=True,
+                  default="m", show_default=True, multiple=True,
                   help="Plugin module type prefix.")
     @click.option('-d', '--dir', 'pdir', type=click.Path(exists=True),
                   default=PLUGIN_DIR, show_default=True, help="Plugin "
@@ -43,6 +58,8 @@ if not getattr(sys, 'frozen', False):
     @click.pass_context
     def init(ctx, ptypes, file_name, class_name, pdir):
         """Init new plugin package."""
+        if not validate_init_args(file_name, class_name):
+            sys.exit(-1)
         prepare_cli(ctx)
 
         # check duplicate plugin
@@ -57,11 +74,10 @@ if not getattr(sys, 'frozen', False):
                     sys.exit(-1)
 
         # check duplicate input types
-        if 'intxt' in ptypes and 'inrec' in ptypes:
+        if 'it' in ptypes and 'ir' in ptypes:
             logging.error("Text input & Record input plugins are mutually "
                           "exclusive.")
             sys.exit(-1)
-
         init_plugin_dir(ptypes, file_name, class_name, pdir)
 
 
@@ -73,7 +89,8 @@ def list(ctx):
 
     def list_plugins(standard):
         plugins = []
-        pinfos = [(pi.pname, pi.module) for pi in iter_plugins(standard)]
+        pinfos = [(pi.pname, pi.module) for pi in iter_plugins(standard,
+                                                               warn=True)]
         pinfos = sorted(pinfos)
         cnt = len(pinfos)
         for pname, pmod in pinfos:

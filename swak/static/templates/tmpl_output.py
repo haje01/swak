@@ -5,5 +5,4 @@
     def _write(self, bulk):
         """Write a bulk."""
         raise NotImplementedError()
-
 {% endblock %}

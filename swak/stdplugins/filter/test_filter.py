@@ -3,7 +3,7 @@
 from swak.event_router import EventRouter
 from swak.plugin import DummyOutput
 
-from .mod_filter import Filter
+from .m_filter import Filter
 
 
 def init_event_router(doutput, modifiers):

@@ -2,7 +2,7 @@
 
 import socket
 
-from .mod_reform import Reform, _tag_suffix, _normalize
+from .m_reform import Reform, _tag_suffix, _normalize
 
 
 def test_event_router_util():

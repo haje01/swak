@@ -55,10 +55,10 @@ def process_components(components):
     return Stdout(_formatter)
 
 
-@main.command('formatter', help="Setting formatter for this output.")
+@main.command('f.stdout', help="Setting formatter for this output.")
 @click.option('-z', '--timezone', default="UTC", show_default=True,
               help="Timezone for format.")
-def formatter(timezone):
+def f_stdout(timezone):
     """Formatter entry."""
     return StdoutFormatter(timezone=timezone)
 

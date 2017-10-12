@@ -1,8 +1,8 @@
 """This module implements thread test."""
 from __future__ import absolute_import
 
-from swak.stdplugins.counter.in_counter import Counter
-from swak.stdplugins.stdout.out_stdout import Stdout
+from swak.stdplugins.counter.i_counter import Counter
+from swak.stdplugins.stdout.o_stdout import Stdout
 
 
 def test_thread_basic(router):
