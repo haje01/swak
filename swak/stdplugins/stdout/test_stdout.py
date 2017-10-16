@@ -5,18 +5,13 @@ from swak.stdplugins.counter.i_counter import Counter
 from .o_stdout import Stdout
 
 
-def test_stdout_basic(router, capfd):
+def test_stdout_basic(agent, capfd):
     """Test basic features of Stdout plugin."""
     counter = Counter(3, 1, 0)
-    counter.set_router(router)
-    counter.set_tag("test")
+    agent.register_plugin("test", counter)
     stdout = Stdout()
-    stdout.set_router(router)
-
-    router.add_rule("test", counter)
-    router.add_rule("test", stdout)
-    counter.read()
-    router.flush()
+    agent.register_plugin("test", stdout)
+    agent.simple_process(counter)
 
     out, err = capfd.readouterr()
     lines = out.strip().split('\n')

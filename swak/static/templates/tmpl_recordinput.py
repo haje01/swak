@@ -1,46 +1,21 @@
 {% extends "tmpl_base.py" %}
 
 {% block class_body %}
-
     def __init__(self):
         """Init."""
-        super(Input, self).__init__()
+        super(RecordInput, self).__init__()
 
-    def start(self):
-        """Start plugin.
+    def read_record(self):
+        """Generate a record from the source.
 
-        This method is called when the task starts after processing the
-        setting. Creation of resources such as files and threads to be used in
-        the plug-in is created here.
-        """
-        super({{class_name}}, self).start()
-        # Allocate resources if necessary.
+        Throw NoMoreData exception if no more record available.
 
-    def stop(self):
-        """Stop plugin.
+        Raises:
+            NoMoreData: No more data to generate.
 
-        This method is called when the task is preparing to shutdown. You
-        should do simple things that do not fail, such as setting a thread
-        stop flag.
-
-        """
-        super({{class_name}}, self).stop()
-
-    def shutdown(self):
-        """Shutdown plugin.
-
-        This method is called when the task is completely shutdown. Here you
-        can close or remove any files, threads, etc. that you had created in
-        ``start``.
-        """
-        super({{class_name}}, self).shutdown()
-        # Release resources if necessary.
-
-    def generate_records(self):
-        """Yield multiple records.
-
-        Yields:
-            dict: A record
+        Returns:
+            dict: A record. Return empty dict if conditions do not
+                match.
         """
         raise NotImplementedError()
 {% endblock %}

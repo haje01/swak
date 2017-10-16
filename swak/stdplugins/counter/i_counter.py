@@ -5,41 +5,54 @@ import time
 import click
 
 from swak.plugin import RecordInput
+from swak.exception import NoMoreData
 
 
 class Counter(RecordInput):
     """Counter input plugin class."""
 
-    def __init__(self, count, field, delay):
+    def __init__(self, max_count, field, delay):
         """Init.
 
         Args:
-            count: Count to read.
+            max_count: Maximum count..
             field: Field count.
             delay: Delay time in seconds before next read.
         """
         super(Counter, self).__init__()
-        self.count = count
+        self.count = 0
+        self.max_count = max_count
         self.field = field
         self.delay = delay
+        self.last_time = None
 
-    def generate_records(self):
-        """Yield multiple records.
+    def read_record(self):
+        """Generate a record from the source.
 
-        Yields:
-            dict
+        Raises:
+            NoMoreData: No more data to generate.
+
+        Returns:
+            dict: Generated record. Return empty dict if conditions do not
+                match.
         """
-        cnt = 0
-        while True:
-            if cnt >= self.count:
-                break
-            cnt += 1
-            record = {}
-            for f in range(self.field):
-                key = "f{}".format(f + 1)
-                record[key] = cnt
-            yield record
-            time.sleep(self.delay)
+        if self.count >= self.max_count:
+            raise NoMoreData()
+
+        cur_time = time.time()
+        if self.last_time is None:
+            self.last_time = cur_time
+        if not (self.delay is None or self.delay == 0):
+            if time.time() - self.last_time < self.delay:
+                return {}
+
+        self.count += 1
+        record = {}
+        for f in range(self.field):
+            key = "f{}".format(f + 1)
+            record[key] = self.count
+        self.last_time = cur_time
+        return record
 
 
 @click.command(help="Generate incremental numbers.")

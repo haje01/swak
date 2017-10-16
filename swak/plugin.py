@@ -6,7 +6,6 @@ import glob
 from collections import namedtuple
 import logging
 import types
-import time
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
@@ -26,12 +25,12 @@ class Plugin(object):
 
     def __init__(self):
         """Init."""
-        self.router = None
         self.started = self.shutdowned = False
+        self.tag = None
 
-    def set_router(self, router):
-        """Set router for the plugin."""
-        self.router = router
+    def set_tag(self, tag):
+        """Set tag."""
+        self.tag = tag
 
     def start(self):
         """Start plugin.
@@ -41,7 +40,12 @@ class Plugin(object):
         the plug-in is created here.
         """
         assert not self.started
+        self._start()
         self.started = True
+
+    def _start(self):
+        """Implement start."""
+        pass
 
     def stop(self):
         """Stop plugin.
@@ -52,21 +56,28 @@ class Plugin(object):
 
         """
         assert self.started
+        self._stop()
         self.started = False
 
-    def before_shutdown(self):
-        """Handle things before shutdown."""
+    def _stop(self):
+        """Implement stop."""
         pass
 
     def shutdown(self):
         """Shutdown plugin.
 
-        This method is called when the task is completely shutdown. Here you
-        can close or remove any files, threads, etc. that you had created in
+        This method is called when the agent has been completely done. Here you
+        can close or remove any files, threads, etc that you had created in
         ``start``.
         """
-        self.before_shutdown()
+        assert not self.started  # stop first
+        assert not self.shutdowned
+        self._shutdown()
         self.shutdowned = True
+
+    def _shutdown(self):
+        """Implement shutdown."""
+        pass
 
 
 class Input(Plugin):
@@ -79,27 +90,15 @@ class Input(Plugin):
             tag (str): An event tag.
         """
         super(Input, self).__init__()
-        self.tag = None
         self.encoding = None
 
-    def set_tag(self, tag):
-        """Set tag."""
-        self.tag = tag
+    def read_one(self):
+        """Read a record from the source.
 
-    def read(self):
-        """Read input from source and emit to event router."""
-        raise NotImplementedError()
-
-    def emit(self, record):
-        """Emit a record.
-
-        Args:
-            record (dict)
+        Returns:
+            dict: A record.
         """
-        assert self.router is not None, "Plugin needs a router."
-        assert self.tag is not None, "Input plugin needs a event tag."
-        utime = time.time()
-        self.router.emit(self.tag, utime, record)
+        raise NotImplementedError()
 
     def set_encoding(self, encoding):
         """Set encoding of input source.
@@ -113,25 +112,32 @@ class Input(Plugin):
 class RecordInput(Input):
     """Base class for input plugin which emits record.
 
-    This if usually for a generative input plugin which generate data and
-        **emit** record directly to the event router. (no following parser is
-        needed.)
+    This if usually for a generative input plugin which knows how to genreate
+      data and **emit** record directly to the event router. (no following
+      parser is needed.)
 
     Function to be implemented:
 
-        ``read_record``
+        ``read_one``
     """
 
-    def read(self):
-        """Read records and emit them to the router."""
-        for record in self.generate_records():
-            self.emit(record)
+    def read_one(self):
+        """Read a record and emit it to the router."""
+        record = self.read_record()
+        if record:
+            return record
 
-    def generate_records(self):
-        """Yield multiple records.
+    def read_record(self):
+        """Read a record from the source.
 
-        Yields:
-            dict: A record
+        Throw NoMoreData exception if no more record available.
+
+        Raises:
+            NoMoreData: No more data to read.
+
+        Returns:
+            dict: Read record. Return empty dict if conditions do not
+                match.
         """
         raise NotImplementedError()
 
@@ -157,26 +163,36 @@ class TextInput(Input):
         """Set parser for this TextInput plugin."""
         self.parser = parser
 
-    def read(self):
-        """Read data from source, parse and emit results to the router."""
+    def read_one(self):
+        """Read a line from source, and return a record by parsing.
+
+        Returns:
+            str: A line. Return empty string if conditions do not match.
+        """
         assert self.parser is not None, "Text input plugin needs a parser."
-        for line in self.read_lines():
-            if line is None:
-                break
+        line = self.read_line()
+        if line:
             if self.encoding is not None:
                 line = line.decode(self.encoding)
+            # test by filter function
             if self.filter_fn is not None:
                 if not self.filter_fn(line):
-                    continue
-
+                    return {}
             record = self.parser.parse(line)
-            self.emit(record)
+            return record
+        else:
+            return {}
 
-    def read_lines(self):
-        """Read lines.
+    def read_line(self):
+        """Read a line from the source.
+
+        Throw NoMoreData exception if no more record available.
+
+        Raises:
+            NoMoreData: No more data to read.
 
         Yields:
-            str: A line
+            str: A line. Return empty string if conditions do not match.
         """
         raise NotImplementedError()
 
@@ -277,8 +293,8 @@ class Output(Plugin):
         self.send_queue = None
         self.recv_queues = []
 
-    def before_shutdown(self):
-        """Handle things before shutdown."""
+    def _shutdown(self):
+        """Implement shutdown."""
         if self.buffer.flush_at_shutdown is not None:
             self.flush()
 
@@ -303,6 +319,11 @@ class Output(Plugin):
         assert len(self.recv_queues) > 0, "Can not send and receive at the"\
             " same time"
         self.send_queue = send_queue
+
+    @property
+    def trun_finished(self):
+        """Return whether this output has been finished for a test run."""
+        return False
 
     @property
     def is_proxy(self):
@@ -358,7 +379,7 @@ class Output(Plugin):
             self.handle_stream(tag, es)
 
     def write(self, bulk):
-        """Write a bulk.o
+        """Write a bulk.
 
         Make sure the bulk is empty and do nothing if it is empty.
 
@@ -416,7 +437,7 @@ def iter_plugins(standard, _home=None, _filter=None, warn=True):
         _filter (function): filter plugins for test.
         warn (bool): Warning if a directory does not suitable for plugin.
 
-    Returns:
+    Yields:
         PluginInfo:
     """
     pdir = get_plugins_dir(standard, _home)

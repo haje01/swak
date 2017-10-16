@@ -12,7 +12,7 @@ from tabulate import tabulate
 from swak.util import check_python_version, set_log_verbosity
 from swak.plugin import PREFIX, get_plugins_dir, init_plugin_dir,\
     iter_plugins
-from swak.core import parse_and_validate_test_cmds, run_test_cmds
+from swak.core import TRunAgent
 
 check_python_version()
 
@@ -113,7 +113,7 @@ def list(ctx):
 @main.command(help="Show help message for a plugin.")
 @click.argument('plugin')
 @click.option('-s', '--sub-command', 'subcmd', help="Show help for a "
-              "subcommand of the plugin")
+              "subcommand.")
 @click.pass_context
 def desc(ctx, plugin, subcmd):
     """Show help message for a plugin.
@@ -141,15 +141,15 @@ def desc(ctx, plugin, subcmd):
 @main.command(help="Run '|' seperated test commands.")
 @click.argument('commands')
 @click.pass_context
-def test(ctx, commands):
-    """Run test commands.
+def trun(ctx, commands):
+    """Test run.
 
     Args:
-        commands (str): Test commands concated with '|'
+        commands (str): Test command concated with '|'
     """
     prepare_cli(ctx)
-    cmds = parse_and_validate_test_cmds(commands)
-    run_test_cmds(cmds)
+    agent = TRunAgent()
+    agent.run_commands(commands)
 
 
 def prepare_cli(ctx):

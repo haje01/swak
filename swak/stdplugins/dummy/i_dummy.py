@@ -4,30 +4,41 @@ from __future__ import absolute_import  # NOQA
 import click
 
 from swak.plugin import RecordInput
+from swak.exception import NoMoreData
 
 
 class Dummy(RecordInput):
     """Dummy class."""
 
-    def __init__(self, record, count=1):
+    def __init__(self, record, max_count=3):
         """Init.
 
         Args:
             record (dict): A user input record.
-            count (int): Repeat count.
+            max_count (int): Maximum count to input.
         """
         super(RecordInput, self).__init__()
         self.record = record
-        self.count = count
+        self.max_count = max_count
+        self.count = 0
 
-    def generate_records(self):
-        """Return multiple records.
+    def read_record(self):
+        """Generate a record from the source.
 
-        Yields:
-            dict: A record
+        Throw NoMoreData exception if no more record available.
+
+        Raises:
+            NoMoreData: No more data to generate.
+
+        Returns:
+            dict: Generated record. Return empty dict if conditions do not
+                match.
         """
-        for i in range(self.count):
-            yield self.record
+        if self.count < self.max_count:
+            self.count += 1
+            return self.record
+        else:
+            raise NoMoreData()
 
 
 @click.command(help="Generate user input as dummy event.")

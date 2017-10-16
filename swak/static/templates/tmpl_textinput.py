@@ -1,47 +1,21 @@
 {% extends "tmpl_base.py" %}
+from swak.exception import NoMoreData
 
 {% block class_body %}
-
     def __init__(self):
         """Init."""
-        super(Input, self).__init__()
+        super(TextInput, self).__init__()
 
-    def start(self):
-        """Start plugin.
+    def read_line(self):
+        """Generate a line from the source.
 
-        This method is called when the task starts after processing the
-        setting. Creation of resources such as files and threads to be used in
-        the plug-in is created here.
-        """
-        super({{class_name}}, self).start()
-        # Allocate resources if necessary.
+        Raises:
+            NoMoreData: No more data to generate.
 
-    def stop(self):
-        """Stop plugin.
+        Throw NoMoreData exception if no more record available.
 
-        This method is called when the task is preparing to shutdown. You
-        should do simple things that do not fail, such as setting a thread
-        stop flag.
-
-        """
-        super({{class_name}}, self).stop()
-
-    def shutdown(self):
-        """Shutdown plugin.
-
-        This method is called when the task is completely shutdown. Here you
-        can close or remove any files, threads, etc. that you had created in
-        ``start``.
-        """
-        super({{class_name}}, self).shutdown()
-        # Release resources if necessary.
-
-
-    def read_lines(self):
-        """Read lines.
-
-        Yields:
-            str: A line
+        Returns:
+            str: A line. Return empty string if conditions do not match.
         """
         raise NotImplementedError()
 {% endblock %}

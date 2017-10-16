@@ -1,5 +1,5 @@
 """This module implements consts."""
 
 TIME_KEY = '_time'
-TEST_STREAM_TAG = 'test'
+TESTRUN_TAG = 'trun'
 PLUGINDIR_PREFIX = 'swak_plugin'

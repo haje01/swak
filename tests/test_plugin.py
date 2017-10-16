@@ -9,6 +9,8 @@ from swak.plugin import iter_plugins, import_plugins_package, TextInput,\
     Parser, get_plugins_dir
 from swak.util import test_logconfig
 from swak.const import PLUGINDIR_PREFIX
+from swak.exception import NoMoreData
+
 
 test_logconfig()
 
@@ -44,13 +46,23 @@ def test_plugin_import():
     __import__('stdplugins.filter')
 
 
-def test_plugin_basic(router):
+def test_plugin_basic(agent):
     """Test plugins basic features."""
     class FooInput(TextInput):
-        def read_lines(self):
-            yield "john 1"
-            yield "jane 2"
-            yield "smith 3"
+        def __init__(self):
+            super(FooInput, self).__init__()
+            self.count = 0
+
+        def read_line(self):
+            self.count += 1
+            if self.count == 1:
+                return "john 1"
+            elif self.count == 2:
+                return "jane 2"
+            elif self.count == 3:
+                return "smith 3"
+            else:
+                raise NoMoreData()
 
     class FooParser(Parser):
         def parse(self, line):
@@ -58,22 +70,18 @@ def test_plugin_basic(router):
             return dict(name=name, rank=rank)
 
     parser = FooParser()
-    parser.set_router(router)
     dtinput = FooInput()
-    dtinput.set_router(router)
     dtinput.set_parser(parser)
-    dtinput.set_tag("test")
+    agent.register_plugin("test", dtinput)
 
     def filter(line):
         return 'j' in line
 
     dtinput.set_filter_func(filter)
-    dtinput.start()
-    assert dtinput.started
-    dtinput.read()
-    router.flush()
+    agent.simple_process(dtinput)
+    agent.flush()
 
-    bulks = router.def_output.bulks
+    bulks = agent.def_output.bulks
     assert len(bulks) == 2
     assert "'name': 'john'" in bulks[0].split('\t')[2]
     assert "'name': 'jane'" in bulks[1].split('\t')[2]

@@ -1,2 +1,0 @@
-..  automodule:: swak.util
-    :members:

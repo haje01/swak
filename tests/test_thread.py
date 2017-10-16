@@ -5,20 +5,15 @@ from swak.stdplugins.counter.i_counter import Counter
 from swak.stdplugins.stdout.o_stdout import Stdout
 
 
-def test_thread_basic(router):
-    """Test individual thread model."""
+def test_thread_basic(sagent):
+    """Test service agent building threads."""
     cnt1 = Counter(3, 1, 0)
-    cnt1.set_router(router)
-    cnt1.set_tag("cnt1")
+    sagent.register_plugin("cnt1", cnt1)
 
     cnt2 = Counter(3, 1, 0)
-    cnt2.set_router(router)
-    cnt2.set_tag("cnt2")
+    sagent.register_plugin("cnt2", cnt2)
 
     stdout = Stdout()
-    stdout.set_router(router)
+    sagent.register_plugin("cnt*", stdout)
 
-    router.add_rule("cnt1", cnt1)
-    router.add_rule("cnt2", cnt2)
-    router.add_rule("cnt*", stdout)
-    router.build_threads()
+    sagent.build_threads()

@@ -120,20 +120,27 @@
 | ``t``  | TB   | ``2t`` (2 TB)     |
 +--------+------+-------------------+
 
+.. _formatter_and_buffer:
+
 포매터와 버퍼
 =============
 
-포매터(Formatter)와 버퍼(Buffer)는 플러그인은 아니지만, 모든 출력 플러그인은 필수적으로 포매터를, 선택적으로 버퍼를 갖기에 여기에서 함께 설명하겠다.
+포매터(Formatter)와 버퍼(Buffer)는 플러그인은 아니지만, 모든 출력 플러그인과 함께 사용되기에 여기에서 함께 설명하겠다.
+
 
 포매터
 ------
 
-포매터는 태그, 시간, 레코드를 주어진 형식으로 변환하는 역할을 한다.
+포매터는 태그, 시간, 레코드를 주어진 형식으로 변환하는 역할을 한다. 포매터는 출력 플러그인에 필수적으로 내장되어 사용된다.
+
+.. topic:: 포매터가 출력 플러그인에 필수적으로 내장되는 이유
+
+  출력의 대상은 특정 형식의 포맷을 원하는 경우가 많다. 예를 들어 표준 출력이면 Plain Text 형식을, Elasticsearch라면 JSON 포맷을, Fluentd라면 MessagePack 형식을 원할 것이다. 따라서 모든 출력 플러그인은 자신이 사용할 포매터를 선언하여 가지게 된다.
 
 다음과 같은 포매터 클래스가 있다.
 
 ``StdoutFormatter``
-  ``o.stdout`` 플러그인에서 사용하는 형식으로, tag datetime record 형식으로 출력된다.
+  ``o.stdout`` 플러그인에서 사용하는 형식으로, tag, datetime, record 순서로 출력된다.
 
 ``DsvFormatter``
   Delimiter Seperated Values의 약자로, CSV나 TSV 형식으로 출력할 때 사용한다.
@@ -169,9 +176,14 @@ Swak 내부에서 모든 이벤트의 시간은 UTC 기준의 Unix time stamp �
 버퍼
 ----
 
-버퍼 플러그인은 하나 이상의 입력에서 이벤트를 받아 모으고, 적절한 조건이 되면 **청크(chunk)** 단위로 **플러쉬(flush, 내려보냄)** 하여 출력 플러그인에 전달하는 역할을 한다.
+버퍼는 하나 이상의 입력에서 이벤트를 받아 모으고, 적절한 조건이 되면 **청크(chunk)** 단위로 **플러쉬(flush, 내려보냄)** 하여 출력 플러그인에 전달하는 역할을 한다.
 
-버퍼 플러그인은 **출력 풀러그인** 에 내장되어 사용된다
+버퍼는 출력 플러그인 에 선택적으로 내장되어 사용된다
+
+.. topic:: 버퍼가 출력 플러그인에 선택적으로 내장되는 이유
+
+  모든 출력 플러그인이 버퍼를 반드시 필요로 하는 것은 아니지만, ``o.file`` 와 ``o.s3`` 는 시간 단위 버퍼를 필수적으로 필요로한다. 필수는 아니더라도 빈번한 IO가 일어나는 경우를 대비해 출력 플러그인에 선택적으로 버퍼를 내장하면 좋다.
+
 
 버퍼 포맷 옵션
 ^^^^^^^^^^^^^^
@@ -250,7 +262,7 @@ Swak 내부에서 모든 이벤트의 시간은 UTC 기준의 Unix time stamp �
 
 Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그인을 위한 별도 스레드를 생성한다.
 
-.. note:: Swak CLI의 테스트 커맨드 모드에서는 디버깅의 용이성을 위해 메인 스레드에서 동작한다.
+.. note:: Swak CLI의 테스트 런에서는 디버깅의 용이성을 위해 메인 스레드에서 동작한다.
 
 스레드 종류
 -----------
@@ -291,8 +303,8 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 .. code-block:: yaml
 
     sources:
-      - i.file -f file1 --tag file1  # 입력 스레드 1에서 실행
-      - i.file -f file2 --tag file2  # 입력 스레드 2에서 실행
+      - i.filetail -f file1 --tag file1  # 입력 스레드 1에서 실행
+      - i.filetail -f file2 --tag file2  # 입력 스레드 2에서 실행
 
     matches:
       "file1":
@@ -315,8 +327,8 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 .. code-block:: yaml
 
     sources:
-      - i.file -f file1 --tag file  # 입력 스레드 1에서 실행
-      - i.file -f file2 --tag file  # 입력 스레드 2에서 실행
+      - i.filetail -f file1 --tag file  # 입력 스레드 1에서 실행
+      - i.filetail -f file2 --tag file  # 입력 스레드 2에서 실행
 
     matches:
       "file":
@@ -334,33 +346,15 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 .. code-block:: yaml
 
     sources:
-      - i.file -f file1 --tag file  # 입력 스레드 1에서 실행
-      - i.file -f file2 --tag file  # 입력 스레드 2에서 실행
+      - i.filetail -f file1 --tag file  # 입력 스레드 1에서 실행
+      - i.filetail -f file2 --tag file  # 입력 스레드 2에서 실행
 
     matches:
       "file":
-        - par.myparser     # 입력 스레드 1, 2에서 각각 실행
+        - p.myparser     # 입력 스레드 1, 2에서 각각 실행
         - o.file -f out  # 출력 스레드 3에서 실행
 
-
-``file1`` 과 ``file2`` 의 파싱 과정이 필요한데, 그것은 각 입력 플러그인과 같은 스레드 아래에서 수행되고, 그 결과가 출력 스레드에 모여서 출력된다.
-
-그러나, 출력 앞에 버퍼 플러그인이 있는 다음과 같은 경우:
-
-.. code-block:: yaml
-
-    sources:
-      - i.file -f file1 --tag file  # 입력 스레드 1에서 실행
-      - i.file -f file2 --tag file  # 입력 스레드 2에서 실행
-
-    matches:
-      "file":
-        - par.myparser     # 입력 스레드 1, 2에서 각각 실행
-        - buf.file         # 출력 스레드 3에서 실행
-        - o.file -f out  # 출력 스레드 3에서 실행
-
-
-버퍼 플러그인은 출력과 같은 스레드에서 실행된다.
+``file1`` 과 ``file2`` 의 파싱 과정은 각 입력 플러그인과 같은 스레드에서 수행되고, 그 결과가 출력 스레드에 모여서 출력된다.
 
 
 스레드 생성 과정
@@ -459,7 +453,7 @@ Swak은 CPU의 멀티 코어를 효율적으로 이용하기 위해, 플러그�
 
     counter/
         __init__.py
-        in_counter.py
+        i_counter.py
         test_counter.py
         README.md
 
@@ -528,7 +522,7 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
       Init new plugin package.
 
     Options:
-      -t, --type [it|ir|p|m|b|o]
+      -t, --type [it|ir|p|m|o]
                                       Plugin module type prefix.  [default: mod]
       -d, --dir PATH                  Plugin directory  [default: SWAK_DIR/plugins]
       --help                          Show this message and exit.
@@ -548,7 +542,7 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
 
 .. code-block:: shell
 
-    swak init --type mod linenumber LineNumber
+    swak init --type m linenumber LineNumber
 
 그러면 ``plugins/`` 디렉토리에 아래와 같은 파일들이 생성될 것이다.
 
@@ -556,13 +550,13 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
 
     plugins/
         linenumber/
-            mod_linenumber.py
+            m_linenumber.py
 
-입력 플러그인 모듈인 ``mod_linenumber.py`` 에는 아래와 같은 클래스가 선언된다.
+모디파이어 플러그인 모듈인 ``m_linenumber.py`` 에는 아래와 같은 클래스가 선언된다.
 
 .. code-block:: python
 
-    class LineNumber(Input):
+    class LineNumber(Modifier):
         """LineNumber class."""
 
         ...
@@ -574,16 +568,16 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
 
 .. code-block:: shell
 
-    swak init --type inrec --type par syslog Syslog
+    swak init --type ir --type p syslog Syslog
 
-그러면 아래와 같이 패키지 파일이 생성된다.
+그러면 아래와 같은 플러그인 패키지 디렉토리가 생성된다.
 
 .. code-block:: shell
 
     plugins/
         syslog/
-            in_syslog.py
-            par_syslog.py
+            i_syslog.py
+            p_syslog.py
 
 
 플러그인 기본 클래스

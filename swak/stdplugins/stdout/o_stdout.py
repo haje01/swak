@@ -5,7 +5,7 @@ import click
 
 from swak.plugin import Output
 from swak.formatter import Formatter, StdoutFormatter
-from swak.buffer import MemoryBuffer
+from swak.buffer import Buffer, MemoryBuffer
 
 
 class Stdout(Output):
@@ -38,7 +38,7 @@ def main(ctx):
 
 @main.resultcallback()
 def process_components(components):
-    """Process components and build Stdout.
+    """Process components and build a Stdout.
 
     Args:
         components (list)
@@ -46,19 +46,29 @@ def process_components(components):
     Returns:
         Stdout
     """
-    _formatter = None
+    _formatter = _buffer = None
     for com in components:
         if isinstance(com, Formatter):
             _formatter = com
-    return Stdout(_formatter)
+        if isinstance(com, Buffer):
+            _buffer = com
+    return Stdout(_formatter, _buffer)
 
 
-@main.command('f.stdout', help="Setting formatter for this output.")
-@click.option('-z', '--timezone', default="UTC", show_default=True,
+@main.command('f.stdout', help="Stdout formatter for this output.")
+@click.option('-z', '--timezone', default=None, show_default=True,
               help="Timezone for format.")
 def f_stdout(timezone):
     """Formatter entry."""
     return StdoutFormatter(timezone=timezone)
+
+
+@main.command('b.memory', help="Memory buffer for this output.")
+@click.option('-f', '--flush-interval', default=None, show_default=True,
+              help="Flush interval.")
+def b_memory(flush_interval):
+    """Formatter entry."""
+    return MemoryBuffer(None, False, flush_interval=flush_interval)
 
 
 if __name__ == '__main__':

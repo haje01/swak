@@ -116,6 +116,7 @@ class Reform(Modifier):
             writes (list): List of (key, value) tuple to add.
             deletes (list): List of key to delete.
         """
+        super(Reform, self).__init__()
         for k, v in writes:
             assert isinstance(k, string_types), "Key must be a string"
             assert isinstance(k, string_types), "Value must be a string"

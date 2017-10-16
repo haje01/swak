@@ -177,38 +177,17 @@ class EventRouter(object):
             logging.error(e)
             return False
 
-    def iter_plugins(self):
-        """Iterate all plugins."""
-        for rule in self.rules:
-            yield rule.collector
-        yield self.def_output
-
-    def start(self):
-        """Start plugins in the router."""
-        for plugin in self.iter_plugins():
-            plugin.start()
-
-    def flush(self):
-        """Flush all output plugins."""
-        for plugin in self.iter_plugins():
-            if isinstance(plugin, Output):
-                plugin.flush()
-
-    def shutdown(self):
-        """Shutdown plugins in the router."""
-        for plugin in self.iter_plugins():
-            plugin.shutdown()
-
-    def add_rule(self, pattern, collector):
+    def add_rule(self, tag, collector):
         """Add new rule.
 
         Args:
-            pattern (str): Multiple Glob pattern seperated by space.
+            tag (str): Multiple patterns seperated by space for tag.
             collector (Plugin): Input or Modifier or Output plugin
         """
         logging.debug("add_rule pattern {} collector {}".
-                      format(pattern, collector))
-        rule = Rule(pattern, collector)
+                      format(tag, collector))
+        collector.set_tag(tag)
+        rule = Rule(tag, collector)
         self.rules.append(rule)
 
     def match(self, tag):
@@ -250,6 +229,3 @@ class EventRouter(object):
 
         pipeline.set_output(self.def_output)
         return pipeline
-
-    def build_threads(self):
-        pass
