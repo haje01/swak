@@ -42,9 +42,12 @@ class Pipeline(object):
         Args:
             tag (str): Event tag
             es (EventStream): Event stream to emit
+
+        Returns:
+            int: Adding size of the stream.
         """
         modified = self.modify_stream(tag, es)
-        self.output.emit_events(tag, modified)
+        return self.output.emit_events(tag, modified)
 
     def modify_stream(self, tag, es):
         """Modify event stream.
@@ -155,8 +158,11 @@ class EventRouter(object):
             tag (str): Event tag.
             utime (float): Emit time stamp.
             record (dict): A record.
+
+        Returns:
+            int: Adding size of the stream if succeeded, or None.
         """
-        self.emit_stream(tag, OneEventStream(utime, record))
+        return self.emit_stream(tag, OneEventStream(utime, record))
 
     def emit_stream(self, tag, es):
         """Emit stream with tag.
@@ -166,16 +172,15 @@ class EventRouter(object):
             es (EventStream): Event stream
 
         Returns:
-            bool: True if emit succeeds, False otherwise.
+            int: Adding size of the stream if succeeded, or None.
         """
         try:
-            self.match(tag).emit_events(tag, es)
-            return True
+            adding_size = self.match(tag).emit_events(tag, es)
+            return adding_size
         except Exception as e:
             if DEBUG:
                 raise
             logging.error(e)
-            return False
 
     def add_rule(self, tag, collector):
         """Add new rule.

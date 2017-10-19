@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+import time
 import pytest
 import click
 
@@ -9,12 +10,21 @@ from swak.core import TRunAgent
 from swak.plugin import Output
 
 
-def test_core_test_run():
-    """Test core test run."""
+def init_agent_with_cmds(cmds):
+    """Init agnet with test run commands."""
+    cmds = TRunAgent._parse_and_validate_cmds(cmds)
+    agent = TRunAgent()
+    input_pl = agent._init_from_commands(cmds, True)
+    return agent, input_pl
+
+
+def test_core_testrun(capfd):
+    """Test test run relations."""
     # First plugin must be an input plugin.
     with pytest.raises(ValueError):
         list(TRunAgent._parse_and_validate_cmds("m.reform"))
 
+    # test parse and validate commands
     cmds = list(TRunAgent._parse_and_validate_cmds('i.counter --count 4 '
                                                    '--field 3'))
     assert len(cmds) == 1
@@ -27,7 +37,7 @@ def test_core_test_run():
     router = agent._init_from_commands(cmds, True)
     assert router is not None
     # process events from input
-    agent.simple_process(agent.plugins[0])
+    agent.simple_process(agent.plugins[0], 0.0)
     bulks = agent.def_output.bulks
     assert len(bulks) == 4
     _, _, record = bulks[0].split('\t')
@@ -39,14 +49,68 @@ def test_core_test_run():
         cmds = TRunAgent._parse_and_validate_cmds(cmds)
         agent._init_from_commands(cmds, True)
 
+    # test run with reform
     agent = TRunAgent()
     agent.run_commands('i.counter | m.reform -w host ${hostname} -w tag ${tag}'
-                       ' -d tag')
+                       ' -d tag', 0.0)
     _, _, record = agent.def_output.bulks[0].split('\t')
     record = eval(record)
     assert len(record) == 2
     assert 'host' in record      # inserted
     assert 'tag' not in record   # deleted (overrided)
+    capfd.readouterr()  # flush stdout/err
+
+    # test run with buffer
+    agent = TRunAgent()
+    agent.run_commands('i.counter | o.stdout b.memory -f 1', 0.0)
+    out, _ = capfd.readouterr()
+    # check number of lines
+    assert len(out.strip().split('\n')) == 3
+
+
+def test_core_agent_process(capfd):
+    """Test agent processing."""
+    cmds = 'i.counter | o.stdout b.memory -c 1 -r 1'
+    agent, input_pl = init_agent_with_cmds(cmds)
+    # first process
+    agent.simple_process_one(input_pl)
+    out, _ = capfd.readouterr()
+    # no output for buffer_max_chunk == 1
+    assert out == ''
+    # second process
+    agent.simple_process_one(input_pl)
+    # first output
+    out, _ = capfd.readouterr()
+    assert len(out.strip().split('\n')) == 1
+    assert "'f1': 1" in out
+    agent.simple_process_one(input_pl)
+    # second output
+    out, _ = capfd.readouterr()
+    assert "'f1': 2" in out
+
+    cmds = 'i.counter | o.stdout b.memory -f 1'
+    agent, input_pl = init_agent_with_cmds(cmds)
+    # first process
+    agent.simple_process_one(input_pl)
+    out, _ = capfd.readouterr()
+    # no output for flush interval
+    assert out == ''
+    time.sleep(1)
+    agent.simple_process_one(input_pl)
+    out, _ = capfd.readouterr()
+    # first, second output after sleep
+    assert "'f1': 1" in out
+    assert "'f1': 2" in out
+    assert len(out.strip().split('\n')) == 2
+    agent.simple_process_one(input_pl)
+    out, _ = capfd.readouterr()
+    # no output immediately
+    assert out == ''
+    time.sleep(1)
+    # third output after sleep
+    agent.simple_process_one(input_pl)
+    out, _ = capfd.readouterr()
+    assert "'f1': 3" in out
 
 
 def test_core_agent_basic(agent):

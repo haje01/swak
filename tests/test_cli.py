@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import os
-import time
 from subprocess import call
 import shutil
 
@@ -64,29 +63,6 @@ def test_cli_basic(capfd):
     call(cmd)
     out, err = capfd.readouterr()
     assert '--timezone' in out
-
-
-# def test_cli_test(capfd):
-#     """Test CLI test command."""
-#     # test default output
-#     cmd = [SWAK_CLI, 'trun', 'i.counter']
-#     call(cmd)
-#     out, err = capfd.readouterr()
-#     assert len(err) == 0
-
-#     # test stdout
-#     cmd = [SWAK_CLI, 'trun', 'i.counter | o.stdout f.stdout -z Asia/Seoul']
-#     call(cmd)
-#     out, err = capfd.readouterr()
-#     assert '+09:00' in out
-
-#     # test stdout with buffer
-#     cmd = [SWAK_CLI, 'trun', 'i.counter | o.stdout b.memory -f 2']
-#     start = time.time()
-#     call(cmd)
-#     elapsed = time.time() - start
-#     assert elapsed >= 2.0
-#     out, err = capfd.readouterr()
 
 
 @pytest.mark.skipif(which_exe('git') is None, reason="requires git")

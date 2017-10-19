@@ -6,10 +6,11 @@ import types
 
 from swak.config import get_exe_dir
 from swak.plugin import iter_plugins, import_plugins_package, TextInput,\
-    Parser, get_plugins_dir
+    Parser, get_plugins_dir, Output
 from swak.util import test_logconfig
 from swak.const import PLUGINDIR_PREFIX
 from swak.exception import NoMoreData
+from swak.buffer import MemoryBuffer
 
 
 test_logconfig()
@@ -78,10 +79,21 @@ def test_plugin_basic(agent):
         return 'j' in line
 
     dtinput.set_filter_func(filter)
-    agent.simple_process(dtinput)
-    agent.flush()
+    agent.simple_process(dtinput, 0.0)
 
     bulks = agent.def_output.bulks
     assert len(bulks) == 2
     assert "'name': 'john'" in bulks[0].split('\t')[2]
     assert "'name': 'jane'" in bulks[1].split('\t')[2]
+
+
+def test_plugin_output():
+    """Test output plugin."""
+    # stopping output let its buffer stopped.
+    buf = MemoryBuffer(None, False)
+    out = Output(None, buf)
+    assert out.buffer is buf
+    out.start()
+    assert out.buffer.started
+    out.stop()
+    assert not out.buffer.started

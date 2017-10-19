@@ -138,10 +138,12 @@ def desc(ctx, plugin, subcmd):
     print("Can not find plugin '{}'".format(plugin), file=sys.stderr)
 
 
-@main.command(help="Run '|' seperated test commands.")
+@main.command(help="Test run by chaining plugin commands.")
 @click.argument('commands')
+@click.option('-f', '--force-flush-interval', default=0.0, show_default=True,
+              help="Force flushing interval for input is terminated.")
 @click.pass_context
-def trun(ctx, commands):
+def trun(ctx, commands, force_flush_interval):
     """Test run.
 
     Args:
@@ -149,7 +151,7 @@ def trun(ctx, commands):
     """
     prepare_cli(ctx)
     agent = TRunAgent()
-    agent.run_commands(commands)
+    agent.run_commands(commands, force_flush_interval)
 
 
 def prepare_cli(ctx):

@@ -288,6 +288,8 @@ class Output(Plugin):
             abuffer (Buffer): Swak buffer for this output.
         """
         super(Output, self).__init__()
+        if abuffer is not None and abuffer.output is None:
+            abuffer.output = self
         self.formatter = formatter
         self.buffer = abuffer
         self.send_queue = None
@@ -320,10 +322,15 @@ class Output(Plugin):
             " same time"
         self.send_queue = send_queue
 
-    @property
-    def trun_finished(self):
-        """Return whether this output has been finished for a test run."""
-        return False
+    def _start(self):
+        """Implement start."""
+        if self.buffer is not None:
+            self.buffer.start()
+
+    def _stop(self):
+        """Implement stop."""
+        if self.buffer is not None:
+            self.buffer.stop()
 
     @property
     def is_proxy(self):
@@ -339,10 +346,13 @@ class Output(Plugin):
         Args:
             tag (str): Event tag.
             es (EventStream): Event stream.
+
+        Returns:
+            int: Adding size of the stream. (if send_queue exists.)
         """
         if self.send_queue is None:
             # no send_queue exists, which means single thread.
-            self.handle_stream(tag, es)
+            return self.handle_stream(tag, es)
         else:
             # send_queue exists, which means two threads for input & output.
             self.send_queue.put(es)
@@ -355,11 +365,16 @@ class Output(Plugin):
         Args:
             tag (str)
             es (EventStream)
+
+        Returns:
+            int: Adding size of the stream.
         """
+        adding_size = 0
         for utime, record in es:
             dtime = self.formatter.timestamp_to_datetime(utime)
             formatted = self.formatter.format(tag, dtime, record)
-            self.buffer.append(formatted)
+            adding_size += self.buffer.append(formatted)
+        return adding_size
 
     def append_recv_queue(self, queue):
         """Append receive queue."""
@@ -391,8 +406,29 @@ class Output(Plugin):
         self._write(bulk)
 
     def _write(self, bulk):
-        """Write a bulk."""
+        """Write a bulk.
+
+        Args:
+            bulk (bytearray or list): If the chunk that passes the argument is
+              a binary type, bulk is an array of bytes, otherwise it is a list
+              of strings.
+        """
         raise NotImplementedError()
+
+    def may_chunking(self):
+        """Chunking if needed."""
+        if self.buffer is not None:
+            self.buffer.may_chunking()
+
+    def may_flushing(self, last_flush_interval=None):
+        """Flushing if needed.
+
+        Args:
+            force_flushing_interval (float): Force flushing interval for input
+              is terminated.
+        """
+        if self.buffer is not None:
+            self.buffer.may_flushing(last_flush_interval)
 
 
 BASE_CLASS_MAP = {
@@ -407,8 +443,8 @@ BASE_CLASS_MAP = {
 
 def _get_base_class_name(prefix):
     """Get base class name from prefix."""
-    cls = BASE_CLASS_MAP[prefix]
-    return cls.__name__
+    acls = BASE_CLASS_MAP[prefix]
+    return acls.__name__
 
 
 def _get_full_name(prefix, class_name):
@@ -607,11 +643,20 @@ class DummyOutput(Output):
     def _write(self, bulk):
         """Write a bulk.
 
-        Dummy output saves the bulk for test purpose.
+        Args:
+            bulk (bytearray or list): If the chunk that passes the argument is
+              a binary type, bulk is an array of bytes, otherwise it is a list
+              of strings.
         """
-        if self.echo:
-            print(bulk)
-        self.bulks.append(bulk)
+        if type(bulk) is list:
+            if self.echo:
+                for line in bulk:
+                    print(line)
+            self.bulks += bulk
+        else:
+            if self.echo:
+                print(bulk)
+            self.bulks.append(bulk)
 
     def reset(self):
         """Reset events."""

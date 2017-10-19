@@ -24,14 +24,14 @@ def assert_or_not_match(pats, str):
     assert not Rule(pats, None).match(str)
 
 
-def test_simple():
-    """Test simple cases."""
+def test_match_basic():
+    """Test basic cases."""
     assert_glob_match('a', 'a')
     assert_glob_match('a.b', 'a.b')
     assert_glob_not_match('a', 'b')
 
 
-def test_wildcard():
+def test_match_wildcard():
     """Test wildcard."""
     assert_glob_match('a*', 'a')
     assert_glob_match('a*', 'ab')
@@ -61,7 +61,7 @@ def test_wildcard():
     assert_glob_not_match('a.*.c', 'a.c')
 
 
-def test_recursive_wildcard():
+def test_match_recursive_wildcard():
     """Test recursive wildcard."""
     assert_glob_match('a.**', 'a')
     assert_glob_not_match('a.**', 'ab')
@@ -92,7 +92,7 @@ def test_recursive_wildcard():
     assert_glob_match('**a', 'd.e.a')
 
 
-def test_or():
+def test_match_or():
     """Test or pattern match."""
     assert_glob_match('a.{b,c}', 'a.b')
     assert_glob_match('a.{b,c}', 'a.c')
@@ -109,7 +109,7 @@ def test_or():
     assert_glob_not_match('a.{b.**,c}', 'a.c.d')
 
 
-def test_multi_pattern_or():
+def test_match_multi_pattern_or():
     """Test multi pattern."""
     assert_or_match('a.b a.c', 'a.b')
     assert_or_match('a.b a.c', 'a.c')

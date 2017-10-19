@@ -49,6 +49,12 @@ class BaseAgent(object):
         if no_output:
             yield self.router.def_output
 
+    def iter_outputs(self):
+        """Iterate all output."""
+        for plugin in self.iter_plugins():
+            if isinstance(plugin, Output):
+                yield plugin
+
     def start(self):
         """Start plugins in the router."""
         for plugin in self.iter_plugins():
@@ -61,14 +67,35 @@ class BaseAgent(object):
 
     def flush(self):
         """Flush all output plugins."""
-        for plugin in self.iter_plugins():
-            if isinstance(plugin, Output):
-                plugin.flush()
+        for output in self.iter_outputs():
+            output.flush()
 
     def shutdown(self):
         """Shutdown plugins in the router."""
         for plugin in self.iter_plugins():
             plugin.shutdown()
+
+    def all_output_finished(self):
+        """Whether all output is stopped & flushed or not."""
+        for output in self.iter_outputs():
+            if output.started:
+                return False
+            buffer = output.buffer
+            if buffer is not None and buffer.started:
+                return False
+            if not buffer.empty:
+                return False
+        return True
+
+    def may_chunking(self):
+        """Chunking for all outputs if needed."""
+        for output in self.iter_outputs():
+            output.may_chunking()
+
+    def may_flushing(self, last_flush_interval=None):
+        """Flushing for all outputs if needed."""
+        for output in self.iter_outputs():
+            output.may_flushing(last_flush_interval)
 
 
 class DummyAgent(BaseAgent):
@@ -88,26 +115,43 @@ class DummyAgent(BaseAgent):
             if isinstance(plugin, Output):
                 plugin.flush()
 
-    def simple_process(self, input_pl):
+    def simple_process(self, input_pl, last_flush_interval):
         """Simple process for a given input & router."""
         self.start()
+        # read input and emit to event router until input finished.
         while True:
-            tag = input_pl.tag
-            try:
-                record = input_pl.read_one()
-                if record:
-                    utime = time.time()
-                    self.router.emit(tag, utime, record)
-                else:
-                    # may have data later.
-                    pass
-            except NoMoreData:
-                # input has been finished.
+            if self.simple_process_one(input_pl):
                 break
 
-        # stop & shutdown router for flushing output.
+        # input finished. stop and wait until all output flushed.
         self.stop()
+        while not self.all_output_finished():
+            self.may_flushing(last_flush_interval)
+            time.sleep(0.1)
+
+        # shutdown
         self.shutdown()
+
+    def simple_process_one(self, input_pl):
+        """Process one record.
+
+        Args:
+            input_pl: Input plugin to process.
+
+        Returns:
+            bool: True if the input has finished, False otherwise.
+        """
+        try:
+            record = input_pl.read_one()
+            if record:
+                utime = time.time()
+                self.router.emit(input_pl.tag, utime, record)
+            return False
+        except NoMoreData:
+            return True
+        finally:
+            # need to check timely flushing here.
+            self.may_flushing()
 
 
 class TRunAgent(DummyAgent):
@@ -189,11 +233,13 @@ class TRunAgent(DummyAgent):
                 input_pl = plugin
         return input_pl
 
-    def run_commands(self, cmds, _test=False):
+    def run_commands(self, cmds, last_flush_interval, _test=False):
         """Init agent from test commands and execute them.
 
         Args:
             cmds (str): Unparsed commands string.
+            last_flush_interval (float): Force flushing interval for input
+              is terminated.
             _test (bool): Test mode
 
         Returns:
@@ -202,7 +248,7 @@ class TRunAgent(DummyAgent):
         cmds = TRunAgent._parse_and_validate_cmds(cmds)
         input_pl = self._init_from_commands(cmds, _test)
 
-        self.simple_process(input_pl)
+        self.simple_process(input_pl, last_flush_interval)
 
 
 class ServiceAgent(BaseAgent):

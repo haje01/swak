@@ -5,7 +5,7 @@ from .m_filter import Filter
 from swak.core import DummyAgent
 
 
-def emit_records(router):
+def emit_records(router, agent):
     """Emit records to router."""
     records = [
         {"k1": "a", "k2": "A"},
@@ -15,6 +15,9 @@ def emit_records(router):
     ]
     for i, rec in enumerate(records):
         router.emit("test", i, rec)
+        agent.may_flushing()
+    # flush last
+    agent.may_flushing(0.0)
 
 
 def emit_for_modifiers(modifiers):
@@ -22,8 +25,7 @@ def emit_for_modifiers(modifiers):
     agent = DummyAgent()
     for modifier in modifiers:
         agent.register_plugin("test", modifier)
-    emit_records(agent.router)
-    agent.flush()
+    emit_records(agent.router, agent)
     return agent.def_output
 
 

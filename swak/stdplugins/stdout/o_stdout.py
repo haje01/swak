@@ -24,8 +24,18 @@ class Stdout(Output):
         super(Stdout, self).__init__(formatter, abuffer)
 
     def _write(self, bulk):
-        """Write a bulk."""
-        print(bulk)
+        """Write a bulk.
+
+        Args:
+            bulk (bytearray or list): If the chunk that passes the argument is
+              a binary type, bulk is an array of bytes, otherwise it is a list
+              of strings.
+        """
+        if type(bulk) is list:
+            for line in bulk:
+                print(line)
+        else:
+            print(bulk)
 
 
 @click.group(chain=True, invoke_without_command=True,
@@ -64,11 +74,17 @@ def f_stdout(timezone):
 
 
 @main.command('b.memory', help="Memory buffer for this output.")
-@click.option('-f', '--flush-interval', default=None, show_default=True,
-              help="Flush interval.")
-def b_memory(flush_interval):
+@click.option('-f', '--flush-interval', default=None, type=str,
+              show_default=True, help="Flush interval.")
+@click.option('-c', '--buffer-max-chunk', default=1, show_default=True,
+              help="Buffer max chunks.")
+@click.option('-r', '--chunk-max-record', default=None, type=int,
+              show_default=True, help="Chunk max record.")
+def b_memory(flush_interval, buffer_max_chunk, chunk_max_record):
     """Formatter entry."""
-    return MemoryBuffer(None, False, flush_interval=flush_interval)
+    return MemoryBuffer(None, False, flush_interval=flush_interval,
+                        buffer_max_chunk=buffer_max_chunk,
+                        chunk_max_record=chunk_max_record)
 
 
 if __name__ == '__main__':

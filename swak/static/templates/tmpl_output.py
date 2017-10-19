@@ -7,7 +7,13 @@ from swak.buffer import Buffer, MemoryBuffer
 
 {% block class_body %}
     def _write(self, bulk):
-        """Write a bulk."""
+        """Write a bulk.
+
+        Args:
+            bulk (bytearray or list): If the chunk that passes the argument is
+              a binary type, bulk is an array of bytes, otherwise it is a list
+              of strings.
+        """
         raise NotImplementedError()
 {% endblock %}
 

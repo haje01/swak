@@ -16,6 +16,10 @@ class Chunk(object):
             binary(bool): Whether store data as binary or not.
         """
         self.binary = binary
+        self.reset()
+
+    def reset(self):
+        """Reset member variables."""
         self.bytesize = 0
         self.num_record = 0
 
@@ -25,7 +29,17 @@ class Chunk(object):
 
     def flush(self, output):
         """Flushing chunk into output."""
+        self._flush(output)
+        self.reset()
+
+    def _flush(self, output):
+        """Implement flush."""
         raise NotImplementedError()
+
+    @property
+    def empty(self):
+        """Whether chunk empty or not."""
+        return self.num_record == 0
 
 
 class MemoryChunk(Chunk):
@@ -34,7 +48,12 @@ class MemoryChunk(Chunk):
     def __init__(self, binary):
         """Init."""
         super(MemoryChunk, self).__init__(binary)
-        self.bulk = bytearray() if binary else []
+        self.reset()
+
+    def reset(self):
+        """Reset member variables."""
+        super(MemoryChunk, self).reset()
+        self.bulk = bytearray() if self.binary else []
 
     def concat(self, data, adding_size):
         """Concat new data."""
@@ -45,10 +64,9 @@ class MemoryChunk(Chunk):
         self.num_record += 1
         self.bytesize += adding_size
 
-    def flush(self, output):
+    def _flush(self, output):
         """Flushing chunk into output."""
-        bulk = self.bulk if self.binary else ''.join(self.bulk)
-        output.write(bulk)
+        output.write(self.bulk)
 
 
 class DiskChunk(Chunk):
@@ -75,11 +93,20 @@ class Buffer(object):
         self.last_flush = None
         self.cnt_flushing = 0
         self.cnt_chunking = 0
+        self.started = None
         self.flush_at_shutdown = flush_at_shutdown
 
     def set_tag(self, tag):
         """Set tag."""
         self.tag = tag
+
+    @property
+    def empty(self):
+        """All chunks empty or not."""
+        for chunk in self.chunks:
+            if not chunk.empty:
+                return False
+        return True
 
     @property
     def active_chunk(self):
@@ -92,6 +119,16 @@ class Buffer(object):
         """Return number of chunks."""
         return len(self.chunks)
 
+    def start(self):
+        """Start buffer."""
+        assert not self.started
+        self.started = True
+
+    def stop(self):
+        """Stop buffer."""
+        assert self.started
+        self.started = False
+
     def append(self, data):
         """Append event stream to buffer.
 
@@ -99,6 +136,9 @@ class Buffer(object):
 
         Args:
             data: a formatted event.
+
+        Returns:
+            int: Adding size of data.
         """
         raise NotImplementedError()
 
@@ -130,22 +170,17 @@ class Buffer(object):
         if self.num_chunk == 0:
             return self.chunking()
 
-    def check_flush_and_new_chunk(self, output, adding_size):
-        """Check to flush and new chunk.
+    def may_chunking(self, adding_size):
+        """Chunking if needed.
 
-        If need to flush head chunk, flush it and append new chunk to tail.
-        Otherwise, return current tail chunk
+        If new chunk is need for new data, make one.
 
         Args:
-            output (Output)
-            adding_size (int): New byte size to add to chunk.
+            adding_size (int): New data size in bytes.
 
         Returns:
             Chunk: Active chunk.
         """
-        if self.last_flush is None:
-            self.last_flush = time.time()
-
         active_chunk = self.active_chunk
         new_chunk = None
         # check chunking
@@ -153,17 +188,21 @@ class Buffer(object):
             new_chunk = self.chunking()
             active_chunk = new_chunk
 
-        # check flushing
-        if self.need_flushing():
-            only_chunk = self.flushing()
-            if only_chunk is not None:
-                # new chunk has been created since no chunks left after
-                #  flushing.
-                # chunking and flushing don't generate new chunks same time.
-                assert new_chunk is None
-                active_chunk = only_chunk
-
         return active_chunk
+
+    def may_flushing(self, last_flush_interval=None):
+        """Flushing if needed.
+
+        Args:
+            last_flush_interval (float): Force flushing interval for input
+              is terminated.
+
+        Returns:
+            Chunk: Chunk created after flushing.
+        """
+        # check flushing
+        if self.need_flushing(last_flush_interval):
+            return self.flushing()
 
     def new_chunk(self):
         """New chunk."""
@@ -172,16 +211,17 @@ class Buffer(object):
         else:
             return DiskChunk(self.binary)
 
-    def need_chunking(self, adding_size):
-        """Need new chunk or not.
-
-        Args:
-            adding_size (int): New byte size to add to chunk.
-        """
+    def need_chunking(self):
+        """Need new chunk or not."""
         raise NotImplementedError()
 
-    def need_flushing(self):
-        """Need flushing or not."""
+    def need_flushing(self, last_flush_interval):
+        """Need flushing or not.
+
+        Args:
+            last_flush_interval (float): Force flushing interval for input
+              is terminated.
+        """
         raise NotImplementedError()
 
 
@@ -232,25 +272,32 @@ class MemoryBuffer(Buffer):
         """Set maximum records number."""
         self.max_record = max_record
 
-    def append(self, data):
+    def append(self, data, binary_data=False):
         """Append event stream to buffer.
 
         Args:
-            data: a formatted event.
+            data (bytearray or str) bytearry if this is a binary buffer,
+              otherwise string data.
+            binary_data (bool): Whether this data is already binarized or not.
+
+        Returns:
+            int: Adding size of data.
         """
-        bytedata = bytearray(data, encoding='utf8')
+        bytedata = data if binary_data else bytearray(data, encoding='utf8')
         adding_size = len(bytedata)
+        self.may_chunking(adding_size)
         if self.binary:
             data = bytedata
 
-        chunk = self.check_flush_and_new_chunk(self.output, adding_size)
+        chunk = self.may_chunking(adding_size)
         chunk.concat(data, adding_size)
+        return adding_size
 
     def need_chunking(self, adding_size):
         """Need new chunk or not.
 
         Args:
-            adding_size (int): New byte size to add to chunk.
+            adding_size (int): New data size in bytes.
         """
         chunk = self.active_chunk
         if self.chunk_max_record is not None and chunk.num_record + 1 >\
@@ -260,33 +307,27 @@ class MemoryBuffer(Buffer):
                 self.chunk_max_size:
             return True
 
-    def need_flushing(self):
-        """Need flushing or not."""
-        if len(self.chunks) >= self.buffer_max_chunk:
+    def need_flushing(self, last_flush_interval):
+        """Need flushing or not.
+
+        Flush if number of chunk is greater than buffer max chunk.
+        Flush if flush interval is over.
+
+        Args:
+            last_flush_interval (float): Force flushing interval for input
+              is terminated.
+        """
+        if len(self.chunks) > self.buffer_max_chunk:
+            # force flushing to remove head chunk.
             return True
-        if self.flush_interval is not None and time.time() - self.last_flush\
-                > self.flush_interval:
+        cur = time.time()
+        if self.last_flush is None:
+            self.last_flush = time.time()
+        diff = cur - self.last_flush
+        if self.flush_interval is not None and diff >= self.flush_interval:
+            self.last_flush = cur
             return True
-
-
-# @click.command(help="Buffering by size sliced chunk.")
-# @click.option('-r', '--chunk-max-record', default=None, type=int,
-#               help="Maximum records per chunk for slicing.")
-# @click.option('-s', '--chunk-max-size', default='8m', show_default=True,
-#               help="Maximum chunk size for slicing.")
-# @click.option('-c', '--buffer-max-chunk', default=64, show_default=True,
-#               help="Maximum chunks per buffer for slicing.")
-# @click.option('-b', '--buffer-max-size', default='512m', show_default=True,
-#               help="Maximum buffer size for slicing.")
-# @click.option('-i', '--flush-interval', default='60s', show_default=True,
-#               help="Flushing interval.")
-# @click.pass_context
-# def main(ctx, binary, chunk_max_record, chunk_max_size, buffer_max_chunk,
-#          buffer_max_size, flush_interval):
-#     """Plugin entry."""
-#     return Sized(binary, chunk_max_record, chunk_max_size, buffer_max_chunk,
-#                  buffer_max_size, flush_interval)
-
-
-# if __name__ == '__main__':
-#     main()
+        if last_flush_interval is not None and diff >=\
+                last_flush_interval:
+            self.last_flush = cur
+            return True
