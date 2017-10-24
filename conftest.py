@@ -3,7 +3,7 @@ import pytest
 
 from swak.plugin import DummyOutput
 from swak.event_router import EventRouter
-from swak.core import DummyAgent, ServiceAgent
+from swak.core import DummyAgent
 
 
 @pytest.fixture()
@@ -25,10 +25,3 @@ def router():
 def agent():
     """Create dummy agent for test."""
     return DummyAgent()
-
-
-@pytest.fixture()
-def sagent():
-    """Create service agent for test."""
-    doutput = DummyOutput()
-    return ServiceAgent(doutput)

@@ -7,13 +7,13 @@ import types
 from swak.config import get_exe_dir
 from swak.plugin import iter_plugins, import_plugins_package, TextInput,\
     Parser, get_plugins_dir, Output
-from swak.util import test_logconfig
+# from swak.util import test_logconfig
 from swak.const import PLUGINDIR_PREFIX
 from swak.exception import NoMoreData
 from swak.buffer import MemoryBuffer
 
 
-test_logconfig()
+# test_logconfig()
 
 
 def plugin_filter(_dir):

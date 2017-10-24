@@ -125,7 +125,7 @@
 포매터와 버퍼
 =============
 
-포매터(Formatter)와 버퍼(Buffer)는 플러그인은 아니지만, 모든 출력 플러그인과 함께 사용되기에 여기에서 함께 설명하겠다.
+포매터(Formatter)와 버퍼(Buffer)는 플러그인은 아니지만, 플러그인과 유사한 형태로, 출력 플러그인과 사용되기에 여기에서 설명하겠다.
 
 
 포매터
@@ -523,7 +523,7 @@ Click의 사용법에 대해서는 Click의 문서를 참고하자.
 
     Options:
       -t, --type [it|ir|p|m|o]
-                                      Plugin module type prefix.  [default: mod]
+                                      Plugin ****module type prefix.  [default: mod]
       -d, --dir PATH                  Plugin directory  [default: SWAK_DIR/plugins]
       --help                          Show this message and exit.
 

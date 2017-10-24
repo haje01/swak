@@ -301,3 +301,52 @@ def time_value(sval):
         return float(sval)
     except ValueError:
         raise ValueError("Can not convert '{}' into seconds".format(sval))
+
+
+def validate_tag(tag):
+    """Validate tag syntax."""
+    if type(tag) is not str:
+        raise ValueError("Tag must be a string.")
+
+
+def parse_and_validate_cmds(cmds, check_input, check_tag):
+    """Parse and validate plugin commands.
+
+    Vadation rule:
+    - Starts with input plugin.
+    - Zero or more modifier plugins.
+    - Optionally finished with output plugin.
+
+    Args:
+        cmds (str): Plugin commands.
+        check_input (bool): Check for starting input.
+        check_tag (bool): Check for ending tag command.
+
+    Raises:
+        ValueError: When commands has a fault.
+
+    Returns:
+        list: Parsed command list.
+    """
+    if type(cmds) is not str:
+        raise ValueError("Commands are not a string.")
+
+    cmds = cmds.split('|')
+    last_idx = len(cmds) - 1
+    pcmds = []
+    for i, cmd in enumerate(cmds):
+        args = [arg.strip() for arg in cmd.split()]
+        if len(args) == 0:
+            raise ValueError("Illegal plugin commands: {}".format(cmds))
+        cmd = args[0]
+        if check_input and i == 0 and not cmd.startswith('i.'):
+            raise ValueError("plugin command must starts with input "
+                             "plugin.")
+        if check_tag and i == last_idx:
+            if cmd != 'tag':
+                raise ValueError("'sources' plugin command must ends with a "
+                                 "tag command.")
+            tag = ' '.join(args[1:])
+            validate_tag(tag)
+        pcmds.append(args)
+    return pcmds

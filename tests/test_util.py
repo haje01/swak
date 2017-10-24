@@ -13,7 +13,7 @@ from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
 from swak.util import init_home, get_plugin_module_name, update_dict,\
     check_python_version, set_log_verbosity, _verbosity_from_log_level,\
-    which_exe, size_value, time_value
+    which_exe, size_value, time_value, parse_and_validate_cmds
 
 
 CFG = """
@@ -101,6 +101,8 @@ def test_util_etc():
     logger = logging.getLogger()
     org_level = logger.getEffectiveLevel()
     org_verbosity = _verbosity_from_log_level(org_level)
+    if org_verbosity is None:
+        org_verbosity = 0
     set_log_verbosity(0)
     new_level = logger.getEffectiveLevel()
     assert new_level == 40
@@ -137,3 +139,19 @@ def test_util_value():
     assert 60 * 60 * 24 == time_value('1D')
     with pytest.raises(ValueError):
         size_value('asdf')
+
+
+def test_util_cmd(capsys):
+    """Test plugin commands parsing."""
+    with pytest.raises(ValueError):
+        parse_and_validate_cmds('m.reform', True, False)
+    parse_and_validate_cmds('i.counter | m.reform', True, False)
+
+    with pytest.raises(ValueError):
+        parse_and_validate_cmds('m.reform', False, True)
+    res = parse_and_validate_cmds('tag "test"', False, True)
+    assert len(res[0]) == 2
+
+    # legal tags
+    parse_and_validate_cmds('tag boo foo', False, True)
+    parse_and_validate_cmds('tag boo*.foo', False, True)

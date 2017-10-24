@@ -7,6 +7,8 @@ from collections import Mapping
 
 import yaml
 
+from swak.exception import ConfigError
+from swak.util import parse_and_validate_cmds, validate_tag
 
 ENVVAR = 'SWAK_HOME'
 CFG_FNAME = 'config.yml'
@@ -164,3 +166,60 @@ def get_pid_path(home, svc_name):
     pid_name = 'swak.pid' if svc_name is None else '{}.pid'.format(svc_name)
     pid_path = os.path.join(home, 'run', pid_name)
     return pid_path
+
+
+def validate_cfg(cfg):
+    """Validate config content."""
+    from swak.event_router import Rule
+
+    def check_souce_input(v):
+        if not v.startswith('i.'):
+            raise ConfigError("A source should start with input "
+                              "plugin.")
+
+    source_tags = set()
+    match_tags = set()
+    # souces
+    if 'sources' not in cfg:
+        raise ConfigError("No 'sources' field exists in config.")
+    if cfg['sources'] is None:
+        raise ConfigError("'sources' field has no declaration.")
+    if type(cfg['sources']) is not list:
+        raise ConfigError("The value of the 'sources' field must be a "
+                          "list.")
+    for srccmds in cfg['sources']:
+        if type(srccmds) is not str:
+            raise ConfigError("The value of the each source must be a string.")
+        try:
+            cmds = parse_and_validate_cmds(srccmds, True, True)
+        except ValueError as e:
+            raise ConfigError(e)
+        tag = cmds[-1][-1]
+        validate_tag(tag)
+        source_tags.add(tag)
+        first = cmds[0][0]
+        check_souce_input(first)
+
+    # maches
+    if 'matches' not in cfg:
+        raise ConfigError("No 'matches' field exists in config.")
+    if cfg['matches'] is None:
+        raise ConfigError("'matches' field has no declaration.")
+    if type(cfg['matches']) is not dict:
+        raise ConfigError("The value of the 'matches' field must be a "
+                          "dictionary content.")
+    for tag, match_cmds in cfg['matches'].items():
+        try:
+            validate_tag(tag)
+            if type(match_cmds) is not str:
+                raise ConfigError("each match must be a string.")
+            cmds = parse_and_validate_cmds(match_cmds, False, False)
+        except ValueError as e:
+            raise ConfigError(e)
+        match_tags.add(tag)
+
+    for stag in source_tags:
+        for mtag in match_tags:
+            if Rule(mtag, None).match(stag) is None:
+                raise ConfigError("source tag '{}' does not have corresponding"
+                                  " match tag.".format(stag))

@@ -11,3 +11,9 @@ class NoMoreData(Exception):
     """Exception: No more data for this input."""
 
     pass
+
+
+class ConfigError(Exception):
+    """Exception: Config has an error."""
+
+    pass

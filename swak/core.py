@@ -1,26 +1,25 @@
 """This module implements core functions."""
 
-import sys
 import time
 
 from swak.event_router import EventRouter
-from swak.plugin import Input, DummyOutput, import_plugins_package, Output
+from swak.plugin import Input, DummyOutput, Output, create_plugin_by_name
 from swak.const import TESTRUN_TAG
-from swak.util import get_plugin_module_name
 from swak.exception import NoMoreData
+from swak.util import parse_and_validate_cmds
 
 
-class BaseAgent(object):
-    """Agent class."""
+class PluginPod(object):
+    """Plugin pod class."""
 
-    def __init__(self, test):
+    def __init__(self, def_output):
         """Init.
 
         Args:
-            test: Test mode.
+            def_output (Output): Default output.
         """
-        self.def_output = DummyOutput(echo=test)
-        router = EventRouter(self.def_output)
+        self.def_output = def_output
+        router = EventRouter(def_output)
         self.router = router
         self.plugins = []
 
@@ -35,6 +34,33 @@ class BaseAgent(object):
         assert plugin not in self.plugins
         self.plugins.append(plugin)
         self.router.add_rule(tag, plugin)
+
+    def init_from_commands(self, tag, cmds, check_input):
+        """Init agent from plugin commands.
+
+        Args:
+            tag (str): Event tag.
+            cmds (list): Seperated plugin commands list.
+            check_input (bool): Check for input commands.
+
+        Returns:
+            Input: Starting input plugin
+        """
+        input_pl = None
+        assert getattr(cmds, '__iter__') is not None
+        last_idx = len(cmds) - 1
+        for i, cmd in enumerate(cmds):
+            args = cmd[1:]
+            pname = cmd[0]
+            if pname == 'tag':
+                assert i == last_idx
+                break
+            plugin = create_plugin_by_name(pname, args)
+            self.register_plugin(tag, plugin)
+            if check_input and i == 0:
+                assert isinstance(plugin, Input)
+                input_pl = plugin
+        return input_pl
 
     def iter_plugins(self):
         """Iterate all plugins in the agent.
@@ -98,22 +124,91 @@ class BaseAgent(object):
             output.may_flushing(last_flush_interval)
 
 
+class BaseAgent(object):
+    """Agent class."""
+
+    def start(self):
+        """Start plugins in the router."""
+        raise NotImplementedError()
+
+    def stop(self):
+        """Stop plugins in the router."""
+        raise NotImplementedError()
+
+    def shutdown(self):
+        """Shutdown plugins in the router."""
+        raise NotImplementedError()
+
+
 class DummyAgent(BaseAgent):
     """Dummy agent for test."""
 
     def __init__(self):
         """Init."""
-        super(DummyAgent, self).__init__(True)
+        def_output = DummyOutput(echo=True)
+        self.pluginpod = PluginPod(def_output)
+
+    def init_from_commands(self, tag, cmds):
+        """Init agent from plugin commands.
+
+        Args:
+            tag (str): Event tag.
+            cmds (list): Seperated plugin commands list.
+            _test (bool): Test mode
+
+        Returns:
+            Input: Starting input plugin
+        """
+        assert type(tag) is str
+        assert type(cmds) is list
+        self.pluginpod.init_from_commands(tag, cmds, False)
+
+    def register_plugin(self, tag, plugin):
+        """Register a plugin by event tag pattern.
+
+        Args:
+            tag: A tag pattern.
+            plugin: A plugin to regiseter.
+        """
+        self.pluginpod.register_plugin(tag, plugin)
+
+    def may_flushing(self, last_flush_interval=None):
+        """Flushing for all outputs if needed."""
+        self.pluginpod.may_flushing(last_flush_interval)
+
+    def all_output_finished(self):
+        """Whether all output is stopped & flushed or not."""
+        return self.pluginpod.all_output_finished()
+
+    def shutdown(self):
+        """Shutdown plugins in the router."""
+        self.pluginpod.shutdown()
+
+    @property
+    def def_output(self):
+        """Return pluginpod's default output."""
+        return self.pluginpod.def_output
+
+    @property
+    def router(self):
+        """Return pluginpod's event router."""
+        return self.pluginpod.router
 
     def emit(self, tag, time, record):
         """Emit by delegating to router."""
         self.router.emit(tag, time, record)
 
     def flush(self):
-        """Delegate to router to be flushed."""
-        for plugin in self.iter_plugins():
-            if isinstance(plugin, Output):
-                plugin.flush()
+        """Flush all output plugins."""
+        self.pluginpod.flush()
+
+    def start(self):
+        """Start plugins in the router."""
+        self.pluginpod.start()
+
+    def stop(self):
+        """Stop plugins in the router."""
+        self.pluginpod.stop()
 
     def simple_process(self, input_pl, last_flush_interval):
         """Simple process for a given input & router."""
@@ -145,7 +240,7 @@ class DummyAgent(BaseAgent):
             record = input_pl.read_one()
             if record:
                 utime = time.time()
-                self.router.emit(input_pl.tag, utime, record)
+                self.pluginpod.router.emit(input_pl.tag, utime, record)
             return False
         except NoMoreData:
             return True
@@ -157,84 +252,20 @@ class DummyAgent(BaseAgent):
 class TRunAgent(DummyAgent):
     """Test run agent class."""
 
-    @staticmethod
-    def _parse_and_validate_cmds(cmds):
-        """Parse and validate test commands.
-
-        Vadation rule:
-        - Starts with input plugin.
-        - Zero or more modifier plugins.
-        - Optionally finished with output plugin.
+    def init_from_commands(self, tag, cmds):
+        """Init agent from plugin commands.
 
         Args:
-            cmds (str): Unix shell command style test command.
-
-        Yields:
-            str: Each command string.
-        """
-        for i, cmd in enumerate(cmds.split('|')):
-            args = [arg.strip() for arg in cmd.split()]
-            if len(args) == 0:
-                raise ValueError("Illegal test commands: {}".format(cmds))
-            cmd = args[0]
-            if i == 0 and not cmd.startswith('i.'):
-                raise ValueError("Test command must starts with input plugin.")
-            yield args
-
-    @staticmethod
-    def _create_plugin_by_name(plugin_name, args):
-        """Create plugin by name for test command.
-
-        Args:
-            plugin_name (str): Plugin full name
-            args (list): Command arguments to instantiate plugin object.
-
-        Returns:
-            Plugin module
-        """
-        for i in range(2):
-            import_plugins_package(i == 0)
-            try:
-                elms = plugin_name.split('.')
-                package_name = '.'.join(elms[1:])
-                module_name = get_plugin_module_name(plugin_name)
-                tn = 'std' if i == 0 else ''
-                path = '{}plugins.{}.{}'.format(tn, package_name, module_name)
-                __import__(path)
-            except ImportError:
-                if i == 0:
-                    pass  # for external plugins
-                else:
-                    raise ValueError("There is no plugin '{}'".
-                                     format(plugin_name))
-            else:
-                mod = sys.modules[path]
-                return mod.main(args=args, standalone_mode=False)
-
-    def _init_from_commands(self, cmds, test):
-        """Init agent from test commands.
-
-        Args:
-            cmds (list): Seperated test commands list.
-            _test (bool): Test mode
+            tag (str): Event tag.
+            cmds (list): Seperated plugin commands list.
 
         Returns:
             Input: Starting input plugin
         """
-        input_pl = None
-        assert getattr(cmds, '__iter__') is not None
-        for i, cmd in enumerate(cmds):
-            args = cmd[1:]
-            pname = cmd[0]
-            plugin = TRunAgent._create_plugin_by_name(pname, args)
-            self.register_plugin(TESTRUN_TAG, plugin)
-            if i == 0:
-                assert isinstance(plugin, Input)
-                input_pl = plugin
-        return input_pl
+        return self.pluginpod.init_from_commands(TESTRUN_TAG, cmds, True)
 
-    def run_commands(self, cmds, last_flush_interval, _test=False):
-        """Init agent from test commands and execute them.
+    def run_commands(self, cmds, last_flush_interval):
+        """Init agent from plugin commands and execute them.
 
         Args:
             cmds (str): Unparsed commands string.
@@ -245,15 +276,7 @@ class TRunAgent(DummyAgent):
         Returns:
             EventRouter: To test result.
         """
-        cmds = TRunAgent._parse_and_validate_cmds(cmds)
-        input_pl = self._init_from_commands(cmds, _test)
+        cmds = parse_and_validate_cmds(cmds, True, False)
+        input_pl = self.init_from_commands(TESTRUN_TAG, cmds)
 
         self.simple_process(input_pl, last_flush_interval)
-
-
-class ServiceAgent(BaseAgent):
-    """Service Agent."""
-
-    def build_threads(self):
-        """Build thread for service."""
-        pass

@@ -12,6 +12,7 @@ from swak.exception import UnsupportedPython
 from swak.const import PLUGINDIR_PREFIX
 from swak.formatter import StdoutFormatter
 from swak.buffer import MemoryBuffer
+from swak.util import get_plugin_module_name
 
 
 PREFIX = ['i', 'p', 'm', 'o']
@@ -107,6 +108,29 @@ class Input(Plugin):
             encoding (str): Encoding of input source.
         """
         self.encoding = encoding
+
+
+class InputProxy(Input):
+    """Input proxy class."""
+
+    def __init__(self):
+        """Init."""
+        self.recv_queues = []
+
+    def append_recv_queue(self, queue):
+        """Append receive queue."""
+        assert queue not in self.recv_queues, "The queue has already been "\
+            "appended."
+        self.recv_queues.append(queue)
+
+    def read_queues(self):
+        """Read from receive queues.
+
+        This is to be called within output thread.
+        """
+        for tag, queue in self.recv_queues.items():
+            es = queue.get()
+            self.handle_stream(tag, es)
 
 
 class RecordInput(Input):
@@ -292,8 +316,6 @@ class Output(Plugin):
             abuffer.output = self
         self.formatter = formatter
         self.buffer = abuffer
-        self.send_queue = None
-        self.recv_queues = []
 
     def _shutdown(self):
         """Implement shutdown."""
@@ -309,18 +331,18 @@ class Output(Plugin):
         """Set output bufer."""
         self.buffer = buffer
 
-    def set_send_queue(self, send_queue):
-        """Set send queue.
+    # def set_send_queue(self, send_queue):
+    #     """Set send queue.
 
-        It means this plugin works as output proxy in an input thread. the
-            queue will be consumed by an output thread's buffer.
+    #     It means this plugin works as output proxy in an input thread. the
+    #         queue will be consumed by an output thread's buffer.
 
-        Args:
-            send_queue (Queue): queue of event streams.
-        """
-        assert len(self.recv_queues) > 0, "Can not send and receive at the"\
-            " same time"
-        self.send_queue = send_queue
+    #     Args:
+    #         send_queue (Queue): queue of event streams.
+    #     """
+    #     assert len(self.recv_queues) > 0, "Can not send and receive at the"\
+    #         " same time"
+    #     self.send_queue = send_queue
 
     def _start(self):
         """Implement start."""
@@ -332,30 +354,22 @@ class Output(Plugin):
         if self.buffer is not None:
             self.buffer.stop()
 
-    @property
-    def is_proxy(self):
-        """Return whether this is an output proxy or not."""
-        return self.send_queue is not None
+    # @property
+    # def is_proxy(self):
+    #     """Return whether this is an output proxy or not."""
+    #     return self.send_queue is not None
 
     def emit_events(self, tag, es):
         """Emit event stream to queue or directly to output target.
-
-        If send queue exists, this acts as output proxy, putting event stream
-            to the queue.
 
         Args:
             tag (str): Event tag.
             es (EventStream): Event stream.
 
         Returns:
-            int: Adding size of the stream. (if send_queue exists.)
+            int: Adding size of the stream.
         """
-        if self.send_queue is None:
-            # no send_queue exists, which means single thread.
-            return self.handle_stream(tag, es)
-        else:
-            # send_queue exists, which means two threads for input & output.
-            self.send_queue.put(es)
+        return self.handle_stream(tag, es)
 
     def handle_stream(self, tag, es):
         """Handle event stream from emit events.
@@ -375,23 +389,6 @@ class Output(Plugin):
             formatted = self.formatter.format(tag, dtime, record)
             adding_size += self.buffer.append(formatted)
         return adding_size
-
-    def append_recv_queue(self, queue):
-        """Append receive queue."""
-        assert self.send_queue is None, "Can not send and receive at the same"\
-            "time."
-        assert queue not in self.recv_queues, "The queue has already been "\
-            "appended."
-        self.recv_queues.append(queue)
-
-    def read_queues(self):
-        """Read from receive queues.
-
-        This is to be called within output thread.
-        """
-        for tag, queue in self.recv_queues.items():
-            es = queue.get()
-            self.handle_stream(tag, es)
 
     def write(self, bulk):
         """Write a bulk.
@@ -429,6 +426,30 @@ class Output(Plugin):
         """
         if self.buffer is not None:
             self.buffer.may_flushing(last_flush_interval)
+
+
+class OutputProxy(Output):
+    """Output proxy class."""
+
+    def __init__(self, queue):
+        """Init.
+
+        Args:
+            queue (Queue): Sending queue.
+        """
+        self.send_queue = queue
+
+    def emit_events(self, tag, es):
+        """Emit event stream to queue or directly to output target.
+
+        As output proxy, putting event stream to the queue.
+
+        Args:
+            tag (str): Event tag.
+            es (EventStream): Event stream.
+        """
+        # send_queue exists, which means two threads for input & output.
+        self.send_queue.put(es)
 
 
 BASE_CLASS_MAP = {
@@ -744,3 +765,33 @@ def import_plugins_package(standard):
     plugins.__path__ = [get_plugins_dir(standard)]
     sys.modules[mod_name] = plugins
     return plugins
+
+
+def create_plugin_by_name(plugin_name, args):
+    """Create a plugin by name and arguments.
+
+    Args:
+        plugin_name (str): Plugin full name
+        args (list): Command arguments to instantiate plugin object.
+
+    Returns:
+        Plugin module
+    """
+    for i in range(2):
+        import_plugins_package(i == 0)
+        try:
+            elms = plugin_name.split('.')
+            package_name = '.'.join(elms[1:])
+            module_name = get_plugin_module_name(plugin_name)
+            tn = 'std' if i == 0 else ''
+            path = '{}plugins.{}.{}'.format(tn, package_name, module_name)
+            __import__(path)
+        except ImportError:
+            if i == 0:
+                pass  # for external plugins
+            else:
+                raise ValueError("There is no plugin '{}'".
+                                 format(plugin_name))
+        else:
+            mod = sys.modules[path]
+            return mod.main(args=args, standalone_mode=False)

@@ -1,3 +1,5 @@
+"""This module implements plugin base."""
+
 import time
 import logging
 from logging import config as logconfig
@@ -15,7 +17,10 @@ check_python_version()
 
 
 class SwakDaemon(Daemon):
+    """Daemon class."""
+
     def run(self):
+        """Daemon main."""
         while True:
             time.sleep(4)
 
@@ -24,6 +29,7 @@ class SwakDaemon(Daemon):
 @click.option('--home', type=click.Path(exists=True), help="Home directory.")
 @click.pass_context
 def daemon(ctx, home):
+    """Daemon CLI entry."""
     # select home and parse its config
     home, cfg = select_and_parse(home)
     # init required directories
@@ -40,6 +46,7 @@ def daemon(ctx, home):
 @daemon.command(help="Start daemon.")
 @click.pass_context
 def start(ctx):
+    """Daemon start."""
     logging.critical("========== Start daemon ==========")
     daemon = SwakDaemon(ctx.obj['pid_path'])
     daemon.start()
@@ -48,19 +55,10 @@ def start(ctx):
 @daemon.command(help="Stop daemon.")
 @click.pass_context
 def stop(ctx):
+    """Daemon stop."""
     logging.critical("========== Stop daemon ==========")
     daemon = SwakDaemon(ctx.obj['pid_path'])
     daemon.stop()
-
-
-#@cli.command(help="Test in no daemon mode.")
-#@click.option('--task', type=int, default=1, show_default=True, help="Task"
-              #" number to test.")
-#@click.option('--version', is_flag=True, help="Show Swak version.")
-#@click.pass_context
-#def test(ctx, task, version):
-    #home = ctx.obj['home']
-    #test_run(home, task, version)
 
 
 if __name__ == '__main__':

@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import re
 import sys
-import logging
 
 import click
 from tabulate import tabulate
@@ -34,11 +33,11 @@ def validate_init_args(file_name, class_name):
     """Validate file & class name for init command."""
     for pr in PREFIX:
         if file_name.startswith('{}_'.format(pr)):
-            logging.error("FILE_NAME should not contain plugin prefix. ({}_)"
-                          .format(pr))
+            sys.stderr.write("FILE_NAME should not contain plugin prefix. "
+                             "({}_)\n".format(pr))
             return False
     if ptrn_classnm.match(class_name) is None:
-        logging.error("{} is not suitable class name style.")
+        sys.stderr.write("{} is not suitable class name style.\n")
         return False
     return True
 
@@ -69,14 +68,14 @@ if not getattr(sys, 'frozen', False):
                 pfname = '{}.{}'.format(ptype, file_name)
                 if pfname in pnames:
                     ptypen = 'standard' if i == 0 else 'external'
-                    logging.error("Plugin '{}' already exists as {} plugin".
-                                  format(pfname, ptypen))
+                    sys.stderr.write("Plugin '{}' already exists as {} plugin"
+                                     "\n".format(pfname, ptypen))
                     sys.exit(-1)
 
         # check duplicate input types
         if 'it' in ptypes and 'ir' in ptypes:
-            logging.error("Text input & Record input plugins are mutually "
-                          "exclusive.")
+            sys.stderr.write("Text input & Record input plugins are mutually "
+                             "exclusive.\n")
             sys.exit(-1)
         init_plugin_dir(ptypes, file_name, class_name, pdir)
 
@@ -135,7 +134,7 @@ def desc(ctx, plugin, subcmd):
             pi.module.main(args=args)
             return
 
-    print("Can not find plugin '{}'".format(plugin), file=sys.stderr)
+    sys.stderr.write("Can not find plugin '{}'\n".format(plugin))
 
 
 @main.command(help="Test run by chaining plugin commands.")
@@ -147,7 +146,7 @@ def trun(ctx, commands, force_flush_interval):
     """Test run.
 
     Args:
-        commands (str): Test command concated with '|'
+        commands (str): plugin command concated with '|'
     """
     prepare_cli(ctx)
     agent = TRunAgent()

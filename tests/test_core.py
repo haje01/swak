@@ -3,30 +3,29 @@
 from __future__ import absolute_import
 
 import time
+
 import pytest
 import click
 
 from swak.core import TRunAgent
 from swak.plugin import Output
+from swak.util import parse_and_validate_cmds
+from swak.const import TESTRUN_TAG
 
 
 def init_agent_with_cmds(cmds):
     """Init agnet with test run commands."""
-    cmds = TRunAgent._parse_and_validate_cmds(cmds)
+    cmds = parse_and_validate_cmds(cmds, True, False)
     agent = TRunAgent()
-    input_pl = agent._init_from_commands(cmds, True)
+    input_pl = agent.init_from_commands(TESTRUN_TAG, cmds)
     return agent, input_pl
 
 
 def test_core_testrun(capfd):
     """Test test run relations."""
-    # First plugin must be an input plugin.
-    with pytest.raises(ValueError):
-        list(TRunAgent._parse_and_validate_cmds("m.reform"))
-
     # test parse and validate commands
-    cmds = list(TRunAgent._parse_and_validate_cmds('i.counter --count 4 '
-                                                   '--field 3'))
+    cmds = parse_and_validate_cmds('i.counter --count 4 --field 3', True,
+                                   False)
     assert len(cmds) == 1
     assert cmds[0][0] == 'i.counter'
     assert cmds[0][1] == '--count'
@@ -34,10 +33,10 @@ def test_core_testrun(capfd):
     assert cmds[0][3] == '--field'
 
     agent = TRunAgent()
-    router = agent._init_from_commands(cmds, True)
-    assert router is not None
+    input_pl = agent.init_from_commands(TESTRUN_TAG, cmds)
+    assert input_pl is not None
     # process events from input
-    agent.simple_process(agent.plugins[0], 0.0)
+    agent.simple_process(agent.pluginpod.plugins[0], 0.0)
     bulks = agent.def_output.bulks
     assert len(bulks) == 4
     _, _, record = bulks[0].split('\t')
@@ -46,8 +45,8 @@ def test_core_testrun(capfd):
 
     with pytest.raises(click.exceptions.UsageError):
         cmds = 'i.counter --foo 3'
-        cmds = TRunAgent._parse_and_validate_cmds(cmds)
-        agent._init_from_commands(cmds, True)
+        cmds = parse_and_validate_cmds(cmds, True, False)
+        agent.init_from_commands(TESTRUN_TAG, cmds)
 
     # test run with reform
     agent = TRunAgent()
@@ -117,5 +116,5 @@ def test_core_agent_basic(agent):
     """Test event router iter plugin."""
     # iterate plugin test. if no output plugin exists, last plugin is
     #  default output.
-    plugins = [plugin for plugin in agent.iter_plugins()]
+    plugins = [plugin for plugin in agent.pluginpod.iter_plugins()]
     assert isinstance(plugins[-1], Output)
