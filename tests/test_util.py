@@ -152,6 +152,6 @@ def test_util_cmd(capsys):
     res = parse_and_validate_cmds('tag "test"', False, True)
     assert len(res[0]) == 2
 
-    # legal tags
+    # legal tag commands
     parse_and_validate_cmds('tag boo foo', False, True)
     parse_and_validate_cmds('tag boo*.foo', False, True)

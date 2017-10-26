@@ -39,19 +39,15 @@ sources:
     assert_cfg_error('''
 sources:
     - o.stdout
-    ''', capsys, "command must starts with input")
+    ''', capsys, "commands must starts with input")
     assert_cfg_error('''
 sources:
     - i.counter
-    ''', capsys, "command must ends with a tag command")
+    ''', capsys, "commands must ends with a tag command")
     assert_cfg_error('''
 sources:
     - {}
     ''', capsys, "each source must be a string")
-    assert_cfg_error('''
-sources:
-    - i.counter | tag foo
-    ''', capsys, "No 'matches' field")
     assert_cfg_error('''
 sources:
     - i.counter | tag foo

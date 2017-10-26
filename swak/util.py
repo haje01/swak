@@ -309,7 +309,7 @@ def validate_tag(tag):
         raise ValueError("Tag must be a string.")
 
 
-def parse_and_validate_cmds(cmds, check_input, check_tag):
+def parse_and_validate_cmds(cmds, check_input, check_output=None):
     """Parse and validate plugin commands.
 
     Vadation rule:
@@ -319,8 +319,8 @@ def parse_and_validate_cmds(cmds, check_input, check_tag):
 
     Args:
         cmds (str): Plugin commands.
-        check_input (bool): Check for starting input.
-        check_tag (bool): Check for ending tag command.
+        check_input (bool): Check starting command.
+        check_output (bool): Check ending command.
 
     Raises:
         ValueError: When commands has a fault.
@@ -334,18 +334,20 @@ def parse_and_validate_cmds(cmds, check_input, check_tag):
     cmds = cmds.split('|')
     last_idx = len(cmds) - 1
     pcmds = []
+    check_output = check_input if check_output is None else check_output
     for i, cmd in enumerate(cmds):
         args = [arg.strip() for arg in cmd.split()]
         if len(args) == 0:
             raise ValueError("Illegal plugin commands: {}".format(cmds))
         cmd = args[0]
         if check_input and i == 0 and not cmd.startswith('i.'):
-            raise ValueError("plugin command must starts with input "
+            raise ValueError("plugin commands must starts with input "
                              "plugin.")
-        if check_tag and i == last_idx:
-            if cmd != 'tag':
-                raise ValueError("'sources' plugin command must ends with a "
-                                 "tag command.")
+        if check_output and i == last_idx:
+            # last command must be a tag command or output plugin
+            if cmd != 'tag' and not cmd.startswith('o.'):
+                raise ValueError("'sources' plugin commands must ends with a "
+                                 "tag command or output plugin.")
             tag = ' '.join(args[1:])
             validate_tag(tag)
         pcmds.append(args)

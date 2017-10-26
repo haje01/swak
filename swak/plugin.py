@@ -110,7 +110,7 @@ class Input(Plugin):
         self.encoding = encoding
 
 
-class InputProxy(Input):
+class ProxyInput(Input):
     """Input proxy class."""
 
     def __init__(self):
@@ -428,7 +428,7 @@ class Output(Plugin):
             self.buffer.may_flushing(last_flush_interval)
 
 
-class OutputProxy(Output):
+class ProxyOutput(Output):
     """Output proxy class."""
 
     def __init__(self, queue):

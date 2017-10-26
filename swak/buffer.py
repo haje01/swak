@@ -135,7 +135,7 @@ class Buffer(object):
         If matches flush condition, will call ``flush`` with chunk
 
         Args:
-            data: a formatted event.
+            data: Formatted event.
 
         Returns:
             int: Adding size of data.

@@ -23,19 +23,23 @@ class PluginPod(object):
         self.router = router
         self.plugins = []
 
-    def register_plugin(self, tag, plugin):
+    def register_plugin(self, tag, plugin, insert_first=False):
         """Register a plugin by event tag pattern.
 
         Args:
-            tag: A tag pattern.
-            plugin: A plugin to regiseter.
+            tag: Tag pattern.
+            plugin: Plugin to regiseter.
+            insert_first (bool): Do not append, insert at first.
         """
         assert self.router is not None
         assert plugin not in self.plugins
-        self.plugins.append(plugin)
+        if insert_first:
+            self.plugins.insert(0, plugin)
+        else:
+            self.plugins.append(plugin)
         self.router.add_rule(tag, plugin)
 
-    def init_from_commands(self, tag, cmds, check_input):
+    def init_from_commands(self, tag, cmds):
         """Init agent from plugin commands.
 
         Args:
@@ -57,8 +61,7 @@ class PluginPod(object):
                 break
             plugin = create_plugin_by_name(pname, args)
             self.register_plugin(tag, plugin)
-            if check_input and i == 0:
-                assert isinstance(plugin, Input)
+            if i == 0 and isinstance(plugin, Input):
                 input_pl = plugin
         return input_pl
 
@@ -75,8 +78,14 @@ class PluginPod(object):
         if no_output:
             yield self.router.def_output
 
+    def iter_inputs(self):
+        """Iterate all inputs."""
+        for plugin in self.iter_plugins():
+            if isinstance(plugin, Input):
+                yield plugin
+
     def iter_outputs(self):
-        """Iterate all output."""
+        """Iterate all outputs."""
         for plugin in self.iter_plugins():
             if isinstance(plugin, Output):
                 yield plugin
@@ -127,26 +136,11 @@ class PluginPod(object):
 class BaseAgent(object):
     """Agent class."""
 
-    def start(self):
-        """Start plugins in the router."""
-        raise NotImplementedError()
-
-    def stop(self):
-        """Stop plugins in the router."""
-        raise NotImplementedError()
-
-    def shutdown(self):
-        """Shutdown plugins in the router."""
-        raise NotImplementedError()
-
-
-class DummyAgent(BaseAgent):
-    """Dummy agent for test."""
-
     def __init__(self):
         """Init."""
         def_output = DummyOutput(echo=True)
         self.pluginpod = PluginPod(def_output)
+        self.started = False
 
     def init_from_commands(self, tag, cmds):
         """Init agent from plugin commands.
@@ -154,21 +148,36 @@ class DummyAgent(BaseAgent):
         Args:
             tag (str): Event tag.
             cmds (list): Seperated plugin commands list.
-            _test (bool): Test mode
 
         Returns:
             Input: Starting input plugin
         """
         assert type(tag) is str
         assert type(cmds) is list
-        self.pluginpod.init_from_commands(tag, cmds, False)
+        return self.pluginpod.init_from_commands(tag, cmds)
+
+    def flush(self):
+        """Flush all output pluginpod."""
+        self.pluginpod.flush()
+
+    def start(self):
+        """Start plugins in the pluginpod."""
+        assert not self.started
+        self.pluginpod.start()
+        self.started = True
+
+    def stop(self):
+        """Stop plugins in the pluginpod."""
+        assert self.started
+        self.pluginpod.stop()
+        self.started = False
 
     def register_plugin(self, tag, plugin):
         """Register a plugin by event tag pattern.
 
         Args:
-            tag: A tag pattern.
-            plugin: A plugin to regiseter.
+            tag: Tag pattern.
+            plugin: Plugin to regiseter.
         """
         self.pluginpod.register_plugin(tag, plugin)
 
@@ -185,6 +194,11 @@ class DummyAgent(BaseAgent):
         self.pluginpod.shutdown()
 
     @property
+    def plugins(self):
+        """Return pluginpod's plugins."""
+        return self.pluginpod.plugins
+
+    @property
     def def_output(self):
         """Return pluginpod's default output."""
         return self.pluginpod.def_output
@@ -198,17 +212,9 @@ class DummyAgent(BaseAgent):
         """Emit by delegating to router."""
         self.router.emit(tag, time, record)
 
-    def flush(self):
-        """Flush all output plugins."""
-        self.pluginpod.flush()
 
-    def start(self):
-        """Start plugins in the router."""
-        self.pluginpod.start()
-
-    def stop(self):
-        """Stop plugins in the router."""
-        self.pluginpod.stop()
+class DummyAgent(BaseAgent):
+    """Dummy agent for test."""
 
     def simple_process(self, input_pl, last_flush_interval):
         """Simple process for a given input & router."""
@@ -240,7 +246,7 @@ class DummyAgent(BaseAgent):
             record = input_pl.read_one()
             if record:
                 utime = time.time()
-                self.pluginpod.router.emit(input_pl.tag, utime, record)
+                self.router.emit(input_pl.tag, utime, record)
             return False
         except NoMoreData:
             return True
@@ -251,18 +257,6 @@ class DummyAgent(BaseAgent):
 
 class TRunAgent(DummyAgent):
     """Test run agent class."""
-
-    def init_from_commands(self, tag, cmds):
-        """Init agent from plugin commands.
-
-        Args:
-            tag (str): Event tag.
-            cmds (list): Seperated plugin commands list.
-
-        Returns:
-            Input: Starting input plugin
-        """
-        return self.pluginpod.init_from_commands(TESTRUN_TAG, cmds, True)
 
     def run_commands(self, cmds, last_flush_interval):
         """Init agent from plugin commands and execute them.
