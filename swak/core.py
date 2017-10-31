@@ -3,10 +3,11 @@
 import time
 
 from swak.event_router import EventRouter
-from swak.plugin import Input, DummyOutput, Output, create_plugin_by_name
-from swak.const import TESTRUN_TAG
+from swak.plugin import Input, DummyOutput, Output, create_plugin_by_name,\
+    ProxyInput
 from swak.exception import NoMoreData
 from swak.util import parse_and_validate_cmds
+from swak.const import TESTRUN_TAG
 
 
 class PluginPod(object):
@@ -110,6 +111,15 @@ class PluginPod(object):
         for plugin in self.iter_plugins():
             plugin.shutdown()
 
+        # input finished. stop and wait until all output flushed.
+        self.stop()
+        while not self.all_output_finished():
+            self.may_flushing(0)
+            time.sleep(0.1)
+
+        # shutdown
+        self.shutdown()
+
     def all_output_finished(self):
         """Whether all output is stopped & flushed or not."""
         for output in self.iter_outputs():
@@ -131,6 +141,61 @@ class PluginPod(object):
         """Flushing for all outputs if needed."""
         for output in self.iter_outputs():
             output.may_flushing(last_flush_interval)
+
+    def process(self, stop_event):
+        """Read from input and emit through router for service.
+
+        Args:
+            stop_event (threading.Event): Stop event
+        """
+        self.start()
+        # read input and emit to event router until input finished.
+        while not stop_event.wait(1):
+            if self.process_one():
+                # exit if input finished.
+                break
+
+    def simple_process(self, input_pl, last_flush_interval=None):
+        """Read from input and emit through router for CLI or test.
+
+        Args:
+            input_pl (swak.plugin.Input): Input plugin to read event.
+            last_flush_interval (float): Force flushing interval when input
+              is terminated.
+        """
+        while not self.process_one(input_pl, last_flush_interval):
+            time.sleep(0.1)
+
+    def process_one(self, input_pl=None, last_flush_interval=None):
+        """Process one record.
+
+        Args:
+            input_pl (swak.plugin.Input): Input plugin for simple process.
+            last_flush_interval (float): Force flushing interval when input
+              is terminated.
+
+        Returns:
+            bool: True if the input has finished, False otherwise.
+        """
+        ainput = input_pl if input_pl is not None else self.input
+        try:
+            record = ainput.read_one()
+            if record:
+                utime = time.time()
+                self.router.emit(ainput.tag, utime, record)
+            return False
+        except NoMoreData:
+            return True
+        finally:
+            # need to check flushing here.
+            self.may_flushing(last_flush_interval)
+
+    @property
+    def input(self):
+        """Return input plugin."""
+        first = self.plugins[0]
+        assert isinstance(first, Input) or isinstance(first, ProxyInput)
+        return first
 
 
 class BaseAgent(object):
@@ -155,6 +220,34 @@ class BaseAgent(object):
         assert type(tag) is str
         assert type(cmds) is list
         return self.pluginpod.init_from_commands(tag, cmds)
+
+    def flush(self):
+        """Flush all output pluginpod."""
+        raise NotImplementedError()
+
+    def start(self):
+        """Start plugins in the pluginpod."""
+        raise NotImplementedError()
+
+    def stop(self):
+        """Stop plugins in the pluginpod."""
+        raise NotImplementedError()
+
+    def may_flushing(self, last_flush_interval=None):
+        """Flushing for all outputs if needed."""
+        raise NotImplementedError()
+
+    def all_output_finished(self):
+        """Whether all output is stopped & flushed or not."""
+        raise NotImplementedError()
+
+    def shutdown(self):
+        """Shutdown plugins in the router."""
+        raise NotImplementedError()
+
+
+class DummyAgent(BaseAgent):
+    """Dummy agent class for test."""
 
     def flush(self):
         """Flush all output pluginpod."""
@@ -212,47 +305,15 @@ class BaseAgent(object):
         """Emit by delegating to router."""
         self.router.emit(tag, time, record)
 
-
-class DummyAgent(BaseAgent):
-    """Dummy agent for test."""
-
-    def simple_process(self, input_pl, last_flush_interval):
-        """Simple process for a given input & router."""
-        self.start()
-        # read input and emit to event router until input finished.
-        while True:
-            if self.simple_process_one(input_pl):
-                break
-
-        # input finished. stop and wait until all output flushed.
-        self.stop()
-        while not self.all_output_finished():
-            self.may_flushing(last_flush_interval)
-            time.sleep(0.1)
-
-        # shutdown
-        self.shutdown()
-
-    def simple_process_one(self, input_pl):
-        """Process one record.
+    def simple_process(self, input_pl, last_flush_interval=None):
+        """Simple process for a given input & router.
 
         Args:
-            input_pl: Input plugin to process.
-
-        Returns:
-            bool: True if the input has finished, False otherwise.
+            input_pl (swak.plugin.Input): Input plugin to read event.
+            last_flush_interval (float): Force flushing interval when input
+              is terminated.
         """
-        try:
-            record = input_pl.read_one()
-            if record:
-                utime = time.time()
-                self.router.emit(input_pl.tag, utime, record)
-            return False
-        except NoMoreData:
-            return True
-        finally:
-            # need to check timely flushing here.
-            self.may_flushing()
+        self.pluginpod.simple_process(input_pl, last_flush_interval)
 
 
 class TRunAgent(DummyAgent):
@@ -263,7 +324,7 @@ class TRunAgent(DummyAgent):
 
         Args:
             cmds (str): Unparsed commands string.
-            last_flush_interval (float): Force flushing interval for input
+            last_flush_interval (float): Force flushing interval when input
               is terminated.
             _test (bool): Test mode
 
@@ -271,6 +332,44 @@ class TRunAgent(DummyAgent):
             EventRouter: To test result.
         """
         cmds = parse_and_validate_cmds(cmds, True, False)
-        input_pl = self.init_from_commands(TESTRUN_TAG, cmds)
+        input_pl = self.pluginpod.init_from_commands(TESTRUN_TAG, cmds)
+        self.simple_process(input_pl)
+        self.flush()
 
-        self.simple_process(input_pl, last_flush_interval)
+    # def simple_process(self, input_pl, last_flush_interval):
+    #     """Simple process for a given input & router."""
+    #     self.start()
+    #     # read input and emit to event router until input finished.
+    #     while True:
+    #         if self.simple_process_one(input_pl):
+    #             break
+
+    #     # input finished. stop and wait until all output flushed.
+    #     self.stop()
+    #     while not self.all_output_finished():
+    #         self.may_flushing(last_flush_interval)
+    #         time.sleep(0.1)
+
+    #     # shutdown
+    #     self.shutdown()
+
+    # def simple_process_one(self, input_pl):
+    #     """Process one record.
+
+    #     Args:
+    #         input_pl: Input plugin to process.
+
+    #     Returns:
+    #         bool: True if the input has finished, False otherwise.
+    #     """
+    #     try:
+    #         record = input_pl.read_one()
+    #         if record:
+    #             utime = time.time()
+    #             self.router.emit(input_pl.tag, utime, record)
+    #         return False
+    #     except NoMoreData:
+    #         return True
+    #     finally:
+    #         # need to check timely flushing here.
+    #         self.may_flushing()

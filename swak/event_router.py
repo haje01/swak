@@ -189,8 +189,7 @@ class EventRouter(object):
             tag (str): Multiple patterns seperated by space for tag.
             collector (Plugin): Input or Modifier or Output plugin
         """
-        logging.debug("add_rule pattern {} collector {}".
-                      format(tag, collector))
+        logging.info("add_rule tag '{}' collector {}".format(tag, collector))
         collector.set_tag(tag)
         rule = Rule(tag, collector)
         self.rules.append(rule)
@@ -220,7 +219,7 @@ class EventRouter(object):
         Returns:
             ``Pipeline``
         """
-        logging.debug("build_pipeline")
+        logging.info("build_pipeline for tag '{}'".format(tag))
         pipeline = Pipeline(tag)
         for rule in self.rules:
             if not rule.match(tag):

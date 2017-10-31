@@ -2,6 +2,9 @@
 from __future__ import absolute_import
 
 import yaml
+import time
+
+import pytest
 
 from swak.agent import ServiceAgent
 from swak.plugin import ProxyOutput, ProxyInput, Modifier, Input, Output
@@ -12,7 +15,7 @@ def init_agent_from_cfg(cfgs, dryrun=False):
     cfg = yaml.load(cfgs)
     # dry run test
     agent = ServiceAgent()
-    if not agent.init_from_config(cfg, dryrun):
+    if not agent.init_from_cfg(cfg, dryrun):
         return
     return agent
 
@@ -25,8 +28,7 @@ sources:
         - m.reform -w tag test1
 
 matches:
-    "test*":
-        - o.stdout
+    "test*": o.stdout
     '''
     agent = init_agent_from_cfg(cfgs, False)
     out, err = capfd.readouterr()
@@ -96,10 +98,11 @@ matches:
     assert len(plugins) == 2
     assert isinstance(plugins[0], ProxyInput)
     assert isinstance(plugins[1], Output)
-    assert plugins[0].recv_queues == proxy_queues
+    assert set(plugins[0].recv_queues.values()) == set(proxy_queues)
 
 
-def test_agent_run():
+@pytest.mark.skip()
+def test_agent_run(capsys):
     """Test service agent run."""
     cfgs = '''
 sources:
@@ -116,3 +119,13 @@ matches:
         assert itrd.is_alive()
     for otrd in agent.output_threads:
         assert otrd.is_alive()
+
+    time.sleep(2)
+
+    print("stopping..")
+    out, err = capsys.readouterr()
+    # assert len(err) == 0
+    # assert "'f1': 3" in out
+
+    agent.stop()
+    agent.shutdown()

@@ -12,13 +12,13 @@ from swak.util import parse_and_validate_cmds, validate_tag
 
 ENVVAR = 'SWAK_HOME'
 CFG_FNAME = 'config.yml'
-DEFAULT_LOG_CFG = '''
+MAIN_LOG_CFG = '''
 logger:
     version: 1
 
     formatters:
         simpleFormater:
-            format: '%(asctime)s %(threadName)s [%(levelname)s] - %(message)s'
+            format: '%(asctime)s %(threadName)s [%(levelname)s] [%(filename)s:%(lineno)d] - %(message)s'
             datefmt: '%Y-%m-%d %H:%M:%S'
 
     handlers:
@@ -39,6 +39,20 @@ logger:
         level: DEBUG
         handlers: [console, file]
 '''
+
+
+def main_logger_config(update_cfg=None):
+    """Get main process logger config.
+
+    Args:
+        update_cfg (dict): Settings to overwrite.
+    """
+    expanded_log = MAIN_LOG_CFG.format(**os.environ)
+    cfg = yaml.load(expanded_log)
+    if update_cfg is not None:
+        assert type(update_cfg) is dict
+        _update_dict(cfg, update_cfg)
+    return cfg
 
 
 def _update_dict(d, u):
@@ -101,7 +115,7 @@ def select_and_parse(_home=None):
 
         expanded = raw.format(**os.environ)
         cfg = yaml.load(expanded)
-        expanded_log = DEFAULT_LOG_CFG.format(**os.environ)
+        expanded_log = MAIN_LOG_CFG.format(**os.environ)
         lcfg = yaml.load(expanded_log)
         _update_dict(cfg, lcfg)
         return home, cfg
@@ -155,7 +169,7 @@ def select_home(_home=None, check_config=True):
         logging.debug("  exedir {} has config".format(get_exe_dir()))
         home = get_exe_dir()
     else:
-        raise ValueError("Home directory can't be decided!")
+        raise ConfigError("Home directory can't be decided!")
 
     logging.info("Selected home '{}'".format(home))
     return home
@@ -170,16 +184,25 @@ def get_pid_path(home, svc_name):
 
 def validate_cfg(cfg):
     """Validate config content."""
+    _validate_agent_cfg(cfg)
+
+
+def _validate_agent_cfg(cfg):
     from swak.event_router import Rule
 
-    def check_souce_input(v):
+    source_tags = set()
+    match_tags = set()
+
+    def check_source_input(v):
         if not v.startswith('i.'):
             raise ConfigError("A source should start with input "
                               "plugin.")
 
-    source_tags = set()
-    match_tags = set()
-    # souces
+    # log
+    if 'logger' in cfg:
+        raise ConfigError("Agent can not have individual logger config. "
+                          "You can only set log level.")
+    # sources
     if 'sources' not in cfg:
         raise ConfigError("No 'sources' field exists in config.")
     if cfg['sources'] is None:
@@ -190,15 +213,12 @@ def validate_cfg(cfg):
     for srccmds in cfg['sources']:
         if type(srccmds) is not str:
             raise ConfigError("The value of the each source must be a string.")
-        try:
-            cmds = parse_and_validate_cmds(srccmds, True)
-        except ValueError as e:
-            raise ConfigError(e)
+        cmds = parse_and_validate_cmds(srccmds, True)
         tag = cmds[-1][-1]
         validate_tag(tag)
         source_tags.add(tag)
         first = cmds[0][0]
-        check_souce_input(first)
+        check_source_input(first)
 
     # maches
     if 'matches' in cfg:

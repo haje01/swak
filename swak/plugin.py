@@ -115,18 +115,25 @@ class ProxyInput(Input):
 
     def __init__(self):
         """Init."""
-        self.recv_queues = []
+        super(ProxyInput, self).__init__()
+        self.recv_queues = {}
 
-    def append_recv_queue(self, queue):
-        """Append receive queue."""
+    def append_recv_queue(self, tag, queue):
+        """Append receive queue.
+
+        Args:
+            tag (str): Event tag.
+            queue (Queue): Receiving queue
+        """
         assert queue not in self.recv_queues, "The queue has already been "\
             "appended."
-        self.recv_queues.append(queue)
+        self.recv_queues[tag] = queue
 
-    def read_queues(self):
-        """Read from receive queues.
+    def read_one(self):
+        """Read a record from the receive queues.
 
-        This is to be called within output thread.
+        Returns:
+            dict: A record.
         """
         for tag, queue in self.recv_queues.items():
             es = queue.get()
@@ -331,19 +338,6 @@ class Output(Plugin):
         """Set output bufer."""
         self.buffer = buffer
 
-    # def set_send_queue(self, send_queue):
-    #     """Set send queue.
-
-    #     It means this plugin works as output proxy in an input thread. the
-    #         queue will be consumed by an output thread's buffer.
-
-    #     Args:
-    #         send_queue (Queue): queue of event streams.
-    #     """
-    #     assert len(self.recv_queues) > 0, "Can not send and receive at the"\
-    #         " same time"
-    #     self.send_queue = send_queue
-
     def _start(self):
         """Implement start."""
         if self.buffer is not None:
@@ -428,7 +422,7 @@ class Output(Plugin):
             self.buffer.may_flushing(last_flush_interval)
 
 
-class ProxyOutput(Output):
+class ProxyOutput(Plugin):
     """Output proxy class."""
 
     def __init__(self, queue):
@@ -437,6 +431,7 @@ class ProxyOutput(Output):
         Args:
             queue (Queue): Sending queue.
         """
+        super(ProxyOutput, self).__init__()
         self.send_queue = queue
 
     def emit_events(self, tag, es):
@@ -449,6 +444,7 @@ class ProxyOutput(Output):
             es (EventStream): Event stream.
         """
         # send_queue exists, which means two threads for input & output.
+        logging.debug(es)
         self.send_queue.put(es)
 
 

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 from subprocess import call
 import shutil
+import logging
 
 import pytest
 
@@ -12,7 +13,7 @@ from swak.plugin import iter_plugins, get_plugins_dir,\
     get_plugins_initpy_path, PREFIX
 from swak.util import which_exe
 from swak.const import PLUGINDIR_PREFIX
-from swak.cli import ptrn_classnm
+from swak.cli import ptrn_classnm, set_log_verbosity, _verbosity_from_log_level
 
 
 SWAK_CLI = 'swak.bat' if os.name == 'nt' else 'swak'
@@ -215,3 +216,16 @@ def test_cli_init_names():
     assert ptrn_classnm.match("9Cls") is None
     assert ptrn_classnm.match("_Cls") is None
     assert ptrn_classnm.match("fooCls") is None
+
+
+def test_cli_etc():
+    """Test cli etc."""
+    logger = logging.getLogger()
+    org_level = logger.getEffectiveLevel()
+    org_verbosity = _verbosity_from_log_level(org_level)
+    if org_verbosity is None:
+        org_verbosity = 0
+    set_log_verbosity(0)
+    new_level = logger.getEffectiveLevel()
+    assert new_level == 40
+    set_log_verbosity(org_verbosity)

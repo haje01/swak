@@ -8,7 +8,7 @@ import collections
 import errno
 import logging
 
-from swak.exception import UnsupportedPython
+from swak.exception import UnsupportedPython, ConfigError
 
 test_logger_inited = False
 
@@ -24,6 +24,16 @@ time_ptrn_s = re.compile('(\d+)s', re.I)
 time_ptrn_m = re.compile('(\d+)m', re.I)
 time_ptrn_h = re.compile('(\d+)h', re.I)
 time_ptrn_d = re.compile('(\d+)d', re.I)
+
+
+def query_stream_log_handler(logger):
+    """Query stream handler from logger."""
+    if len(logger.handlers):
+        ch = logger.handlers[0]
+    else:
+        ch = logging.StreamHandler()
+        logger.addHandler(ch)
+    return ch
 
 
 def make_dirs(adir):
@@ -115,15 +125,6 @@ def init_home(home, cfg):
                     make_dirs(dname)
 
 
-def _query_stream_log_handler(logger):
-    if len(logger.handlers):
-        ch = logger.handlers[0]
-    else:
-        ch = logging.StreamHandler()
-        logger.addHandler(ch)
-    return ch
-
-
 def test_logconfig():
     """Config logger for test."""
     global test_logger_inited
@@ -134,7 +135,7 @@ def test_logconfig():
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    ch = _query_stream_log_handler(logger)
+    ch = query_stream_log_handler(logger)
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(LOG_FMT)
 
@@ -158,40 +159,6 @@ def check_python_version():
         return 3
     else:
         raise UnsupportedPython("Python {} is not supported".format(vi))
-
-
-def _log_level_from_verbosity(verbosity):
-    """Get log level from verbosity count."""
-    if verbosity == 0:
-        return 40
-    elif verbosity == 1:
-        return 20
-    elif verbosity >= 2:
-        return 10
-
-
-def _verbosity_from_log_level(level):
-    """Get log level from verbosity."""
-    if level == 40:
-        return 0
-    elif level == 20:
-        return 1
-    elif level == 10:
-        return 2
-
-
-def set_log_verbosity(verbosity):
-    """Set log level by verbose level.
-
-    Args:
-        verbosity (int): verbose level.
-    """
-    level = _log_level_from_verbosity(verbosity)
-    logger = logging.getLogger()
-    logger.setLevel(level)
-    handler = _query_stream_log_handler(logger)
-    handler.setLevel(level)
-    handler.setFormatter(LOG_FMT)
 
 
 def get_plugin_module_name(plugin_name):
@@ -242,7 +209,7 @@ def size_value(sval):
         int: Bytes
 
     Raises:
-        ValueError: If conversion failed.
+        ConfigError: If conversion failed.
     """
     if sval is None:
         return None
@@ -261,8 +228,8 @@ def size_value(sval):
         return int(match.groups()[0]) * (1024 ** 4)
     try:
         return int(sval)
-    except ValueError:
-        raise ValueError("Can not convert '{}' into bytes".format(sval))
+    except ConfigError:
+        raise ConfigError("Can not convert '{}' into bytes".format(sval))
 
 
 def time_value(sval):
@@ -280,7 +247,7 @@ def time_value(sval):
         float: Time in seconds with millisecond.
 
     Raises:
-        ValueError: If conversion failed.
+        ConfigError: If conversion failed.
     """
     if sval is None:
         return None
@@ -299,14 +266,14 @@ def time_value(sval):
         return int(match.groups()[0]) * 60 * 60 * 24
     try:
         return float(sval)
-    except ValueError:
-        raise ValueError("Can not convert '{}' into seconds".format(sval))
+    except ConfigError:
+        raise ConfigError("Can not convert '{}' into seconds".format(sval))
 
 
 def validate_tag(tag):
     """Validate tag syntax."""
     if type(tag) is not str:
-        raise ValueError("Tag must be a string.")
+        raise ConfigError("Tag must be a string.")
 
 
 def parse_and_validate_cmds(cmds, check_input, check_output=None):
@@ -323,13 +290,13 @@ def parse_and_validate_cmds(cmds, check_input, check_output=None):
         check_output (bool): Check ending command.
 
     Raises:
-        ValueError: When commands has a fault.
+        ConfigError: When commands has a fault.
 
     Returns:
         list: Parsed command list.
     """
     if type(cmds) is not str:
-        raise ValueError("Commands are not a string.")
+        raise ConfigError("Commands are not a string.")
 
     cmds = cmds.split('|')
     last_idx = len(cmds) - 1
@@ -338,16 +305,16 @@ def parse_and_validate_cmds(cmds, check_input, check_output=None):
     for i, cmd in enumerate(cmds):
         args = [arg.strip() for arg in cmd.split()]
         if len(args) == 0:
-            raise ValueError("Illegal plugin commands: {}".format(cmds))
+            raise ConfigError("Illegal plugin commands: {}".format(cmds))
         cmd = args[0]
         if check_input and i == 0 and not cmd.startswith('i.'):
-            raise ValueError("plugin commands must starts with input "
-                             "plugin.")
+            raise ConfigError("plugin commands must starts with input "
+                              "plugin.")
         if check_output and i == last_idx:
             # last command must be a tag command or output plugin
             if cmd != 'tag' and not cmd.startswith('o.'):
-                raise ValueError("'sources' plugin commands must ends with a "
-                                 "tag command or output plugin.")
+                raise ConfigError("'sources' plugin commands must ends with a "
+                                  "tag command or output plugin.")
             tag = ' '.join(args[1:])
             validate_tag(tag)
         pcmds.append(args)

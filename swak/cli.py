@@ -4,11 +4,12 @@ from __future__ import print_function
 
 import re
 import sys
+import logging
 
 import click
 from tabulate import tabulate
 
-from swak.util import check_python_version, set_log_verbosity
+from swak.util import check_python_version, query_stream_log_handler, LOG_FMT
 from swak.plugin import PREFIX, get_plugins_dir, init_plugin_dir,\
     iter_plugins
 from swak.core import TRunAgent
@@ -19,6 +20,40 @@ PLUGIN_DIR = get_plugins_dir(False)
 
 INIT_PREFIX = ['it', 'ir'] + [p for p in PREFIX[1:]]
 ptrn_classnm = re.compile('[A-Z][a-zA-Z0-9_]+')
+
+
+def _log_level_from_verbosity(verbosity):
+    """Get log level from verbosity count."""
+    if verbosity == 0:
+        return 40
+    elif verbosity == 1:
+        return 20
+    elif verbosity >= 2:
+        return 10
+
+
+def _verbosity_from_log_level(level):
+    """Get log level from verbosity."""
+    if level == 40:
+        return 0
+    elif level == 20:
+        return 1
+    elif level == 10:
+        return 2
+
+
+def set_log_verbosity(verbosity):
+    """Set log level by verbose level.
+
+    Args:
+        verbosity (int): verbose level.
+    """
+    level = _log_level_from_verbosity(verbosity)
+    logger = logging.getLogger()
+    logger.setLevel(level)
+    handler = query_stream_log_handler(logger)
+    handler.setLevel(level)
+    handler.setFormatter(LOG_FMT)
 
 
 @click.group()

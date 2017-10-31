@@ -5,15 +5,15 @@ from __future__ import absolute_import
 import os
 import sys
 import tempfile
-import logging
 
 import pytest
 
 from swak.config import CFG_FNAME, select_home, select_and_parse,\
     get_config_path, get_exe_dir
 from swak.util import init_home, get_plugin_module_name, update_dict,\
-    check_python_version, set_log_verbosity, _verbosity_from_log_level,\
-    which_exe, size_value, time_value, parse_and_validate_cmds
+    check_python_version, which_exe, size_value, time_value,\
+    parse_and_validate_cmds
+from swak.exception import ConfigError
 
 
 CFG = """
@@ -98,16 +98,6 @@ def test_util_etc():
     rv = check_python_version()
     assert rv == vi.major
 
-    logger = logging.getLogger()
-    org_level = logger.getEffectiveLevel()
-    org_verbosity = _verbosity_from_log_level(org_level)
-    if org_verbosity is None:
-        org_verbosity = 0
-    set_log_verbosity(0)
-    new_level = logger.getEffectiveLevel()
-    assert new_level == 40
-    set_log_verbosity(org_verbosity)
-
     assert which_exe('date') is not None
 
 
@@ -143,11 +133,11 @@ def test_util_value():
 
 def test_util_cmd(capsys):
     """Test plugin commands parsing."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigError):
         parse_and_validate_cmds('m.reform', True, False)
     parse_and_validate_cmds('i.counter | m.reform', True, False)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigError):
         parse_and_validate_cmds('m.reform', False, True)
     res = parse_and_validate_cmds('tag "test"', False, True)
     assert len(res[0]) == 2

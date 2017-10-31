@@ -79,7 +79,8 @@ def test_plugin_basic(agent):
         return 'j' in line
 
     dtinput.set_filter_func(filter)
-    agent.simple_process(dtinput, 0.0)
+    agent.simple_process(dtinput)
+    agent.flush()
 
     bulks = agent.def_output.bulks
     assert len(bulks) == 2

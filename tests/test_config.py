@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import yaml
 
+from swak.config import main_logger_config
 from swak.agent import ServiceAgent
 
 
@@ -11,7 +12,7 @@ def init_agent_from_cfg(cfgs, dryrun=False):
     cfg = yaml.load(cfgs)
     # dry run test
     agent = ServiceAgent()
-    if not agent.init_from_config(cfg, dryrun):
+    if not agent.init_from_cfg(cfg, dryrun):
         return
     return agent
 
@@ -21,6 +22,20 @@ def assert_cfg_error(cfgs, capsys, emsg):
     assert not init_agent_from_cfg(cfgs)
     _, err = capsys.readouterr()
     assert emsg in err
+
+
+def test_config_logger():
+    """Test logger config."""
+    update_cfg = {
+        'logger': {
+            'root': {
+                'level': 'ERROR'
+            }
+        }
+    }
+    cfg = main_logger_config(update_cfg)
+    assert cfg['logger']['version'] == 1
+    assert cfg['logger']['root']['level'] == 'ERROR'
 
 
 def test_config_init(capsys):

@@ -4,6 +4,7 @@ import time
 from collections import deque
 
 from swak.util import time_value, size_value
+from swak.exception import ConfigError
 
 
 class Chunk(object):
@@ -194,7 +195,7 @@ class Buffer(object):
         """Flushing if needed.
 
         Args:
-            last_flush_interval (float): Force flushing interval for input
+            last_flush_interval (float): Force flushing interval when input
               is terminated.
 
         Returns:
@@ -247,18 +248,21 @@ class MemoryBuffer(Buffer):
         assert flush_interval is None or type(flush_interval) is str,\
             "flush_interval must be a string."
 
-        chunk_max_size = size_value(chunk_max_size)
-        flush_interval = time_value(flush_interval)
+        try:
+            chunk_max_size = size_value(chunk_max_size)
+            flush_interval = time_value(flush_interval)
+        except ValueError as e:
+            raise ConfigError(str(e))
 
         # validate arguements.
         if chunk_max_record is not None and chunk_max_record <= 0:
-            raise ValueError("chunk_max_record must be greater than 0.")
+            raise ConfigError("chunk_max_record must be greater than 0.")
         if buffer_max_chunk is not None and buffer_max_chunk <= 0:
-            raise ValueError("buffer_max_chunk must be greater than 0.")
+            raise ConfigError("buffer_max_chunk must be greater than 0.")
         if chunk_max_size is not None and chunk_max_size <= 0:
-            raise ValueError("chunk_max_size must be greater than 0.")
+            raise ConfigError("chunk_max_size must be greater than 0.")
         if flush_interval is not None and flush_interval <= 0:
-            raise ValueError("flush_interval must be greater than 0.")
+            raise ConfigError("flush_interval must be greater than 0.")
 
         self.chunk_max_record = chunk_max_record
         self.chunk_max_size = chunk_max_size
@@ -285,7 +289,6 @@ class MemoryBuffer(Buffer):
         """
         bytedata = data if binary_data else bytearray(data, encoding='utf8')
         adding_size = len(bytedata)
-        self.may_chunking(adding_size)
         if self.binary:
             data = bytedata
 
@@ -310,8 +313,10 @@ class MemoryBuffer(Buffer):
     def need_flushing(self, last_flush_interval):
         """Need flushing or not.
 
-        Flush if number of chunk is greater than buffer max chunk.
-        Flush if flush interval is over.
+        Flush with the following conditions:
+        - if number of chunk is greater than buffer max chunk.
+        - if flush interval has passed.
+        - if last flush interval has passed.
 
         Args:
             last_flush_interval (float): Force flushing interval for input

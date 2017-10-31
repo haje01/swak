@@ -6,6 +6,7 @@ import time
 import pytest
 
 from swak.buffer import MemoryBuffer
+from swak.exception import ConfigError
 
 
 def test_buffer_chunk():
@@ -15,13 +16,13 @@ def test_buffer_chunk():
 def test_buffer_basic():
     """Test basic features of buffer."""
     # arguments validation
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigError):
         MemoryBuffer(None, False, chunk_max_record=0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigError):
         MemoryBuffer(None, False, buffer_max_chunk=0)
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigError):
         MemoryBuffer(None, False, chunk_max_size='0')
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigError):
         MemoryBuffer(None, False, flush_interval='0')
 
     # chunking by chunk_max_record.
