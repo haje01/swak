@@ -2,20 +2,20 @@
 
 {% block class_body %}
 
-    def prepare_for_stream(self, tag, es):
-        """Prepare to modify an event stream.
+    def prepare_for_stream(self, tag, ds):
+        """Prepare to modify data stream.
 
         Args:
-            tag (str): Event tag
-            es (EventStream): Event stream
+            tag (str): data tag
+            ds (datatream): data stream
         """
         pass
 
     def modify(self, tag, utime, record):
-        """Modify an event.
+        """Modify data.
 
         Args:
-            tag (str): Event tag
+            tag (str): data tag
             utime (float): Event time stamp.
             record (dict): Event record
 

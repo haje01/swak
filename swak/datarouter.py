@@ -1,9 +1,9 @@
-"""This module implements event router."""
+"""This module implements data router."""
 import logging
 
-from swak.event import OneEventStream, MultiEventStream
+from swak.data import MultiDataStream, OneDataStream
 from swak.match import MatchPattern, OrMatchPattern
-from swak.plugin import Modifier, Output
+from swak.plugin import Modifier, Output, is_kind_of_output
 from swak.config import select_and_parse
 
 _, cfg = select_and_parse()
@@ -34,47 +34,50 @@ class Pipeline(object):
         logging.debug("set_output {}".format(output))
         self.output = output
 
-    def emit_events(self, tag, es):
-        """Emit event to tagged stream.
+    def emit_stream(self, tag, ds):
+        """Emit data stream output.
 
-        Optimize event stream by filters before emit.
+        Modify data and emit them.
 
         Args:
-            tag (str): Event tag
-            es (EventStream): Event stream to emit
+            tag (str): data tag
+            ds (DataStream): data stream to emit
 
         Returns:
             int: Adding size of the stream.
         """
-        modified = self.modify_stream(tag, es)
-        return self.output.emit_events(tag, modified)
+        logging.debug("emit_stream")
+        modified = self.modify_stream(tag, ds)
+        return self.output.emit_stream(tag, modified)
 
-    def modify_stream(self, tag, es):
-        """Modify event stream.
+    def modify_stream(self, tag, ds):
+        """Modify data stream.
 
         Args:
-            es (EventStream): Event stream to be modified.
+            ds (DataStream): data stream to be modified.
 
         Returns:
             If modified
-                Modified MultiEventStream object
+                Modified MultiDataStream object
 
             If no modifiers exists
-                Original event stream object
+                Original data stream object
         """
         if len(self.modifiers) == 0:
-            return es
+            return ds
 
         # give modifiers chance to do stream specific operation
         for mod in self.modifiers:
-            mod.prepare_for_stream(tag, es)
+            mod.prepare_for_stream(tag, ds)
 
         # modify each records
+        logging.debug("modify_stream")
         times = []
         records = []
-        for utime, record in es:
+        for utime, record in ds:
             skip = False
             for mod in self.modifiers:
+                logging.debug("apply modifier {}".format(mod))
                 result = mod.modify(tag, utime, record)
                 if result is None:
                     skip = True
@@ -83,7 +86,8 @@ class Pipeline(object):
             if not skip:
                 times.append(utime)
                 records.append(record)
-        return MultiEventStream(times, records)
+        logging.debug("modified records {}".format(records))
+        return MultiDataStream(times, records)
 
 
 class Rule(object):
@@ -105,20 +109,25 @@ class Rule(object):
         """Check tag match.
 
         Args:
-            tag (str): Event tag
+            tag (str): data tag
 
         Returns:
             (SRE_Match): Returns match object if tag matches, None otherwise.
         """
         return self.pattern.match(tag)
 
-    def emit_events(self, es):
-        """Emit event stream.
+    def __repr__(self):
+        """Canonical string representation."""
+        return "<Rule pattern '{}' with collector '{}'>".format(self.pattern,
+                                                                self.collector)
 
-        Args:
-            es (EventStream): Event stream to emit.
-        """
-        self.collector
+    # def emit_stream(self, ds):
+    #     """Emit data stream.
+
+    #     Args:
+    #         ds (DataStream): data stream to emit.
+    #     """
+    #     self.collector
 
 
 class Thread(object):
@@ -129,12 +138,12 @@ class Thread(object):
         super(Thread, self).__init__()
 
 
-class EventRouter(object):
-    """EvnetRouter is responsible to route events to a collector.
+class DataRouter(object):
+    """EvnetRouter is responsible to route datas to a collector.
 
-    1. Receive an event at emit method
-    2. Match the event's tag with tag patterns
-    3. Forward the event to the corresponding Collector
+    1. Receive an data at emit method
+    2. Match the data's tag with tag patterns
+    3. Forward the data to the corresponding Collector
 
     Collector is either of Output, Modifier.
     """
@@ -145,65 +154,86 @@ class EventRouter(object):
         Args:
             def_output (Output): Default output plugin
         """
-        super(EventRouter, self).__init__()
+        super(DataRouter, self).__init__()
         self.rules = []
         self.match_cache = {}
         assert isinstance(def_output, Output)
         self.def_output = def_output
 
     def emit(self, tag, utime, record):
-        """Emit one event.
+        """Emit one data.
 
         Args:
-            tag (str): Event tag.
-            utime (float): Emit time stamp.
+            tag (str): Data tag.
+            utime (float): Data time stamp.
             record (dict): A record.
 
         Returns:
             int: Adding size of the stream if succeeded, or None.
         """
-        return self.emit_stream(tag, OneEventStream(utime, record))
+        return self.emit_stream(tag, OneDataStream(utime, record))
 
-    def emit_stream(self, tag, es):
-        """Emit stream with tag.
+    # def emit_multi(self, tag, utimes, records):
+    #     """Emit multiple datas.
+
+    #     Args:
+    #         tag (str): data tag.
+    #         utimes (float): data time stamps.
+    #         records (dict): Records.
+
+    #     Returns:
+    #         int: Adding size of the stream if succeeded, or None.
+    #     """
+    #     ms = MultiDataStream(utimes, records)
+    #     return self.emit_stream(tag, ms)
+
+    def emit_stream(self, tag, ds):
+        """Emit an data stream with tag.
 
         Args:
-            tag (str): Event tag
-            es (EventStream): Event stream
+            tag (str): data tag
+            ds (DataStream): data stream
 
         Returns:
             int: Adding size of the stream if succeeded, or None.
         """
+        logging.debug("emit_stream tag '{}' ds {}".format(tag, ds))
         try:
-            adding_size = self.match(tag).emit_events(tag, es)
+            adding_size = self.match(tag).emit_stream(tag, ds)
             return adding_size
         except Exception as e:
             if DEBUG:
                 raise
             logging.error(e)
 
-    def add_rule(self, tag, collector):
+    def add_rule(self, tag, collector, insert_first):
         """Add new rule.
 
         Args:
             tag (str): Multiple patterns seperated by space for tag.
             collector (Plugin): Input or Modifier or Output plugin
+            insert_first (bool): Do not append, insert at first.
         """
         logging.info("add_rule tag '{}' collector {}".format(tag, collector))
         collector.set_tag(tag)
         rule = Rule(tag, collector)
-        self.rules.append(rule)
+        if insert_first:
+            self.rules.insert(0, rule)
+        else:
+            self.rules.append(rule)
 
     def match(self, tag):
         """Match pipeline by tag.
 
         Args:
-            tag (str): Event tag
+            tag (str): data tag
 
         Returns:
             ``Pipeline``
         """
         if tag not in self.match_cache:
+            logging.debug("DataRouter.match - not found in cache '{}'".
+                          format(tag))
             pline = self.build_pipeline(tag)
             self.match_cache[tag] = pline
         else:
@@ -214,7 +244,7 @@ class EventRouter(object):
         """Build a pipeline for tag and returns it.
 
         Args:
-            tag (str): Event tag.
+            tag (str): data tag.
 
         Returns:
             ``Pipeline``
@@ -224,12 +254,14 @@ class EventRouter(object):
         for rule in self.rules:
             if not rule.match(tag):
                 continue
-            logging.debug("rule {}".format(rule))
+            logging.info("matched tag '{}' rule {}".format(tag, rule))
             if isinstance(rule.collector, Modifier):
                 pipeline.add_modifier(rule.collector)
-            elif isinstance(rule.collector, Output):
+            elif is_kind_of_output(rule.collector):
                 pipeline.set_output(rule.collector)
                 return pipeline
 
+        logging.info("no output. fallback to default output '{}'".
+                     format(self.def_output))
         pipeline.set_output(self.def_output)
         return pipeline

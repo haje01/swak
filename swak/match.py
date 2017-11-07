@@ -1,4 +1,4 @@
-"""This module implements event tag match."""
+"""This module implements data tag match."""
 
 import re
 
@@ -26,6 +26,10 @@ class AllMatchPattern(MatchPattern):
         super(AllMatchPattern, self).__init__()
         self.arg = arg
 
+    def __repr__(self):
+        """Canonical string representation."""
+        return "<AllMatchPattern arg '{}'>".format(self.arg)
+
 
 class GlobMatchPattern(MatchPattern):
     """GlobMatchPattern class."""
@@ -36,7 +40,7 @@ class GlobMatchPattern(MatchPattern):
         Args:
             pat (str): Glob pattern.
         """
-        super(GlobMatchPattern, self).__init__()
+        self.pat = pat
         stack = []
         regex = ['']
         escape = False
@@ -108,6 +112,10 @@ class GlobMatchPattern(MatchPattern):
         """
         return len(self.regex.findall(strn)) > 0
 
+    def __repr__(self):
+        """Canonical string representation."""
+        return "<GlobMatchPattern pattern '{}'>".format(self.pat)
+
 
 class OrMatchPattern(MatchPattern):
     """OrMatchPattern class."""
@@ -133,3 +141,8 @@ class OrMatchPattern(MatchPattern):
         for pattern in self.patterns:
             if pattern.match(strn):
                 return True
+
+    def __repr__(self):
+        """Canonical string representation."""
+        pats = [repr(pat) for pat in self.patterns]
+        return "<OrMatchPattern {}>".format(', '.join(pats))

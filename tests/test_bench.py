@@ -5,25 +5,27 @@ from threading import Thread, Lock
 from queue import Queue
 
 
-from swak.event import MultiEventStream
+from swak.data import MultiDataStream
 
 
 def test_bench_queue_events():
     """Bench queue with individual event."""
     num_thread = 5
-    num_events = 100000
+    num_events = 10000
+    events_per_stream = 10
     total = [0]
     total_lock = Lock()
     q = Queue()
 
     def inp(count):
         """Input."""
-        for i in range(int(count / 10)):
-            times = [time.time()] * 10
-            records = [dict(name="kjj", score=100, host="localhost")] * 10
-            es = MultiEventStream(times, records)
+        for i in range(int(count / events_per_stream)):
+            times = [time.time()] * events_per_stream
+            records = [dict(name="kjj", score=100, host="localhost")] * \
+                events_per_stream
+            ds = MultiDataStream(times, records)
             try:
-                q.put(es)
+                q.put(ds)
             except Exception as e:
                 print(e)
 
@@ -57,4 +59,4 @@ def test_bench_queue_events():
         t.join()
     q.put(None)
     ot.join()
-    assert total[0] == int(num_events * num_thread / 10)
+    assert total[0] == int(num_events * num_thread / events_per_stream)

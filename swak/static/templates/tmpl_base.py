@@ -4,7 +4,6 @@ from __future__ import absolute_import  # NOQA
 import click
 
 from swak.plugin import {{base_name}}
-{% if 'Input' in base_name%}from swak.exception import NoMoreData{%endif%}
 {% block import_body %}{% endblock %}
 
 class {{class_name}}({{base_name}}):
@@ -33,7 +32,7 @@ class {{class_name}}({{base_name}}):
         pass
 
     def _shutdown(self):
-        """Shutdown plugin.
+        """Shut down the plugin.
 
         This method is called when the task is completely shutdown. Here you
         can close or remove any files, threads, etc. that you had created in

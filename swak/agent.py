@@ -1,26 +1,28 @@
 """This module implements service agent."""
 import sys
-import time
 import logging
 import logging.config
 import threading
 import multiprocessing
 import json
+import time
 
 from queue import Queue
 
-from swak.core import BaseAgent, PluginPod
+from swak.core import BaseAgent
 from swak.exception import ConfigError
 from swak.stdplugins.stdout.o_stdout import Stdout
 from swak.util import parse_and_validate_cmds
 from swak.plugin import ProxyOutput, ProxyInput, Output, Input
 from swak.config import main_logger_config, validate_cfg
+from swak.pluginpod import PluginPod
+from swak import __version__
 
 # set_log_verbosity(0)
 
 
 def init_router(cmd):
-    """Init an event router from plugin commands.
+    """Init data router from plugin commands.
 
     Args:
         cmd (str): Plugin command for this router.
@@ -40,19 +42,21 @@ class BaseThread(threading.Thread):
         super(BaseThread, self).__init__()
         self.stop_event = stop_event
         def_output = Stdout()
+        def_output.buffer = None  # no buffer for default output
         self.pluginpod = PluginPod(def_output)
 
     def init_from_commands(self, tag, cmds, for_input):
         """Init agent from plugin commands.
 
         Args:
-            tag (str): Event tag.
+            tag (str): data tag.
             cmds (list): Seperated plugin commands list.
             for_input (bool): Whether to init for input or output.
 
         Returns:
             Input: Starting input plugin
         """
+        logging.info("init_from_commands thread name {}".format(self.name))
         return self.pluginpod.init_from_commands(tag, cmds)
 
     @property
@@ -61,7 +65,7 @@ class BaseThread(threading.Thread):
         return self.pluginpod.plugins
 
     def register_plugin(self, tag, plugin, insert_first=False):
-        """Register a plugin by event tag pattern.
+        """Register a plugin by data tag pattern.
 
         Args:
             tag: Tag pattern.
@@ -72,8 +76,9 @@ class BaseThread(threading.Thread):
 
     def run(self):
         """Thread main."""
+        logging.info("starting thread name '{}'.".format(self.name))
         self.pluginpod.process(self.stop_event)
-        time.sleep(1)
+        logging.info("finished thread name '{}'.".format(self.name))
 
 
 class InputThread(BaseThread):
@@ -83,19 +88,23 @@ class InputThread(BaseThread):
         """Init input thread from config commands.
 
         Args:
-            tag (str): Event tag.
+            tag (str): data tag.
             cmds (list): Seperated plugin commands list.
 
         Returns:
             Queue: If no output plugin exists, create an inter-proxy queue and
                 return it, None otherwise.
         """
-        self.name = "Input-{}".format(tag)
+        self.pluginpod.type = 'input'
+        self.pluginpod.name = self.name = "InTrd-{}".format(tag)
         super(InputThread, self).init_from_commands(tag, cmds, True)
+
         # makes a ProxyOutput if there is no output plugin.
         assert len(self.plugins) > 0, "No plugins were created."
         last_plugin = self.plugins[-1]
         if not isinstance(last_plugin, Output):
+            # use buffering for inter-thread queue
+            self.pluginpod.buffering = True
             queue = Queue()
             proxy_output = ProxyOutput(queue)
             self.register_plugin(tag, proxy_output)
@@ -109,11 +118,13 @@ class OutputThread(BaseThread):
         """Init output thread from config commands.
 
         Args:
-            tag (str): Event tag.
+            tag (str): data tag.
             cmds (list): Seperated plugin commands list.
         """
-        self.name = "Output-{}".format(tag)
+        self.pluginpod.type = 'output'
+        self.pluginpod.name = self.name = "OutTrd-{}".format(tag)
         super(OutputThread, self).init_from_commands(tag, cmds, False)
+
         # confirm no input plugin.
         assert len(self.plugins) > 0
         for plugin in self.plugins:
@@ -157,13 +168,19 @@ class ServiceAgent(BaseAgent):
             validate_cfg(cfg)
             # init logger
             cfg = main_logger_config(cfg)
-            logging.config.dictConfig(cfg['logger'])
-            logging.critical("Init service agent '{}'".format(self.name))
+            if 'logger' in cfg:
+                lcfg = cfg['logger']
+                if lcfg is not None:
+                    logging.config.dictConfig(lcfg)
+            logging.critical("========== Swak Version {} ==========".
+                             format(__version__))
+            logging.critical("init service agent for '{}'".format(self.name))
             logging.info("effective config: \n{}".
                          format(json.dumps(cfg, indent=1)))
             self.init_threads(cfg, dryrun)
             # more init code here..
         except ConfigError as e:
+            logging.error(e)
             sys.stderr.write("{}\n".format(e))
             return False
         return True
@@ -172,9 +189,9 @@ class ServiceAgent(BaseAgent):
         """Init threads for service agent from config.
 
         There are two kinds of thread:
-        - Input thread: Reads the event from the input, process them, and
+        - Input thread: Reads data from the input, process them, and
             passes them to the output thread via ProxyOutput.
-        - Onput thread: Reads the events from input thread via ProxyInput,
+        - Onput thread: Reads data from input thread via ProxyInput,
             process them, and passes them to the real output.
 
         Args:
@@ -188,14 +205,15 @@ class ServiceAgent(BaseAgent):
             """Create input thread.
 
             Args:
-                tag (str): Event tag.
+                tag (str): data tag.
                 cmd (str): A string command to construct a input thread.
                 stop_event (threading.Event): Stop event.
 
             Returns:
-                str: Event tag.
+                str: data tag.
                 Queue: Inter-proxy queue if no output exists. None otherwise.
             """
+            logging.info("create_input_thread with cmd '{}'".format(cmd))
             trd = InputThread(stop_event)
             cmds = parse_and_validate_cmds(cmd, True)
             tag = ' '.join(cmds[-1][1:])
@@ -207,21 +225,15 @@ class ServiceAgent(BaseAgent):
             """Create output thread.
 
             Args:
-                tag (str): Event tag.
+                tag (str): data tag.
                 cmd (str): A string command to construct a input thread.
                 stop_event (threading.Event): Stop event.
             """
+            logging.info("create_output_thread with cmd '{}'".format(cmd))
             trd = OutputThread(stop_event)
             cmds = parse_and_validate_cmds(cmd, False)
             trd.init_from_commands(tag, cmds)
             self.output_threads.append(trd)
-
-        # def init_from_cfg(cfg, for_input):
-        #     """Init thread from config.
-
-        #     Args:
-        #         cfg (list): List of config strings.
-        #     """
 
         self.stop_event = threading.Event()
 
@@ -253,6 +265,7 @@ class ServiceAgent(BaseAgent):
 
     def start(self):
         """Start service."""
+        logging.critical("starting service agent '{}'".format(self.name))
         assert len(self.input_threads) + len(self.output_threads) > 0, \
             "There are no threads to start."
         # start output threads first.
@@ -264,19 +277,27 @@ class ServiceAgent(BaseAgent):
     def stop(self):
         """Stop service."""
         # stop threads by stop event.
+        logging.critical("stopping service agent '{}'".format(self.name))
         self.stop_event.set()
 
     def shutdown(self):
-        """Shutdown service."""
-        pass
+        """Waiting for all threads to shut down."""
+        for otrd in self.output_threads:
+            otrd.join()
+        for itrd in self.input_threads:
+            itrd.join()
 
+        # other shutdown processes goes here.
+
+        logging.critical("service agent has been successfully shut down for "
+                         "'{}'".format(self.name))
 
 if __name__ == '__main__':
     import yaml
     cfgs = '''
 sources:
-    - i.counter | m.reform -w tag t1 | tag test1
-    - i.counter | m.reform -w tag t2 | tag test2
+    - i.counter -c 100 | m.reform -w tag t1 | tag test1
+    - i.counter -c 100 | m.reform -w tag t2 | tag test2
 
 matches:
     test*: o.stdout
@@ -285,6 +306,6 @@ matches:
     agent = ServiceAgent()
     agent.init_from_cfg(cfg, False)
     agent.start()
-    time.sleep(2)
+    time.sleep(5)
     agent.stop()
     agent.shutdown()

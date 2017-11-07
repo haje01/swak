@@ -4,7 +4,6 @@ from __future__ import absolute_import  # NOQA
 import click
 
 from swak.plugin import RecordInput
-from swak.exception import NoMoreData
 
 
 class Dummy(RecordInput):
@@ -22,23 +21,17 @@ class Dummy(RecordInput):
         self.max_count = max_count
         self.count = 0
 
-    def read_record(self):
-        """Generate a record from the source.
+    def generate_record(self):
+        """Generate records.
 
-        Throw NoMoreData exception if no more record available.
+        Note: Don't do blocking operation. return an empty dict in inadequate
+            situations.
 
-        Raises:
-            NoMoreData: No more data to generate.
-
-        Returns:
-            dict: Generated record. Return empty dict if conditions do not
-                match.
+        Yields:
+            dict: A record.
         """
-        if self.count < self.max_count:
-            self.count += 1
-            return self.record
-        else:
-            raise NoMoreData()
+        for i in range(self.max_count):
+            yield self.record
 
 
 @click.command(help="Generate user input as dummy event.")

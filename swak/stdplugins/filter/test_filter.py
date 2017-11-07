@@ -17,7 +17,7 @@ def emit_records(router, agent):
         router.emit("test", i, rec)
         agent.may_flushing()
     # flush last
-    agent.may_flushing(0.0)
+    agent.flush()
 
 
 def emit_for_modifiers(modifiers):

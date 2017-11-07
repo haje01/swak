@@ -1,4 +1,4 @@
-"""This module implements event router test."""
+"""This module implements    test."""
 import time
 
 import pytest
@@ -20,16 +20,16 @@ def filter():
     return Filter([("k", "V")])
 
 
-def test_event_router_pipeline(agent):
-    """Test event router cache."""
+def test_datarouter_pipeline(agent):
+    """Test data router cache."""
     router = agent.router
     assert len(router.match_cache) == 0
     router.emit("a.b.c", 0, {"k": "v"})
     assert len(router.match_cache) == 1
 
 
-def test_event_router_basic(agent, output):
-    """Test event router."""
+def test_datarouter_basic(agent, output):
+    """Test data router."""
     # router with only default output.
     agent.register_plugin("test", output)
     router = agent.router
@@ -38,8 +38,8 @@ def test_event_router_basic(agent, output):
     assert len(output.bulks) == 1
 
 
-def test_event_router_basic2(agent, output):
-    """Test event router with an output."""
+def test_datarouter_basic2(agent, output):
+    """Test data router with an output."""
     agent.register_plugin("test", output)
     router = agent.router
     router.emit("test", time.time(), {"k": "v"})
@@ -47,8 +47,8 @@ def test_event_router_basic2(agent, output):
     assert len(output.bulks) == 1
 
 
-def test_event_router_basic3(agent, output, filter):
-    """Test event router with modifier & output."""
+def test_datarouter_basic3(agent, output, filter):
+    """Test data router with modifier & output."""
     router = agent.router
     assert len(output.bulks) == 0
     agent.register_plugin("test", filter)
@@ -58,7 +58,7 @@ def test_event_router_basic3(agent, output, filter):
     # the record filtered out.
     assert len(output.bulks) == 0
 
-    # unmatched event goes to default output
+    # unmatched data goes to default output
     router.emit("foo", time.time(), {"k": "v"})
     agent.flush()
     assert 'foo' in router.def_output.buffer.chunks[0].bulk[0]
@@ -71,8 +71,8 @@ def flush_and_get_record(agent):
     return eval(agent.router.def_output.bulks[0].split('\t')[2])
 
 
-def test_event_router_complex(agent):
-    r"""Test V shaped event router.
+def test_datarouter_complex(agent):
+    r"""Test V shaped data router.
 
     a     b
      \   /

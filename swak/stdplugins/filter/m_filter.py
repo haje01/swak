@@ -32,16 +32,16 @@ class Filter(Modifier):
         self.excludes = make_effective_patterns(excludes)
 
     def modify(self, tag, utime, record):
-        """Modify an event by filtering.
+        """Modify data by filtering.
 
         To exclude, one true condition is enough.
         To include, all inclusive conditions must be true,
         Exclusive conditions override inclusive conditions.
 
         Args:
-            tag (str): Event tag
+            tag (str): data tag
             utime (float): Evnt time stamp.
-            record (dict): Event record
+            record (dict): data record
 
         Returns:
             If included
@@ -67,7 +67,7 @@ class Filter(Modifier):
         return utime, record
 
 
-@click.command(help="Filter events by regular expression.")
+@click.command(help="Filter data by regular expression.")
 @click.option('-i', '--include', nargs=2, type=str, multiple=True,
               help="Key and RegExp to include.")
 @click.option('-x', '--exclude', nargs=2, type=str, multiple=True,

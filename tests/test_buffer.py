@@ -30,27 +30,27 @@ def test_buffer_basic():
     assert len(buf.chunks) == 1  # initial chunk
     # append first
     prev_chunk = buf.active_chunk
-    buf.append("formatted event1")
+    buf.append("formatted data1")
     assert prev_chunk == buf.active_chunk
     assert buf.cnt_chunking == 0
     assert buf.active_chunk == prev_chunk
     assert prev_chunk.num_record == 1
-    assert prev_chunk.bytesize == 16
+    assert prev_chunk.bytesize == 15
     assert buf.cnt_chunking == 0
     buf.may_flushing()
     assert prev_chunk == buf.active_chunk
     assert buf.active_chunk.num_record == 1
-    assert buf.active_chunk.bytesize == 16
+    assert buf.active_chunk.bytesize == 15
     assert len(buf.chunks) == 1
     assert buf.cnt_flushing == 0
-    buf.append("formatted event2")
+    buf.append("formatted data2")
     assert prev_chunk != buf.active_chunk
     assert buf.cnt_chunking == 1
     assert buf.cnt_flushing == 0
     assert prev_chunk.num_record == 1
-    assert prev_chunk.bytesize == 16
+    assert prev_chunk.bytesize == 15
     assert buf.active_chunk.num_record == 1
-    assert buf.active_chunk.bytesize == 16
+    assert buf.active_chunk.bytesize == 15
     only_chunk = buf.may_flushing()
     assert only_chunk is None
     assert buf.cnt_flushing == 1
@@ -61,19 +61,19 @@ def test_buffer_basic():
     assert len(buf.chunks) == 1  # initial chunk
     # append first
     prev_chunk = buf.active_chunk
-    buf.append("formatted event1")
+    buf.append("formatted data1")
     assert prev_chunk == buf.active_chunk
     assert len(buf.chunks) == 1
     assert buf.cnt_chunking == 0
     buf.may_flushing()
     assert buf.cnt_flushing == 0
     # append second, chunk flushed and new chunk created.
-    buf.append("formatted event2")
+    buf.append("formatted data2")
     assert buf.active_chunk != prev_chunk
     assert prev_chunk.num_record == 1
-    assert prev_chunk.bytesize == 16
+    assert prev_chunk.bytesize == 15
     assert buf.active_chunk.num_record == 1
-    assert buf.active_chunk.bytesize == 16
+    assert buf.active_chunk.bytesize == 15
     assert len(buf.chunks) == 2
     assert buf.cnt_chunking == 1
     assert buf.cnt_flushing == 0
@@ -86,7 +86,7 @@ def test_buffer_basic():
     assert len(buf.chunks) == 1  # initial chunk
     # append first
     prev_chunk = buf.active_chunk
-    buf.append("formatted event1")
+    buf.append("formatted data1")
     buf.may_flushing()
     assert prev_chunk == buf.active_chunk
     assert len(buf.chunks) == 1  # no chunking yet.
@@ -105,13 +105,24 @@ def test_buffer_basic():
 
     # flushing by buffer_max_chunk
     buf = MemoryBuffer(None, False, chunk_max_record=1, buffer_max_chunk=1)
-    buf.append("event1")
+    buf.append("data1")
     buf.may_flushing()
     # no chunking & flushing yet
     assert buf.cnt_chunking == 0
     assert buf.cnt_flushing == 0
-    buf.append("event2")
+    buf.append("data2")
     assert buf.cnt_chunking == 1
     buf.may_flushing()
     assert buf.cnt_flushing == 1
     assert len(buf.chunks) == 1
+
+
+def test_buffer_multi(def_output):
+    """Test buffer for multi data stream."""
+    buf = MemoryBuffer(def_output, False, chunk_max_record=1,
+                       buffer_max_chunk=1)
+    buf.append("formatted data1")
+    buf.append("formatted data2")
+    assert buf.cnt_chunking == 1
+    buf.flushing(True)
+    assert len(def_output.bulks) == 2

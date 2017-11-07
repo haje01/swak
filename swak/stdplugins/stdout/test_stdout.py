@@ -11,7 +11,8 @@ def test_stdout_basic(agent, capfd):
     agent.register_plugin("test", counter)
     stdout = Stdout()
     agent.register_plugin("test", stdout)
-    agent.simple_process(counter, 0)
+    agent.simple_process(counter)
+    agent.flush(True)
 
     out, err = capfd.readouterr()
     lines = out.strip().split('\n')

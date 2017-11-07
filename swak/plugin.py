@@ -6,13 +6,16 @@ import glob
 from collections import namedtuple
 import logging
 import types
+import time
+from queue import Empty
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 from swak.const import PLUGINDIR_PREFIX
 from swak.formatter import StdoutFormatter
 from swak.buffer import MemoryBuffer
-from swak.util import get_plugin_module_name
+from swak.util import get_plugin_module_name, stop_iter_when_signalled
+from swak.data import OneDataStream
 
 
 PREFIX = ['i', 'p', 'm', 'o']
@@ -41,6 +44,7 @@ class Plugin(object):
         the plug-in is created here.
         """
         assert not self.started
+        logging.info("starting plugin {}".format(self))
         self._start()
         self.started = True
 
@@ -56,6 +60,7 @@ class Plugin(object):
         stop flag.
 
         """
+        logging.info("stopping plugin {}".format(self))
         assert self.started
         self._stop()
         self.started = False
@@ -71,6 +76,7 @@ class Plugin(object):
         can close or remove any files, threads, etc that you had created in
         ``start``.
         """
+        logging.info("shutting down plugin {}".format(self))
         assert not self.started  # stop first
         assert not self.shutdowned
         self._shutdown()
@@ -88,87 +94,140 @@ class Input(Plugin):
         """Init.
 
         Args:
-            tag (str): An event tag.
+            tag (str): data tag.
         """
         super(Input, self).__init__()
         self.encoding = None
+        self.proxy = False
 
-    def read_one(self):
-        """Read a record from the source.
+    def read(self, stop_event):
+        """Generate data stream.
 
-        Returns:
-            dict: A record.
+        This is a function that blocks until all data is exhausted.
+
+        Args:
+            stop_event (threading.Event): Stop event
+
+        Yield:
+            tuple: (tag, DataStream)
+        """
+        logging.debug("Input.read")
+        for tag, ds in self.generate_stream(self.generate_data, stop_event):
+            yield tag, ds
+
+    def generate_data(self):
+        """Generate data.
+
+        Yields:
+            tuple: time, data
         """
         raise NotImplementedError()
 
-    def set_encoding(self, encoding):
-        """Set encoding of input source.
+    def generate_stream(self, gen_data, stop_event):
+        """Generate data stream from data generator.
+
+        Inefficient default implementation.
 
         Args:
-            encoding (str): Encoding of input source.
+            gen_data (function): Data generator function.
+            stop_event (threading.Event): Stop event
+
+        Yields:
+            tuple: (tag, DataStream)
         """
-        self.encoding = encoding
+        logging.debug("Input.generate_stream gen_data {}".format(gen_data))
+        for utime, data in gen_data(stop_event):
+            logging.debug("yield OneDataStream from {} inefficient!".
+                          format(self))
+            yield self.tag, OneDataStream(utime, data)
 
 
 class ProxyInput(Input):
-    """Input proxy class."""
+    """Input proxy class.
+
+    This class is used in the aggregated thread model.
+    """
 
     def __init__(self):
         """Init."""
         super(ProxyInput, self).__init__()
         self.recv_queues = {}
+        self.proxy = True
 
     def append_recv_queue(self, tag, queue):
         """Append receive queue.
 
         Args:
-            tag (str): Event tag.
+            tag (str): data tag.
             queue (Queue): Receiving queue
         """
         assert queue not in self.recv_queues, "The queue has already been "\
             "appended."
         self.recv_queues[tag] = queue
 
-    def read_one(self):
-        """Read a record from the receive queues.
+    def generate_stream(self, gen_data, stop_event):
+        """Generate data stream from data generator.
 
-        Returns:
-            dict: A record.
+        Inefficient default implementation.
+
+        Args:
+            gen_data: Data generator.
+            stop_event (threading.Event): Stop event.
+
+        Yields:
+            tuple: (tag, DataStream)
         """
-        for tag, queue in self.recv_queues.items():
-            es = queue.get()
-            self.handle_stream(tag, es)
+        while True:
+            # loop each receive queue
+            for tag, queue in self.recv_queues.items():
+                while True:
+                    try:
+                        stop_iter_when_signalled(stop_event)
+                        ds = queue.get_nowait()
+                    except Empty:
+                        # process next queue
+                        break
+                    else:
+                        logging.debug("yield ds")
+                        yield tag, ds
 
 
 class RecordInput(Input):
     """Base class for input plugin which emits record.
 
     This if usually for a generative input plugin which knows how to genreate
-      data and **emit** record directly to the event router. (no following
+      data and **emit** record directly to the data router. (no following
       parser is needed.)
 
     Function to be implemented:
 
-        ``read_one``
+        ``generate_record``
     """
 
-    def read_one(self):
-        """Read a record and emit it to the router."""
-        record = self.read_record()
-        if record:
-            return record
+    def generate_data(self, stop_event):
+        """Generate data by reading lines from the source.
 
-    def read_record(self):
-        """Read a record from the source.
+        If explicit encoding, filter & parser exist, apply them.
 
-        Throw NoMoreData exception if no more record available.
+        Args:
+            stop_event (threading.Event): Stop event
 
-        Raises:
-            NoMoreData: No more data to read.
+        Yields:
+            tuple: time, data
+        """
+        logging.debug("RecordInput.generate_data")
+        for record in self.generate_record():
+            stop_iter_when_signalled(stop_event)
+            yield time.time(), record
 
-        Returns:
-            dict: Read record. Return empty dict if conditions do not
-                match.
+    def generate_record(self):
+        """Generate records.
+
+        Note: Don't do blocking operation. return an empty dict in inadequate
+            situations.
+
+        Yields:
+            dict: A record.
         """
         raise NotImplementedError()
 
@@ -181,7 +240,7 @@ class TextInput(Input):
 
     Function to be implemented:
 
-        ``read_line``
+        ``generate_line``
     """
 
     def __init__(self):
@@ -189,59 +248,60 @@ class TextInput(Input):
         super(TextInput, self).__init__()
         self.parser = None
         self.filter_fn = None
+        self.encoding = None
+
+    def set_encoding(self, encoding):
+        """Set encoding of input source.
+
+        Args:
+            encoding (str): Encoding of input source.
+        """
+        self.encoding = encoding
 
     def set_parser(self, parser):
         """Set parser for this TextInput plugin."""
         self.parser = parser
 
-    def read_one(self):
-        """Read a line from source, and return a record by parsing.
+    def generate_data(self, stop_event):
+        """Generate data by reading lines from the source.
 
-        Returns:
-            str: A line. Return empty string if conditions do not match.
+        If explicit encoding, filter & parser exist, apply them.
+
+        Args:
+            stop_event (threading.Event): Stop event
+
+        Yields:
+            tuple: time, data
         """
-        assert self.parser is not None, "Text input plugin needs a parser."
-        line = self.read_line()
-        if line:
+        for line in self.generate_line():
+            stop_iter_when_signalled(stop_event)
+
+            if stop_event is not None:
+                if not stop_event.wait(0.0):
+                    raise StopIteration()
+
             if self.encoding is not None:
                 line = line.decode(self.encoding)
             # test by filter function
             if self.filter_fn is not None:
                 if not self.filter_fn(line):
-                    return {}
-            record = self.parser.parse(line)
-            return record
-        else:
-            return {}
+                    continue
+            if self.parser is not None:
+                data = self.parser.parse(line)
+            else:
+                data = line
+            yield time.time(), data
 
-    def read_line(self):
-        """Read a line from the source.
+    def generate_line(self):
+        """Generate lines.
 
-        Throw NoMoreData exception if no more record available.
-
-        Raises:
-            NoMoreData: No more data to read.
+        Note: Don't do blocking operation. return an empty string in inadequate
+            situations.
 
         Yields:
-            str: A line. Return empty string if conditions do not match.
+            str: A text line.
         """
         raise NotImplementedError()
-
-    def filter(self, line):
-        """Filter unparsed raw line.
-
-        You can override this function or set filter function by
-            `set_filter_func`.
-
-        Args:
-            line (str): Unparsed line.
-
-        Returns:
-            (str): Returns only passed line.
-        """
-        if self.filter_fn is not None:
-            if self.filter_fn(line):
-                return line
 
     def set_filter_func(self, func):
         """Set filter function."""
@@ -275,22 +335,22 @@ class Modifier(Plugin):
         modify
     """
 
-    def prepare_for_stream(self, tag, es):
-        """Prepare to modify an event stream.
+    def prepare_for_stream(self, tag, ds):
+        """Prepare to modify data stream.
 
         Args:
-            tag (str): Event tag
-            es (EventStream): Event stream
+            tag (str): data tag
+            ds (datatream): data stream
         """
         pass
 
     def modify(self, tag, utime, record):
-        """Modify an event.
+        """Modify data.
 
         Args:
-            tag (str): Event tag
-            utime (float): Event time stamp.
-            record (dict): Event record
+            tag (str): data tag
+            utime (float): data time stamp.
+            record (dict): data record
 
         Returns:
             If modified
@@ -323,16 +383,25 @@ class Output(Plugin):
             abuffer.output = self
         self.formatter = formatter
         self.buffer = abuffer
+        self.proxy = False
 
     def _shutdown(self):
-        """Implement shutdown."""
-        if self.buffer.flush_at_shutdown is not None:
-            self.flush()
+        """Shut down the plugin."""
+        logging.info("Output._shutdown")
+        if self.buffer is not None and self.buffer.flush_at_shutdown:
+            logging.info("need flushing at shutdown for {} buffer {}".
+                         format(self, self.buffer))
+            self.flush(True)
 
-    def flush(self):
-        """Flushing buffer."""
+    def flush(self, flush_all=False):
+        """Flushing buffer.
+
+        Args:
+            flush_all (bool): Whether flush all or just one.
+        """
         assert self.buffer is not None
-        self.buffer.flushing()
+        logging.debug("Output.flush")
+        self.buffer.flushing(flush_all)
 
     def set_buffer(self, buffer):
         """Set output bufer."""
@@ -348,37 +417,34 @@ class Output(Plugin):
         if self.buffer is not None:
             self.buffer.stop()
 
-    # @property
-    # def is_proxy(self):
-    #     """Return whether this is an output proxy or not."""
-    #     return self.send_queue is not None
-
-    def emit_events(self, tag, es):
-        """Emit event stream to queue or directly to output target.
+    def emit_stream(self, tag, ds):
+        """Emit data stream to queue or directly to output target.
 
         Args:
-            tag (str): Event tag.
-            es (EventStream): Event stream.
+            tag (str): data tag.
+            ds (datatream): data stream.
 
         Returns:
             int: Adding size of the stream.
         """
-        return self.handle_stream(tag, es)
+        logging.debug("Output.emit_stream")
+        return self.handle_stream(tag, ds)
 
-    def handle_stream(self, tag, es):
-        """Handle event stream from emit events.
+    def handle_stream(self, tag, ds):
+        """Handle data stream from emit events.
 
-        Format each event and write it to buffer.
+        Format each data and write it to buffer.
 
         Args:
             tag (str)
-            es (EventStream)
+            ds (datatream)
 
         Returns:
             int: Adding size of the stream.
         """
+        logging.debug("Output.handle_stream")
         adding_size = 0
-        for utime, record in es:
+        for utime, record in ds:
             dtime = self.formatter.timestamp_to_datetime(utime)
             formatted = self.formatter.format(tag, dtime, record)
             adding_size += self.buffer.append(formatted)
@@ -394,6 +460,7 @@ class Output(Plugin):
         """
         if len(bulk) == 0:
             return
+        logging.debug("Output.write")
         self._write(bulk)
 
     def _write(self, bulk):
@@ -418,12 +485,16 @@ class Output(Plugin):
             force_flushing_interval (float): Force flushing interval for input
               is terminated.
         """
+        logging.debug("may_flushing")
         if self.buffer is not None:
             self.buffer.may_flushing(last_flush_interval)
 
 
 class ProxyOutput(Plugin):
-    """Output proxy class."""
+    """Output proxy class.
+
+    This class is used in the aggregated thread model.
+    """
 
     def __init__(self, queue):
         """Init.
@@ -433,19 +504,27 @@ class ProxyOutput(Plugin):
         """
         super(ProxyOutput, self).__init__()
         self.send_queue = queue
+        logging.debug("ProxyOutput queue {}".format(queue))
+        self.proxy = True
 
-    def emit_events(self, tag, es):
-        """Emit event stream to queue or directly to output target.
-
-        As output proxy, putting event stream to the queue.
+    def emit_stream(self, tag, ds):
+        """Emit data stream to inter-thread queue.
 
         Args:
-            tag (str): Event tag.
-            es (EventStream): Event stream.
+            tag (str): Data tag.
+            ds (datatream): Data stream.
         """
-        # send_queue exists, which means two threads for input & output.
-        logging.debug(es)
-        self.send_queue.put(es)
+        # put data stream to the queue, block if necessary.
+        st = time.time()
+        self.send_queue.put(ds, True)
+        latency = time.time() - st
+        logging.debug("ProxyOutput.emit_events - queue put latency {:.2f}".
+                      format(latency))
+
+
+def is_kind_of_output(plugin):
+    """Return True if given plugin is Output or ProxyOutput."""
+    return isinstance(plugin, Output) or isinstance(plugin, ProxyOutput)
 
 
 BASE_CLASS_MAP = {
@@ -692,7 +771,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     - test_(file_name).py file
 
     Args:
-        prefixes (list): List of plugin prefixes
+        prefixds (list): List of plugin prefixes
         file_name (str): Plugin file name
         class_name (str): Plugin class name
         pdir (str): Plugin directory

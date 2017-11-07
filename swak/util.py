@@ -226,10 +226,7 @@ def size_value(sval):
     match = size_ptrn_t.match(sval)
     if match is not None:
         return int(match.groups()[0]) * (1024 ** 4)
-    try:
-        return int(sval)
-    except ConfigError:
-        raise ConfigError("Can not convert '{}' into bytes".format(sval))
+    return int(sval)
 
 
 def time_value(sval):
@@ -264,10 +261,7 @@ def time_value(sval):
     match = time_ptrn_d.match(sval)
     if match is not None:
         return int(match.groups()[0]) * 60 * 60 * 24
-    try:
-        return float(sval)
-    except ConfigError:
-        raise ConfigError("Can not convert '{}' into seconds".format(sval))
+    return float(sval)
 
 
 def validate_tag(tag):
@@ -295,6 +289,7 @@ def parse_and_validate_cmds(cmds, check_input, check_output=None):
     Returns:
         list: Parsed command list.
     """
+    logging.debug("parse_and_validate_cmds")
     if type(cmds) is not str:
         raise ConfigError("Commands are not a string.")
 
@@ -319,3 +314,10 @@ def parse_and_validate_cmds(cmds, check_input, check_output=None):
             validate_tag(tag)
         pcmds.append(args)
     return pcmds
+
+
+def stop_iter_when_signalled(event):
+    """Stop iteration when event is signalled."""
+    if event is not None:
+        if event.wait(0.0):
+            raise StopIteration()

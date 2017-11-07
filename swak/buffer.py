@@ -2,6 +2,7 @@
 
 import time
 from collections import deque
+import logging
 
 from swak.util import time_value, size_value
 from swak.exception import ConfigError
@@ -30,6 +31,7 @@ class Chunk(object):
 
     def flush(self, output):
         """Flushing chunk into output."""
+        logging.debug("Chunk.flush")
         self._flush(output)
         self.reset()
 
@@ -37,7 +39,6 @@ class Chunk(object):
         """Implement flush."""
         raise NotImplementedError()
 
-    @property
     def empty(self):
         """Whether chunk empty or not."""
         return self.num_record == 0
@@ -58,6 +59,7 @@ class MemoryChunk(Chunk):
 
     def concat(self, data, adding_size):
         """Concat new data."""
+        logging.debug("MemoryChunk.concat adding_size {}".format(adding_size))
         if self.binary:
             self.bulk += data
         else:
@@ -67,6 +69,7 @@ class MemoryChunk(Chunk):
 
     def _flush(self, output):
         """Flushing chunk into output."""
+        logging.debug("MemoryChunk._flush")
         output.write(self.bulk)
 
 
@@ -131,7 +134,7 @@ class Buffer(object):
         self.started = False
 
     def append(self, data):
-        """Append event stream to buffer.
+        """Append data stream to buffer.
 
         If matches flush condition, will call ``flush`` with chunk
 
@@ -149,26 +152,38 @@ class Buffer(object):
         Returns:
             Chunk: Created chunk.
         """
+        logging.debug("Buffer.chunking")
         new_chunk = self.new_chunk()
         self.chunks.append(new_chunk)
         self.cnt_chunking += 1
         return new_chunk
 
-    def flushing(self):
-        """Pop head chunk and flush it.
+    def flushing(self, flush_all=False):
+        """Pop chunk and flush it.
 
         If no remain chunks, create one and return it.
+
+        Args:
+            flush_all (bool): Whether flush all or just one.
 
         Returns:
             Chunk: Chunk created after flushing.
         """
-        head_chunk = self.chunks.popleft()
-        if self.output is not None:
-            head_chunk.flush(self.output)
-        self.cnt_flushing += 1
+        logging.debug("Buffer.flushing")
+        while True:
+            try:
+                head_chunk = self.chunks.popleft()
+                if self.output is not None:
+                    head_chunk.flush(self.output)
+                self.cnt_flushing += 1
+                if not flush_all:
+                    break
+            except IndexError:
+                break
 
         # if there are no left chunks, make one.
         if self.num_chunk == 0:
+            logging.debug("no more chunk, make one")
             return self.chunking()
 
     def may_chunking(self, adding_size):
@@ -182,10 +197,12 @@ class Buffer(object):
         Returns:
             Chunk: Active chunk.
         """
+        logging.debug("may_chunking adding_size {}".format(adding_size))
         active_chunk = self.active_chunk
         new_chunk = None
         # check chunking
         if self.need_chunking(adding_size):
+            logging.debug("need chunk, make one")
             new_chunk = self.chunking()
             active_chunk = new_chunk
 
@@ -202,6 +219,7 @@ class Buffer(object):
             Chunk: Chunk created after flushing.
         """
         # check flushing
+        logging.debug("may_flushing")
         if self.need_flushing(last_flush_interval):
             return self.flushing()
 
@@ -277,7 +295,7 @@ class MemoryBuffer(Buffer):
         self.max_record = max_record
 
     def append(self, data, binary_data=False):
-        """Append event stream to buffer.
+        """Append data stream to buffer.
 
         Args:
             data (bytearray or str) bytearry if this is a binary buffer,
@@ -287,6 +305,7 @@ class MemoryBuffer(Buffer):
         Returns:
             int: Adding size of data.
         """
+        logging.debug("MemoryBuffer.append")
         bytedata = data if binary_data else bytearray(data, encoding='utf8')
         adding_size = len(bytedata)
         if self.binary:

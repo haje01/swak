@@ -188,7 +188,7 @@ def validate_cfg(cfg):
 
 
 def _validate_agent_cfg(cfg):
-    from swak.event_router import Rule
+    from swak.datarouter import Rule
 
     source_tags = set()
     match_tags = set()
@@ -198,10 +198,10 @@ def _validate_agent_cfg(cfg):
             raise ConfigError("A source should start with input "
                               "plugin.")
 
-    # log
-    if 'logger' in cfg:
-        raise ConfigError("Agent can not have individual logger config. "
-                          "You can only set log level.")
+    # # log
+    # if 'logger' in cfg:
+    #     raise ConfigError("Agent can not have individual logger config. "
+    #                       "You can only set log level.")
     # sources
     if 'sources' not in cfg:
         raise ConfigError("No 'sources' field exists in config.")

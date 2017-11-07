@@ -7,10 +7,10 @@ class UnsupportedPython(Exception):
     pass
 
 
-class NoMoreData(Exception):
-    """Exception: No more data for this input."""
+# class InputClosed(Exception):
+#     """Exception: No more data for this input."""
 
-    pass
+#     pass
 
 
 class ConfigError(Exception):

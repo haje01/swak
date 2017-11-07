@@ -1,7 +1,7 @@
 """Test match."""
 
 from swak.match import GlobMatchPattern
-from swak.event_router import Rule
+from swak.datarouter import Rule
 
 
 def assert_glob_match(ptrn, samp):

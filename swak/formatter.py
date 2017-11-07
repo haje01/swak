@@ -42,9 +42,9 @@ class Formatter(object):
         """Format an event.
 
         Args:
-            tag (str): Event tag.
-            dtime (datetime): Event datetime.
-            record (dict): Event record.
+            tag (str): data tag.
+            dtime (datetime): data datetime.
+            record (dict): data record.
         """
         raise NotImplemented()
 
@@ -81,12 +81,12 @@ class StdoutFormatter(Formatter):
                                               time_format)
 
     def format(self, tag, dtime, record):
-        """Format an event.
+        """Format an data.
 
         Args:
-            tag (str): Event tag
-            dtime (datetime): Event datetime
-            record (dict): Event record
+            tag (str): data tag
+            dtime (datetime): data datetime
+            record (dict): data record
 
         Returns:
             str: Formatted string

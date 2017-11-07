@@ -1,16 +1,24 @@
-"""This module implements event classes."""
+"""This module implements data stream classes."""
 
 
-class EventStream(object):
-    """EventStream class."""
+class DataStream(object):
+    """DataStream class."""
 
     def __init__(self):
         """init."""
-        super(EventStream, self).__init__()
+        super(DataStream, self).__init__()
+
+    def __len__(self):
+        """Length of data."""
+        raise NotImplementedError()
+
+    def empty(self):
+        """Wheter stream is empty."""
+        return len(self) == 0
 
 
-class OneEventStream(EventStream):
-    """EventStream class."""
+class OneDataStream(DataStream):
+    """DataStream class."""
 
     def __init__(self, utime, record):
         """init.
@@ -19,7 +27,7 @@ class OneEventStream(EventStream):
             utime (float): emit time stamp.
             record (dict): record to emit.
         """
-        super(OneEventStream, self).__init__()
+        super(OneDataStream, self).__init__()
         self.utime = utime
         assert type(record) is dict
         self.record = record
@@ -40,37 +48,17 @@ class OneEventStream(EventStream):
         """Iterate next for Python2."""
         return self.__next__()
 
-
-# class ArrayEventStream(EventStream):
-#     """EventStream class."""
-
-#     def __init__(self, entries):
-#         """init."""
-#         super(ArrayEventStream, self).__init__()
-#         self.entries = entries
-
-#     def __iter__(self):
-#         """Return iterator."""
-#         self.iter_n = 0
-#         self.iter_max = len(self.entries)
-#         return self
-
-#     def __next__(self):
-#         """Iterate next."""
-#         if self.iter_n <= self.iter_max:
-#             result = self.entries[self.n]
-#             self.iter_n += 1
-#             return result
-#         else:
-#             raise StopIteration()
+    def __len__(self):
+        """Length of datas."""
+        return 1
 
 
-class MultiEventStream(EventStream):
-    """MultiEventStream class."""
+class MultiDataStream(DataStream):
+    """MultiDataStream class."""
 
     def __init__(self, times=[], records=[]):
         """init."""
-        super(MultiEventStream, self).__init__()
+        super(MultiDataStream, self).__init__()
         assert len(times) == len(records)
         self.times = times
         self.records = records
@@ -95,5 +83,5 @@ class MultiEventStream(EventStream):
         return self.__next__()
 
     def __len__(self):
-        """Length of events."""
+        """Length of data."""
         return len(self.records)

@@ -1,6 +1,8 @@
 """Stdout module."""
 from __future__ import print_function, absolute_import
 
+import logging
+
 import click
 
 from swak.plugin import Output
@@ -31,6 +33,7 @@ class Stdout(Output):
               a binary type, bulk is an array of bytes, otherwise it is a list
               of strings.
         """
+        logging.debug("Stdout._write")
         if type(bulk) is list:
             for line in bulk:
                 print(line)
@@ -76,10 +79,10 @@ def f_stdout(timezone):
 @main.command('b.memory', help="Memory buffer for this output.")
 @click.option('-f', '--flush-interval', default=None, type=str,
               show_default=True, help="Flush interval.")
-@click.option('-c', '--buffer-max-chunk', default=1, show_default=True,
-              help="Buffer max chunks.")
+@click.option('-c', '--buffer-max-chunk', default=64, show_default=True,
+              help="Maximum chunks per buffer.")
 @click.option('-r', '--chunk-max-record', default=None, type=int,
-              show_default=True, help="Chunk max record.")
+              show_default=True, help="Maximum records per chunk.")
 def b_memory(flush_interval, buffer_max_chunk, chunk_max_record):
     """Formatter entry."""
     return MemoryBuffer(None, False, flush_interval=flush_interval,

@@ -2,7 +2,7 @@
 import pytest
 
 from swak.plugin import DummyOutput
-from swak.event_router import EventRouter
+from swak.datarouter import DataRouter
 from swak.core import DummyAgent
 
 
@@ -14,9 +14,9 @@ def def_output():
 
 @pytest.fixture()
 def router():
-    """Create event router fixture."""
+    """Create data router fixture."""
     doutput = DummyOutput()
-    r = EventRouter(doutput)
+    r = DataRouter(doutput)
     doutput.router = r
     return r
 

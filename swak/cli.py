@@ -13,6 +13,7 @@ from swak.util import check_python_version, query_stream_log_handler, LOG_FMT
 from swak.plugin import PREFIX, get_plugins_dir, init_plugin_dir,\
     iter_plugins
 from swak.core import TRunAgent
+from swak import __version__
 
 check_python_version()
 
@@ -195,3 +196,9 @@ def prepare_cli(ctx):
     """
     verbosity = ctx.obj['verbosity']
     set_log_verbosity(verbosity)
+
+
+@main.command(help="Show Swak version.")
+def version():
+    """Show version."""
+    print(__version__)

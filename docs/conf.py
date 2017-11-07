@@ -93,7 +93,7 @@ html_theme = 'alabaster'
 #
 # html_theme_options = {}
 
-# Add any paths that contain custom static files (such as style sheets) here,
+# Add any paths that contain custom static filds (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
@@ -138,7 +138,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
+man_pagds = [
     (master_doc, 'swak', u'Swak Documentation',
      [author], 1)
 ]

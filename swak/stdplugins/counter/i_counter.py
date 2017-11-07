@@ -3,9 +3,9 @@ from __future__ import print_function, absolute_import
 import time
 
 import click
+from six.moves import range
 
 from swak.plugin import RecordInput
-from swak.exception import NoMoreData
 
 
 class Counter(RecordInput):
@@ -20,39 +20,35 @@ class Counter(RecordInput):
             delay: Delay time in seconds before next read.
         """
         super(Counter, self).__init__()
-        self.count = 0
         self.max_count = max_count
         self.field = field
         self.delay = delay
         self.last_time = None
 
-    def read_record(self):
-        """Generate a record from the source.
+    def generate_record(self):
+        """Generate records.
 
-        Raises:
-            NoMoreData: No more data to generate.
+        Note: Don't do blocking operation. return an empty dict in inadequate
+            situations.
 
-        Returns:
-            dict: Generated record. Return empty dict if conditions do not
-                match.
+        Yields:
+            dict: A record
         """
-        if self.count >= self.max_count:
-            raise NoMoreData()
+        last_time = None
+        for idx in range(self.max_count):
+            cur_time = time.time()
+            if last_time is None:
+                last_time = cur_time
+            if not (self.delay is None or self.delay == 0):
+                if cur_time - last_time < self.delay:
+                    return {}
 
-        cur_time = time.time()
-        if self.last_time is None:
-            self.last_time = cur_time
-        if not (self.delay is None or self.delay == 0):
-            if time.time() - self.last_time < self.delay:
-                return {}
-
-        self.count += 1
-        record = {}
-        for f in range(self.field):
-            key = "f{}".format(f + 1)
-            record[key] = self.count
-        self.last_time = cur_time
-        return record
+            record = {}
+            for f in range(self.field):
+                key = "f{}".format(f + 1)
+                record[key] = idx + 1
+            last_time = cur_time
+            yield record
 
 
 @click.command(help="Generate incremental numbers.")

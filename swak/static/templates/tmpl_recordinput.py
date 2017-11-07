@@ -5,17 +5,14 @@
         """Init."""
         super(RecordInput, self).__init__()
 
-    def read_record(self):
-        """Generate a record from the source.
+    def generate_record(self):
+        """Generate records.
 
-        Throw NoMoreData exception if no more record available.
+        Note: Don't do blocking operation. return an empty dict in inadequate
+            situations.
 
-        Raises:
-            NoMoreData: No more data to generate.
-
-        Returns:
-            dict: A record. Return empty dict if conditions do not
-                match.
+        Yields:
+            dict: A record.
         """
         raise NotImplementedError()
 {% endblock %}

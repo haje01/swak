@@ -9,7 +9,6 @@ from swak.plugin import iter_plugins, import_plugins_package, TextInput,\
     Parser, get_plugins_dir, Output
 # from swak.util import test_logconfig
 from swak.const import PLUGINDIR_PREFIX
-from swak.exception import NoMoreData
 from swak.buffer import MemoryBuffer
 
 
@@ -50,20 +49,11 @@ def test_plugin_import():
 def test_plugin_basic(agent):
     """Test plugins basic features."""
     class FooInput(TextInput):
-        def __init__(self):
-            super(FooInput, self).__init__()
-            self.count = 0
+        names = ["john", "jane", "smith"]
 
-        def read_line(self):
-            self.count += 1
-            if self.count == 1:
-                return "john 1"
-            elif self.count == 2:
-                return "jane 2"
-            elif self.count == 3:
-                return "smith 3"
-            else:
-                raise NoMoreData()
+        def generate_line(self):
+            for i in range(3):
+                yield '{} {}'.format(FooInput.names[i], i + 1)
 
     class FooParser(Parser):
         def parse(self, line):
@@ -80,7 +70,7 @@ def test_plugin_basic(agent):
 
     dtinput.set_filter_func(filter)
     agent.simple_process(dtinput)
-    agent.flush()
+    agent.flush(True)
 
     bulks = agent.def_output.bulks
     assert len(bulks) == 2

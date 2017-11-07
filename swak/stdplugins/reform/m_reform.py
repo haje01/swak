@@ -3,6 +3,7 @@ from __future__ import absolute_import  # NOQA
 
 import re
 import socket
+import logging
 
 import click
 from six import string_types
@@ -123,12 +124,12 @@ class Reform(Modifier):
         self.writes = writes
         self.deletes = deletes
 
-    def prepare_for_stream(self, tag, es):
-        """Prepare to modify an event stream.
+    def prepare_for_stream(self, tag, ds):
+        """Prepare to modify data stream.
 
         Args:
-            tag (str): Event tag
-            es (EventStream): Event stream
+            tag (str): data tag
+            ds (datatream): data stream
         """
         placeholders = _make_default_placeholders()
         placeholders['tag'] = tag
@@ -153,7 +154,7 @@ class Reform(Modifier):
         If adds & dels conflicts, deleting key wins.
 
         Args:
-            tag (str): Event tag
+            tag (str): data tag
             utime (float): Event time stamp.
             record (dict): Event record
 
