@@ -295,6 +295,10 @@ class ServiceAgent(BaseAgent):
 if __name__ == '__main__':
     import yaml
     cfgs = '''
+logger:
+    root:
+        level: CRITICAL
+
 sources:
     - i.counter -c 100 | m.reform -w tag t1 | tag test1
     - i.counter -c 100 | m.reform -w tag t2 | tag test2
@@ -306,6 +310,6 @@ matches:
     agent = ServiceAgent()
     agent.init_from_cfg(cfg, False)
     agent.start()
-    time.sleep(5)
+    time.sleep(3)
     agent.stop()
     agent.shutdown()

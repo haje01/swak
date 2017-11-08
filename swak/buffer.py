@@ -4,6 +4,8 @@ import time
 from collections import deque
 import logging
 
+from six import string_types
+
 from swak.util import time_value, size_value
 from swak.exception import ConfigError
 
@@ -262,8 +264,10 @@ class MemoryBuffer(Buffer):
         """
         super(MemoryBuffer, self).__init__(output, True, binary, True)
 
-        assert type(chunk_max_size) is str, "chunk_max_size must be a string."
-        assert flush_interval is None or type(flush_interval) is str,\
+        assert isinstance(chunk_max_size, string_types), "chunk_max_size must"\
+            " be a string."
+        assert flush_interval is None or \
+            isinstance(flush_interval, string_types),\
             "flush_interval must be a string."
 
         try:

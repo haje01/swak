@@ -41,7 +41,7 @@ class Counter(RecordInput):
                 last_time = cur_time
             if not (self.delay is None or self.delay == 0):
                 if cur_time - last_time < self.delay:
-                    return {}
+                    yield {}
 
             record = {}
             for f in range(self.field):

@@ -1,5 +1,7 @@
 """This module implements core functions."""
 
+from six import string_types
+
 from swak.plugin import DummyOutput
 from swak.util import parse_and_validate_cmds
 from swak.const import TESTRUN_TAG
@@ -26,7 +28,7 @@ class BaseAgent(object):
         Returns:
             Input: Starting input plugin
         """
-        assert type(tag) is str
+        assert isinstance(tag, string_types)
         assert type(cmds) is list
         return self.pluginpod.init_from_commands(tag, cmds)
 
