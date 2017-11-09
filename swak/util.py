@@ -12,8 +12,9 @@ from swak.exception import UnsupportedPython, ConfigError
 
 test_logger_inited = False
 
-LOG_FMT = logging.Formatter('%(levelname)s [%(filename)s:%(lineno)d]'
-                            ' %(message)s')
+# Simple log format for test
+LOG_FMT = logging.Formatter('%(asctime)s [%(levelname)s] [%(filename)s:'
+                            '%(lineno)d] - %(message)s')
 
 size_ptrn_k = re.compile('(\d+)k', re.I)
 size_ptrn_m = re.compile('(\d+)m', re.I)
@@ -100,7 +101,9 @@ def update_dict(d, u):
             r = update_dict(d.get(k, {}), v)
             d[k] = r
         else:
-            d[k] = u[k]
+            uv = u[k]
+            if not(uv is None or uv == ''):
+                d[k] = uv
     return d
 
 

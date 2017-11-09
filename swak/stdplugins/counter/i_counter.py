@@ -47,6 +47,13 @@ class Counter(RecordInput):
         """
         last_time = time.time()
         for idx in range(self.number):
+            record = {}
+            for f in range(self.field):
+                key = "f{}".format(f + 1)
+                record[key] = idx + 1
+            last_time = time.time()
+            yield record
+
             if not (self.delay is None or self.delay == 0):
                 # wait delay
                 while True:
@@ -55,13 +62,6 @@ class Counter(RecordInput):
                         yield {}
                     else:
                         break
-
-            record = {}
-            for f in range(self.field):
-                key = "f{}".format(f + 1)
-                record[key] = idx + 1
-            last_time = time.time()
-            yield record
 
     # def generate_stream(self, gen_data, stop_event):
     #     """Generate data stream from data generator.

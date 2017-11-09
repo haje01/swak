@@ -94,6 +94,16 @@ def test_util_etc():
     rv = update_dict(d1, d2)
     assert rv == dict(a=1, b=3, c=4, d=dict(A=2, B=3))
 
+    d1 = dict(a=1, b=3)
+    d2 = dict(a=2, b=None)
+    rv = update_dict(d1, d2)
+    assert rv == dict(a=2, b=3)
+
+    d1 = dict(a=1, b=3)
+    d2 = dict(a=2, b='')
+    rv = update_dict(d1, d2)
+    assert rv == dict(a=2, b=3)
+
     vi = sys.version_info
     rv = check_python_version()
     assert rv == vi.major

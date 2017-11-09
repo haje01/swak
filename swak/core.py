@@ -134,14 +134,11 @@ class DummyAgent(BaseAgent):
 class TRunAgent(DummyAgent):
     """Test run agent class."""
 
-    def run_commands(self, cmds, last_flush_interval):
+    def run_commands(self, cmds):
         """Init agent from plugin commands and execute them.
 
         Args:
             cmds (str): Unparsed commands string.
-            last_flush_interval (float): Force flushing interval when input
-              is terminated.
-            _test (bool): Test mode
 
         Returns:
             DataRouter: To test result.
@@ -152,41 +149,3 @@ class TRunAgent(DummyAgent):
         self.simple_process(input_pl)
         self.stop()
         self.shutdown()
-
-    # def simple_process(self, input_pl, last_flush_interval):
-    #     """Simple process for a given input & router."""
-    #     self.start()
-    #     # read input and emit to data router until input finished.
-    #     while True:
-    #         if self.simple_process_one(input_pl):
-    #             break
-
-    #     # input finished. stop and wait until all output flushed.
-    #     self.stop()
-    #     while not self.all_output_finished():
-    #         self.may_flushing(last_flush_interval)
-    #         time.sleep(0.1)
-
-    #     # shutdown
-    #     self.shutdown()
-
-    # def simple_process_one(self, input_pl):
-    #     """Process one record.
-
-    #     Args:
-    #         input_pl: Input plugin to process.
-
-    #     Returns:
-    #         bool: True if the input has finished, False otherwise.
-    #     """
-    #     try:
-    #         record = input_pl.read_one()
-    #         if record:
-    #             utime = time.time()
-    #             self.router.emit(input_pl.tag, utime, record)
-    #         return False
-    #     except InputClosed:
-    #         return True
-    #     finally:
-    #         # need to check timely flushing here.
-    #         self.may_flushing()

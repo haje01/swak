@@ -99,8 +99,42 @@ matches:
     assert set(plugins[0].recv_queues.values()) == set(proxy_queues)
 
 
-def test_agent_run(capsys):
+def test_agent_run_sep(capsys):
     """Test service agent run."""
+    # Seperated thread model.
+    cfgs = '''
+logger:
+    root:
+        level: CRITICAL
+
+sources:
+    - i.counter -d 1 | o.stdout
+    '''
+    agent = init_agent_from_cfg(cfgs, False)
+    agent.start()
+    assert len(agent.input_threads) == 1
+    for itrd in agent.input_threads:
+        assert itrd.is_alive()
+    assert len(agent.output_threads) == 0
+    time.sleep(0.2)
+    out, err = capsys.readouterr()
+    assert len(err) == 0
+    assert "'f1': 1" in out
+
+    time.sleep(1)
+    out, err = capsys.readouterr()
+    assert len(err) == 0
+    assert "'f1': 2" in out
+
+    time.sleep(1)
+    out, err = capsys.readouterr()
+    assert len(err) == 0
+    assert "'f1': 3" in out
+
+    agent.stop()
+    agent.shutdown()
+
+    # Aggregated thread model.
     cfgs = '''
 logger:
     root:
@@ -108,14 +142,12 @@ logger:
 
 sources:
     - i.counter -d 1 | m.reform -w tag t1 | tag test1
-    - i.counter -d 1| m.reform -w tag t2 | tag test2
+    - i.counter -d 1 | m.reform -w tag t2 | tag test2
 
 matches:
     test*: o.stdout b.memory -f 1
     '''
     agent = init_agent_from_cfg(cfgs, False)
-    out, err = capsys.readouterr()
-
     agent.start()
     # check thread running
     for itrd in agent.input_threads:
@@ -123,15 +155,30 @@ matches:
     for otrd in agent.output_threads:
         assert otrd.is_alive()
 
-    time.sleep(1)
-
-
     out, err = capsys.readouterr()
-    print(out)
-    print(err)
+    assert len(err) == 0
+    assert "'f1'" not in out  # because of the output buffer
 
-    # assert len(err) == 0
-    # assert "'f1': 3" in out
+    time.sleep(1)
+    out, err = capsys.readouterr()
+    assert len(err) == 0
+    assert "'f1': 1" in out
+    assert "'tag': 't1'" in out
+    assert "'tag': 't2'" in out
+    assert "'f1': 2" not in out
+
+    time.sleep(1)
+    out, err = capsys.readouterr()
+    assert len(err) == 0
+    assert "'f1': 2" in out
+    assert "'tag': 't1'" in out
+    assert "'tag': 't2'" in out
+    assert "'f1': 3" not in out
 
     agent.stop()
     agent.shutdown()
+
+    # finally flushed.
+    out, err = capsys.readouterr()
+    assert len(err) == 0
+    assert "'f1': 3" in out

@@ -216,7 +216,12 @@ class ServiceAgent(BaseAgent):
             logging.info("create_input_thread with cmd '{}'".format(cmd))
             trd = InputThread(stop_event)
             cmds = parse_and_validate_cmds(cmd, True)
-            tag = ' '.join(cmds[-1][1:])
+            last_cmd = cmds[-1]
+            if last_cmd[0] == 'tag':
+                tag = ' '.join(last_cmd[1:])
+            else:
+                tag = '_notag_'
+
             queue = trd.init_from_commands(tag, cmds)
             self.input_threads.append(trd)
             return tag, queue
@@ -297,15 +302,15 @@ if __name__ == '__main__':
     cfgs = '''
 logger:
     root:
-        level: INFO
+        level: CRITICAL
 
 sources:
-    - i.counter -c 100 | m.reform -w tag t1 | tag test1
-    - i.counter -c 100 | m.reform -w tag t2 | tag test2
-    - i.counter -c 100 | m.reform -w tag t3 | tag test3
+    - i.counter -n 100 | m.reform -w tag t1 | tag test1
+    - i.counter -n 100 | m.reform -w tag t2 | tag test2
+    - i.counter -n 100 | m.reform -w tag t3 | tag test3
 
 matches:
-    test*: o.stdout
+    test*: o.stdout b.memory -f 1
     '''
     cfg = yaml.load(cfgs)
     agent = ServiceAgent()

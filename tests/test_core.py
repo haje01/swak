@@ -16,6 +16,7 @@ def init_agent_with_cmds(cmds):
     cmds = parse_and_validate_cmds(cmds, True, False)
     agent = TRunAgent()
     input_pl = agent.init_from_commands(TESTRUN_TAG, cmds)
+    agent.start()
     return agent, input_pl
 
 
@@ -50,7 +51,7 @@ def test_core_testrun(capfd):
     # test run with reform
     agent = TRunAgent()
     agent.run_commands('i.counter | m.reform -w host ${hostname} -w tag ${tag}'
-                       ' -d tag', 0.0)
+                       ' -d tag')
     _, _, record = agent.def_output.bulks[0].split('\t')
     record = eval(record)
     assert len(record) == 2
@@ -60,7 +61,7 @@ def test_core_testrun(capfd):
 
     # test run with buffer
     agent = TRunAgent()
-    agent.run_commands('i.counter | o.stdout b.memory -f 1', 0.0)
+    agent.run_commands('i.counter | o.stdout b.memory -f 1')
     out, _ = capfd.readouterr()
     # check number of lines
     assert len(out.strip().split('\n')) == 3

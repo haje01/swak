@@ -175,10 +175,8 @@ def desc(ctx, plugin, subcmd):
 
 @main.command(help="Test run by chaining plugin commands.")
 @click.argument('commands')
-@click.option('-f', '--force-flush-interval', default=0.0, show_default=True,
-              help="Force flushing interval for input is terminated.")
 @click.pass_context
-def trun(ctx, commands, force_flush_interval):
+def trun(ctx, commands):
     """Test run.
 
     Args:
@@ -186,7 +184,7 @@ def trun(ctx, commands, force_flush_interval):
     """
     prepare_cli(ctx)
     agent = TRunAgent()
-    agent.run_commands(commands, force_flush_interval)
+    agent.run_commands(commands)
 
 
 def prepare_cli(ctx):
