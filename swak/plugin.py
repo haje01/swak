@@ -13,7 +13,6 @@ from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
 from swak.const import PLUGINDIR_PREFIX
 from swak.formatter import StdoutFormatter
-from swak.buffer import MemoryBuffer
 from swak.util import get_plugin_module_name, stop_iter_when_signalled
 from swak.data import OneDataStream
 
@@ -77,7 +76,7 @@ class Plugin(object):
         ``start``.
         """
         logging.info("shutting down plugin {}".format(self))
-        assert not self.started  # stop first
+        assert not self.started  # Stop first
         assert not self.shutdowned
         self._shutdown()
         self.shutdowned = True
@@ -137,8 +136,13 @@ class Input(Plugin):
         """
         logging.debug("Input.generate_stream gen_data {}".format(gen_data))
         for utime, data in gen_data(stop_event):
-            logging.debug("yield OneDataStream from {} inefficient!".
-                          format(self))
+            # Omit blank data that would have been generated under
+            #  inappropriate input conditions.
+            if len(data) == 0:
+                continue
+            logging.warning("yield inefficient OneDataStream from {}. "
+                            "Implement optimized generate_stream!.".
+                            format(self))
             yield self.tag, OneDataStream(utime, data)
 
 
@@ -168,7 +172,8 @@ class ProxyInput(Input):
     def generate_stream(self, gen_data, stop_event):
         """Generate data stream from data generator.
 
-        Inefficient default implementation.
+        Note: Yield (None, None) tuple if the queue is empty to give agent a
+         chance to flush,
 
         Args:
             gen_data: Data generator.
@@ -178,14 +183,16 @@ class ProxyInput(Input):
             tuple: (tag, DataStream)
         """
         while True:
-            # loop each receive queue
+            # Loop each receive queue
             for tag, queue in self.recv_queues.items():
                 while True:
                     try:
                         stop_iter_when_signalled(stop_event)
                         ds = queue.get_nowait()
                     except Empty:
-                        # process next queue
+                        # Give a chance to flush.
+                        yield None, None
+                        # Process next queue
                         break
                     else:
                         logging.debug("yield ds")
@@ -282,7 +289,7 @@ class TextInput(Input):
 
             if self.encoding is not None:
                 line = line.decode(self.encoding)
-            # test by filter function
+            # Test by filter function
             if self.filter_fn is not None:
                 if not self.filter_fn(line):
                     continue
@@ -399,9 +406,9 @@ class Output(Plugin):
         Args:
             flush_all (bool): Whether flush all or just one.
         """
-        assert self.buffer is not None
-        logging.debug("Output.flush")
-        self.buffer.flushing(flush_all)
+        if self.buffer is not None:
+            logging.debug("Output.flush")
+            self.buffer.flushing(flush_all)
 
     def set_buffer(self, buffer):
         """Set output bufer."""
@@ -447,16 +454,25 @@ class Output(Plugin):
         for utime, record in ds:
             dtime = self.formatter.timestamp_to_datetime(utime)
             formatted = self.formatter.format(tag, dtime, record)
-            adding_size += self.buffer.append(formatted)
+            if self.buffer is not None:
+                adding_size += self.buffer.append(formatted)
+            else:
+                self.write(formatted)
         return adding_size
 
     def write(self, bulk):
         """Write a bulk.
 
-        Make sure the bulk is empty and do nothing if it is empty.
+        NOTE: A bulk can have the following types:
+        - str: When there is no buffer
+        - bytearray: When there is a buffer of binary format
+        - list: When there is a buffer of string format
+
+        The output must support various bulk types depending on the presence
+         and supported formats of the buffer.
 
         Args:
-            bulk: A bulk from a chunk.
+            bulk
         """
         if len(bulk) == 0:
             return
@@ -464,12 +480,18 @@ class Output(Plugin):
         self._write(bulk)
 
     def _write(self, bulk):
-        """Write a bulk.
+        """Write a bulk to the output.
+
+        NOTE: A bulk can have the following types:
+        - str: When there is no buffer
+        - bytearray: When there is a buffer of binary format
+        - list: When there is a buffer of string format
+
+        An output plugin must support various bulk types depending on the
+         presence and supported formats of the buffer.
 
         Args:
-            bulk (bytearray or list): If the chunk that passes the argument is
-              a binary type, bulk is an array of bytes, otherwise it is a list
-              of strings.
+            bulk
         """
         raise NotImplementedError()
 
@@ -514,7 +536,7 @@ class ProxyOutput(Plugin):
             tag (str): Data tag.
             ds (datatream): Data stream.
         """
-        # put data stream to the queue, block if necessary.
+        # Put data stream to the queue, block if necessary.
         st = time.time()
         self.send_queue.put(ds, True)
         latency = time.time() - st
@@ -629,7 +651,7 @@ def validate_plugin_info(adir):
             mod = load_module(fname, pypath)
             pclass = _infer_plugin_class(mod, pr, fname)
             if pclass is None:
-                # has invalid class, break immediately to report
+                # Has invalid class, break immediately to report
                 break
             cname = pclass.__name__
             pname = '{}.{}'.format(pr, cname.lower())
@@ -730,19 +752,25 @@ class DummyOutput(Output):
         Args:
             echo: Whether print output or not.
         """
+        logging.info("DummyOutput.__init__")
         formatter = StdoutFormatter()
-        abuffer = MemoryBuffer(self, False, 1, 1)
-        super(DummyOutput, self).__init__(formatter, abuffer)
+        super(DummyOutput, self).__init__(formatter, None)
         self.bulks = []
         self.echo = echo
 
     def _write(self, bulk):
-        """Write a bulk.
+        """Write a bulk to the output.
+
+        NOTE: A bulk can have the following types:
+        - str: When there is no buffer
+        - bytearray: When there is a buffer of binary format
+        - list: When there is a buffer of string format
+
+        An output plugin must support various bulk types depending on the
+         presence and supported formats of the buffer.
 
         Args:
-            bulk (bytearray or list): If the chunk that passes the argument is
-              a binary type, bulk is an array of bytes, otherwise it is a list
-              of strings.
+            bulk
         """
         if type(bulk) is list:
             if self.echo:
@@ -787,7 +815,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
     def base_input_prefix(prefix):
         return 'i' if prefix in ['it', 'ir'] else prefix
 
-    # create each type module
+    # Create each type module
     for _prefix in prefixes:
         prefix = base_input_prefix(_prefix)
         fname = '{}_{}.py'.format(prefix, file_name)
@@ -801,7 +829,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
                               base_name=basen)
             f.write(code)
 
-    # create README
+    # Create README
     readme_file = os.path.join(plugin_dir, 'README.md')
     with open(readme_file, 'wt') as f:
         tpl = env.get_template('tmpl_readme.md')
@@ -810,7 +838,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
                           base_name=basen, file_name=file_name)
         f.write(code)
 
-    # create test file
+    # Create test file
     test_file = os.path.join(plugin_dir, 'test_{}.py'.format(file_name))
     with open(test_file, 'wt') as f:
         tpl = env.get_template('tmpl_unittest.py')
@@ -820,7 +848,7 @@ def init_plugin_dir(prefixes, file_name, class_name, pdir):
                           type_names=typens, file_name=file_name)
         f.write(code)
 
-    # create __init__.py
+    # Create __init__.py
     init_file = os.path.join(plugin_dir, '__init__.py')
     with open(init_file, 'wt') as f:
         pass
@@ -863,7 +891,7 @@ def create_plugin_by_name(plugin_name, args):
             __import__(path)
         except ImportError:
             if i == 0:
-                pass  # for external plugins
+                pass  # For external plugins
             else:
                 raise ValueError("There is no plugin '{}'".
                                  format(plugin_name))

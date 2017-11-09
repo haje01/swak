@@ -6,21 +6,32 @@ import click
 from six.moves import range
 
 from swak.plugin import RecordInput
+# from swak.data import MultiDataStream
+
+YIELD_STEP = 10
+
+DEFAULT_NUMBER = 3
+DEFAUTL_FIELD = 1
+DEFAULT_DELAY = 0
 
 
 class Counter(RecordInput):
-    """Counter input plugin class."""
+    """Counter input plugin class.
 
-    def __init__(self, max_count, field, delay):
+    Output number of count.
+    """
+
+    def __init__(self, number=DEFAULT_NUMBER, field=DEFAUTL_FIELD,
+                 delay=DEFAULT_DELAY):
         """Init.
 
         Args:
-            max_count: Maximum count..
-            field: Field count.
+            number (int): Number to count.
+            field (int): Field number.
             delay: Delay time in seconds before next read.
         """
         super(Counter, self).__init__()
-        self.max_count = max_count
+        self.number = number
         self.field = field
         self.delay = delay
         self.last_time = None
@@ -34,34 +45,59 @@ class Counter(RecordInput):
         Yields:
             dict: A record
         """
-        last_time = None
-        for idx in range(self.max_count):
-            cur_time = time.time()
-            if last_time is None:
-                last_time = cur_time
+        last_time = time.time()
+        for idx in range(self.number):
             if not (self.delay is None or self.delay == 0):
-                if cur_time - last_time < self.delay:
-                    yield {}
+                # wait delay
+                while True:
+                    diff = time.time() - last_time
+                    if diff < self.delay:
+                        yield {}
+                    else:
+                        break
 
             record = {}
             for f in range(self.field):
                 key = "f{}".format(f + 1)
                 record[key] = idx + 1
-            last_time = cur_time
+            last_time = time.time()
             yield record
+
+    # def generate_stream(self, gen_data, stop_event):
+    #     """Generate data stream from data generator.
+
+    #     Args:
+    #         gen_data (function): Data generator function.
+    #         stop_event (threading.Event): Stop event
+
+    #     Yields:
+    #         tuple: (tag, DataStream)
+    #     """
+    #     times = []
+    #     datas = []
+    #     for i, event in enumerate(gen_data(stop_event)):
+    #         utime, data = event
+    #         times.append(utime)
+    #         datas.append(data)
+    #         if i % YIELD_STEP == 0:
+    #             yield self.tag, MultiDataStream(times, datas)
+    #             times = []
+    #             datas = []
+    #     # yield remain data
+    #     yield self.tag, MultiDataStream(times, datas)
 
 
 @click.command(help="Generate incremental numbers.")
-@click.option('-c', '--count', default=3, show_default=True, help="Count to "
-              "emit.")
-@click.option('-f', '--field', default=1, show_default=True, help="Count of "
-              "fields.")
-@click.option('-d', '--delay', default=0.0, show_default=True, help="Delay "
-              "seconds before next count.")
+@click.option('-n', '--number', default=DEFAULT_NUMBER, show_default=True,
+              help="Number to emit.")
+@click.option('-f', '--field', default=DEFAUTL_FIELD, show_default=True,
+              help="Number of fields.")
+@click.option('-d', '--delay', default=DEFAULT_DELAY, show_default=True,
+              help="Delay seconds before next count.")
 @click.pass_context
-def main(ctx, count, field, delay):
+def main(ctx, number, field, delay):
     """Plugin entry."""
-    return Counter(count, field, delay)
+    return Counter(number, field, delay)
 
 
 if __name__ == '__main__':

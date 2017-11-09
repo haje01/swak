@@ -22,11 +22,11 @@ def init_agent_with_cmds(cmds):
 def test_core_testrun(capfd):
     """Test test run relations."""
     # test parse and validate commands
-    cmds = parse_and_validate_cmds('i.counter --count 4 --field 3', True,
+    cmds = parse_and_validate_cmds('i.counter --number 4 --field 3', True,
                                    False)
     assert len(cmds) == 1
     assert cmds[0][0] == 'i.counter'
-    assert cmds[0][1] == '--count'
+    assert cmds[0][1] == '--number'
     assert cmds[0][2] == '4'
     assert cmds[0][3] == '--field'
 
@@ -71,14 +71,14 @@ def test_core_agent_process(capfd):
     def init(cmds):
         return init_agent_with_cmds(cmds)
     # one step
-    agent, input_pl = init('i.counter -c 1 | o.stdout b.memory -c 1 -r 1')
+    agent, input_pl = init('i.counter -n 1 | o.stdout b.memory -c 1 -r 1')
     agent.pluginpod.simple_process(input_pl)
     out, _ = capfd.readouterr()
     # no output for buffer_max_chunk == 1
     assert out == ''
 
     # two step
-    agent, input_pl = init('i.counter -c 2 | o.stdout b.memory -c 1 -r 1')
+    agent, input_pl = init('i.counter -n 2 | o.stdout b.memory -c 1 -r 1')
     agent.pluginpod.simple_process(input_pl)
     out, _ = capfd.readouterr()
     assert len(out.strip().split('\n')) == 1
@@ -86,7 +86,7 @@ def test_core_agent_process(capfd):
     assert "'f1': 2" not in out
 
     # third step
-    agent, input_pl = init('i.counter -c 3 | o.stdout b.memory -c 1 -r 1')
+    agent, input_pl = init('i.counter -n 3 | o.stdout b.memory -c 1 -r 1')
     agent.pluginpod.simple_process(input_pl)
     out, _ = capfd.readouterr()
     assert "'f1': 2" in out
@@ -94,7 +94,7 @@ def test_core_agent_process(capfd):
 
     # flush interval test
     # first step
-    agent, input_pl = init('i.counter -c 1 | o.stdout b.memory -f 1')
+    agent, input_pl = init('i.counter -n 1 | o.stdout b.memory -f 1')
     # first process
     agent.pluginpod.simple_process(input_pl)
     out, _ = capfd.readouterr()

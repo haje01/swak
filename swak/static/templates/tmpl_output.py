@@ -2,17 +2,25 @@
 
 {% block import_body %}
 from swak.formatter import Formatter, StdoutFormatter
-from swak.buffer import Buffer, MemoryBuffer
+from swak.buffer import Buffer
+from swak.memorybuffer import MemoryBuffer, DEFAULT_CHUNK_MAX_RECORD,\
+    DEFAULT_CHUNK_MAX_SIZE, DEFAULT_BUFFER_MAX_CHUNK
 {% endblock %}
 
 {% block class_body %}
     def _write(self, bulk):
-        """Write a bulk.
+        """Write a bulk to the output.
+
+        NOTE: A bulk can have the following types:
+        - str: When there is no buffer
+        - bytearray: When there is a buffer of binary format
+        - list: When there is a buffer of string format
+
+        An output plugin must support various bulk types depending on the
+         presence and supported formats of the buffer.
 
         Args:
-            bulk (bytearray or list): If the chunk that passes the argument is
-              a binary type, bulk is an array of bytes, otherwise it is a list
-              of strings.
+            bulk
         """
         raise NotImplementedError()
 {% endblock %}
@@ -56,9 +64,18 @@ def f_stdout(timezone):
 
 # MODIFY FOLLOWING BUFFER INIT CODE TO FIT YOUR OUTPUT PLUGIN
 @main.command('b.memory', help="Memory buffer for this output.")
-@click.option('-f', '--flush-interval', default=None, show_default=True,
-              help="Flush interval.")
-def b_memory(flush_interval):
+@click.option('-f', '--flush-interval', default=None, type=str,
+              show_default=True, help="Flush interval.")
+@click.option('-r', '--chunk-max-record', default=DEFAULT_CHUNK_MAX_RECORD,
+              type=int, show_default=True, help="Maximum records per chunk.")
+@click.option('-s', '--chunk-max-size', default=DEFAULT_CHUNK_MAX_SIZE,
+              show_default=True, help="Maximum chunks per buffer.")
+@click.option('-c', '--buffer-max-chunk', default=DEFAULT_BUFFER_MAX_CHUNK,
+              show_default=True, help="Maximum chunks per buffer.")
+def b_memory(flush_interval, chunk_max_record, chunk_max_size,
+             buffer_max_chunk):
     """Formatter entry."""
-    return MemoryBuffer(None, False, flush_interval=flush_interval)
+    return MemoryBuffer(None, False, flush_interval=flush_interval,
+                        buffer_max_chunk=buffer_max_chunk,
+                        chunk_max_record=chunk_max_record)
 {% endblock %}

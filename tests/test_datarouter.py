@@ -61,7 +61,7 @@ def test_datarouter_basic3(agent, output, filter):
     # unmatched data goes to default output
     router.emit("foo", time.time(), {"k": "v"})
     agent.flush()
-    assert 'foo' in router.def_output.buffer.chunks[0].bulk[0]
+    assert 'foo' in router.def_output.bulks[0]
     assert len(output.bulks) == 0
 
 

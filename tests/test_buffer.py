@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from swak.buffer import MemoryBuffer
+from swak.memorybuffer import MemoryBuffer
 from swak.exception import ConfigError
 
 

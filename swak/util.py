@@ -306,7 +306,7 @@ def parse_and_validate_cmds(cmds, check_input, check_output=None):
             raise ConfigError("plugin commands must starts with input "
                               "plugin.")
         if check_output and i == last_idx:
-            # last command must be a tag command or output plugin
+            # Last command must be a tag command or output plugin
             if cmd != 'tag' and not cmd.startswith('o.'):
                 raise ConfigError("'sources' plugin commands must ends with a "
                                   "tag command or output plugin.")

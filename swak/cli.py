@@ -78,9 +78,9 @@ def validate_init_args(file_name, class_name):
     return True
 
 
-# if not packeged into binary
+# If not packeged into binary
 if not getattr(sys, 'frozen', False):
-    # support init command
+    # Support init command
     @main.command(help='Init new plugin package.')
     @click.option('-t', '--type', "ptypes", type=click.Choice(INIT_PREFIX),
                   default="m", show_default=True, multiple=True,
@@ -97,7 +97,7 @@ if not getattr(sys, 'frozen', False):
             sys.exit(-1)
         prepare_cli(ctx)
 
-        # check duplicate plugin
+        # Check duplicate plugin
         for i in range(2):
             pnames = set([pi.pname for pi in iter_plugins(i == 0)])
             for ptype in ptypes:
@@ -108,7 +108,7 @@ if not getattr(sys, 'frozen', False):
                                      "\n".format(pfname, ptypen))
                     sys.exit(-1)
 
-        # check duplicate input types
+        # Check duplicate input types
         if 'it' in ptypes and 'ir' in ptypes:
             sys.stderr.write("Text input & Record input plugins are mutually "
                              "exclusive.\n")
@@ -158,7 +158,7 @@ def desc(ctx, plugin, subcmd):
     """
     prepare_cli(ctx)
 
-    for i in range(2):  # standard / external plugins
+    for i in range(2):  # Standard / external plugins
         for pi in iter_plugins(i == 0):
             if pi.pname != plugin:
                 continue

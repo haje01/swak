@@ -66,11 +66,11 @@ class Pipeline(object):
         if len(self.modifiers) == 0:
             return ds
 
-        # give modifiers chance to do stream specific operation
+        # Give modifiers chance to do stream specific operation
         for mod in self.modifiers:
             mod.prepare_for_stream(tag, ds)
 
-        # modify each records
+        # Modify each records
         logging.debug("modify_stream")
         times = []
         records = []

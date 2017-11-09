@@ -1,3 +1,5 @@
+"""This module implements a windows service."""
+
 #!/usr/bin/env python
 import sys
 import logging
@@ -19,6 +21,7 @@ check_python_version()
 
 
 def prog_name():
+    """Get executable file name."""
     if getattr(sys, 'frozen', False):
         return "swaksvc.exe"
     else:
@@ -26,6 +29,7 @@ def prog_name():
 
 
 def show_usage():
+    """Show usages."""
     print("Swak version {}".format(VERSION))
     print("================== Swak Commands  ==================")
     ctx = click.Context(main, info_name="{} cli".format(prog_name()))
@@ -48,27 +52,32 @@ if len(sys.argv) >= 2:
 
 
 home, cfg = select_and_parse(None)
-# init required directories
+# Init required directories
 init_home(home, cfg)
-# init logger
+# Init logger
 logconfig.dictConfig(cfg['logger'])
 
 
 class SwakService(win32serviceutil.ServiceFramework):
+    """Swak service class."""
+
     _svc_name_ = cfg['svc_name']
     _svc_display_name_ = cfg['svc_dname']
 
     def __init__(self, args):
+        """Init."""
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
 
-    def SvcStop(self):
+    def SvcStop(self):  # NOQA
+        """Stop service."""
         servicemanager.LogInfoMsg("Service is stopping.")
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         win32event.SetEvent(self.hWaitStop)
         self.ReportServiceStatus(win32service.SERVICE_STOPPED)
 
-    def SvcDoRun(self):
+    def SvcDoRun(self):  # NOQA
+        """Service main."""
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         servicemanager.LogInfoMsg("Service is starting.")
         rc = None
@@ -86,11 +95,13 @@ class SwakService(win32serviceutil.ServiceFramework):
 
 
 def log_header():
+    """Log service start."""
     logging.critical("=============== Start service ===============")
     # cfg_path = get_cfg_path()
 
 
 def log_footer():
+    """Log service finish."""
     logging.critical("=============== Finish service ===============")
 
 

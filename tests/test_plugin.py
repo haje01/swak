@@ -9,7 +9,7 @@ from swak.plugin import iter_plugins, import_plugins_package, TextInput,\
     Parser, get_plugins_dir, Output
 # from swak.util import test_logconfig
 from swak.const import PLUGINDIR_PREFIX
-from swak.buffer import MemoryBuffer
+from swak.memorybuffer import MemoryBuffer
 
 
 # test_logconfig()

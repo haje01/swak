@@ -150,17 +150,21 @@ class PluginPod(object):
     def process(self, stop_event):
         """Read from input and emit through router for service.
 
+        This funciont is for service agent.
+
         Args:
             stop_event (threading.Event): Stop event
         """
         self.start()
         logging.info("start processing")
-        # read input and emit to data router until input finished.
+        # Read input and emit to data router until input finished.
         for tag, ds in self.input.read(stop_event):
-            if not ds.empty():
+            # Tag is none when no data from receiving queue of ProxyInput in
+            #  aggregated thread model.
+            if not(tag is None or ds.empty()):
                 self.router.emit_stream(tag, ds)
-                # TODO: sparse flushing problem?
-                self.may_flushing()
+            # Need to check for flushing even if there is no data
+            self.may_flushing()
         logging.info("stop event received")
         self.stop()
         self.shutdown()
@@ -168,7 +172,7 @@ class PluginPod(object):
     def simple_process(self, input_pl):
         """Read from input and emit through router.
 
-        This funciont is for test run mode.
+        This funciont is for test agent.
 
         Args:
             input_pl (swak.plugin.Input): Input plugin to read data.
@@ -177,7 +181,7 @@ class PluginPod(object):
         for tag, ds in ainput.read(None):
             if not ds.empty():
                 self.router.emit_stream(tag, ds)
-                # TODO: sparse flushing problem?
+                # Check forflushing only when there is data.
                 self.may_flushing()
 
     # def process_one(self, input_pl=None):

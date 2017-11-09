@@ -30,15 +30,15 @@ class SwakDaemon(Daemon):
 @click.pass_context
 def daemon(ctx, home):
     """Daemon CLI entry."""
-    # select home and parse its config
+    # Select home and parse its config
     home, cfg = select_and_parse(home)
-    # init required directories
+    # Init required directories
     init_home(home, cfg)
-    # init logger
+    # Init logger
     logconfig.dictConfig(cfg['logger'])
 
     ctx.obj['home'] = home
-    # make pid_path
+    # Make pid_path
     pid_path = get_pid_path(home, cfg['svc_name'])
     ctx.obj['pid_path'] = pid_path
 

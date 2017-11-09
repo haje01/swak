@@ -56,7 +56,7 @@ class GlobMatchPattern(MatchPattern):
                 i += 1
                 continue
             elif pat[i: i + 2] == "**":
-                # recursive any
+                # Recursive any
                 if dot:
                     regex[-1] += "(?![^\\.])"
                     dot = False
@@ -76,10 +76,10 @@ class GlobMatchPattern(MatchPattern):
             elif c == ".":
                 dot = True
             elif c == "*":
-                # any
+                # Any
                 regex[-1] += "[^\\.]*"
             elif c == "{":
-                # or
+                # Or
                 stack.append([])
                 regex.append('')
             elif c == "}" and stack:

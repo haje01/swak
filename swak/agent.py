@@ -99,7 +99,7 @@ class InputThread(BaseThread):
         self.pluginpod.name = self.name = "InTrd-{}".format(tag)
         super(InputThread, self).init_from_commands(tag, cmds, True)
 
-        # makes a ProxyOutput if there is no output plugin.
+        # Makes a ProxyOutput if there is no output plugin.
         assert len(self.plugins) > 0, "No plugins were created."
         last_plugin = self.plugins[-1]
         if not isinstance(last_plugin, Output):
@@ -125,11 +125,11 @@ class OutputThread(BaseThread):
         self.pluginpod.name = self.name = "OutTrd-{}".format(tag)
         super(OutputThread, self).init_from_commands(tag, cmds, False)
 
-        # confirm no input plugin.
+        # Confirm no input plugin.
         assert len(self.plugins) > 0
         for plugin in self.plugins:
             assert not isinstance(plugin, Input)
-        # makes a ProxyInput and insert as first plugin
+        # Makes a ProxyInput and insert as first plugin
         proxy_input = ProxyInput()
         self.register_plugin(tag, proxy_input, True)
         self.proxy_input = proxy_input
@@ -166,7 +166,7 @@ class ServiceAgent(BaseAgent):
             return False
         try:
             validate_cfg(cfg)
-            # init logger
+            # Init logger
             cfg = main_logger_config(cfg)
             if 'logger' in cfg:
                 lcfg = cfg['logger']
@@ -178,7 +178,7 @@ class ServiceAgent(BaseAgent):
             logging.info("effective config: \n{}".
                          format(json.dumps(cfg, indent=1)))
             self.init_threads(cfg, dryrun)
-            # more init code here..
+            # More init code here..
         except ConfigError as e:
             logging.error(e)
             sys.stderr.write("{}\n".format(e))
@@ -237,12 +237,12 @@ class ServiceAgent(BaseAgent):
 
         self.stop_event = threading.Event()
 
-        # create output threads first.
+        # Create output threads first.
         if 'matches' in cfg:
             for tag, cmd in cfg['matches'].items():
                 create_output_thread(tag, cmd, self.stop_event)
 
-        # then create input threads
+        # Then create input threads
         for strcmd in cfg['sources']:
             proxy_info = create_input_thread(None, strcmd, self.stop_event)
             # Link input & output threads if needed
@@ -268,7 +268,7 @@ class ServiceAgent(BaseAgent):
         logging.critical("starting service agent '{}'".format(self.name))
         assert len(self.input_threads) + len(self.output_threads) > 0, \
             "There are no threads to start."
-        # start output threads first.
+        # Start output threads first.
         for otrd in self.output_threads:
             otrd.start()
         for itrd in self.input_threads:
@@ -276,7 +276,7 @@ class ServiceAgent(BaseAgent):
 
     def stop(self):
         """Stop service."""
-        # stop threads by stop event.
+        # Stop threads by stop event.
         logging.critical("stopping service agent '{}'".format(self.name))
         self.stop_event.set()
 
@@ -287,7 +287,7 @@ class ServiceAgent(BaseAgent):
         for itrd in self.input_threads:
             itrd.join()
 
-        # other shutdown processes goes here.
+        # Other shutdown processes goes here.
 
         logging.critical("service agent has been successfully shut down for "
                          "'{}'".format(self.name))
@@ -297,11 +297,12 @@ if __name__ == '__main__':
     cfgs = '''
 logger:
     root:
-        level: CRITICAL
+        level: INFO
 
 sources:
     - i.counter -c 100 | m.reform -w tag t1 | tag test1
     - i.counter -c 100 | m.reform -w tag t2 | tag test2
+    - i.counter -c 100 | m.reform -w tag t3 | tag test3
 
 matches:
     test*: o.stdout
@@ -310,6 +311,6 @@ matches:
     agent = ServiceAgent()
     agent.init_from_cfg(cfg, False)
     agent.start()
-    time.sleep(3)
+    time.sleep(1)
     agent.stop()
     agent.shutdown()

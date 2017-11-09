@@ -7,7 +7,9 @@ import click
 
 from swak.plugin import Output
 from swak.formatter import Formatter, StdoutFormatter
-from swak.buffer import Buffer, MemoryBuffer
+from swak.buffer import Buffer
+from swak.memorybuffer import MemoryBuffer, DEFAULT_CHUNK_MAX_RECORD,\
+    DEFAULT_CHUNK_MAX_SIZE, DEFAULT_BUFFER_MAX_CHUNK
 
 
 class Stdout(Output):
@@ -20,9 +22,8 @@ class Stdout(Output):
             formatter (Formatter): Swak formatter for this output.
             abuffer (Buffer): Swak buffer for this output.
         """
+        logging.info("Stdout.__init__")
         formatter = formatter if formatter is not None else StdoutFormatter()
-        if abuffer is None:
-            abuffer = MemoryBuffer(self, False, 1, 1)
         super(Stdout, self).__init__(formatter, abuffer)
 
     def _write(self, bulk):
@@ -79,11 +80,14 @@ def f_stdout(timezone):
 @main.command('b.memory', help="Memory buffer for this output.")
 @click.option('-f', '--flush-interval', default=None, type=str,
               show_default=True, help="Flush interval.")
-@click.option('-c', '--buffer-max-chunk', default=64, show_default=True,
-              help="Maximum chunks per buffer.")
-@click.option('-r', '--chunk-max-record', default=None, type=int,
-              show_default=True, help="Maximum records per chunk.")
-def b_memory(flush_interval, buffer_max_chunk, chunk_max_record):
+@click.option('-r', '--chunk-max-record', default=DEFAULT_CHUNK_MAX_RECORD,
+              type=int, show_default=True, help="Maximum records per chunk.")
+@click.option('-s', '--chunk-max-size', default=DEFAULT_CHUNK_MAX_SIZE,
+              show_default=True, help="Maximum chunks per buffer.")
+@click.option('-c', '--buffer-max-chunk', default=DEFAULT_BUFFER_MAX_CHUNK,
+              show_default=True, help="Maximum chunks per buffer.")
+def b_memory(flush_interval, chunk_max_record, chunk_max_size,
+             buffer_max_chunk):
     """Formatter entry."""
     return MemoryBuffer(None, False, flush_interval=flush_interval,
                         buffer_max_chunk=buffer_max_chunk,

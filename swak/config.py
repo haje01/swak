@@ -198,11 +198,7 @@ def _validate_agent_cfg(cfg):
             raise ConfigError("A source should start with input "
                               "plugin.")
 
-    # # log
-    # if 'logger' in cfg:
-    #     raise ConfigError("Agent can not have individual logger config. "
-    #                       "You can only set log level.")
-    # sources
+    # Sources
     if 'sources' not in cfg:
         raise ConfigError("No 'sources' field exists in config.")
     if cfg['sources'] is None:
@@ -220,7 +216,7 @@ def _validate_agent_cfg(cfg):
         first = cmds[0][0]
         check_source_input(first)
 
-    # maches
+    # Matches
     if 'matches' in cfg:
         matches = cfg['matches']
         if matches is None:
