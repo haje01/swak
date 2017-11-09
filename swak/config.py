@@ -236,6 +236,6 @@ def _validate_agent_cfg(cfg):
 
     for stag in source_tags:
         for mtag in match_tags:
-            if Rule(mtag, None).match(stag) is None:
+            if not Rule(mtag, None).match(stag):
                 raise ConfigError("source tag '{}' does not have corresponding"
                                   " match tag.".format(stag))

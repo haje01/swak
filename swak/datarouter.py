@@ -101,9 +101,6 @@ class Rule(object):
             collector: Modifier or Output
         """
         patterns = [MatchPattern().create(ptrn) for ptrn in pattern.split()]
-        if len(patterns) == 0:
-            import pdb; pdb.set_trace()  # breakpoint c1f247df //
-            pass
         self.pattern = patterns[0] if len(patterns) == 1 else\
             OrMatchPattern(patterns)
         self.collector = collector

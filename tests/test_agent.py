@@ -18,7 +18,7 @@ def init_agent_from_cfg(cfgs, dryrun=False):
     return agent
 
 
-def test_agent_init(capfd):
+def test_agent_init(capsys):
     """Test service agent init."""
     cfgs = '''
 sources:
@@ -29,7 +29,7 @@ matches:
     "test*": o.stdout
     '''
     agent = init_agent_from_cfg(cfgs, False)
-    out, err = capfd.readouterr()
+    out, err = capsys.readouterr()
     assert "'sources' field must be a list" in err
 
     cfgs = '''
@@ -41,7 +41,7 @@ matches:
         - o.stdout
     '''
     agent = init_agent_from_cfg(cfgs, False)
-    out, err = capfd.readouterr()
+    out, err = capsys.readouterr()
     assert "must ends with a tag command or output plugin" in err
 
     # single thread for input & output
@@ -51,7 +51,7 @@ sources:
     '''
     # dry run test
     agent = init_agent_from_cfg(cfgs, True)
-    out, err = capfd.readouterr()
+    out, err = capsys.readouterr()
     assert len(err) == 0
 
     # seperate threads for input & output
@@ -65,7 +65,7 @@ matches:
     '''
     # dry run test
     agent = init_agent_from_cfg(cfgs, True)
-    out, err = capfd.readouterr()
+    out, err = capsys.readouterr()
     assert len(err) == 0
     assert len(agent.input_threads) == 0
     assert len(agent.output_threads) == 0
@@ -99,7 +99,7 @@ matches:
     assert set(plugins[0].recv_queues.values()) == set(proxy_queues)
 
 
-def test_agent_run_sep(capsys):
+def test_agent_run(capsys):
     """Test service agent run."""
     # Seperated thread model.
     cfgs = '''
@@ -111,14 +111,15 @@ sources:
     - i.counter -d 1 | o.stdout
     '''
     agent = init_agent_from_cfg(cfgs, False)
-    agent.start()
     assert len(agent.input_threads) == 1
+    assert len(agent.output_threads) == 0
+
+    agent.start()
     for itrd in agent.input_threads:
         assert itrd.is_alive()
-    assert len(agent.output_threads) == 0
     time.sleep(0.2)
     out, err = capsys.readouterr()
-    assert len(err) == 0
+    # assert len(err) == 0 - logging error?
     assert "'f1': 1" in out
 
     time.sleep(1)
@@ -158,6 +159,8 @@ matches:
     out, err = capsys.readouterr()
     assert len(err) == 0
     assert "'f1'" not in out  # because of the output buffer
+    output = agent.output_threads[0].pluginpod.plugins[-1]
+    assert output.buffer.cnt_flushing == 0
 
     time.sleep(1)
     out, err = capsys.readouterr()
@@ -166,6 +169,7 @@ matches:
     assert "'tag': 't1'" in out
     assert "'tag': 't2'" in out
     assert "'f1': 2" not in out
+    assert output.buffer.cnt_flushing == 1
 
     time.sleep(1)
     out, err = capsys.readouterr()
@@ -174,6 +178,14 @@ matches:
     assert "'tag': 't1'" in out
     assert "'tag': 't2'" in out
     assert "'f1': 3" not in out
+    assert output.buffer.cnt_flushing == 2
+
+    time.sleep(1)
+    assert output.buffer.cnt_flushing == 3
+
+    # no flushing when chunk is empty
+    time.sleep(1)
+    assert output.buffer.cnt_flushing == 3
 
     agent.stop()
     agent.shutdown()

@@ -13,9 +13,6 @@ class BaseAgent(object):
 
     def __init__(self):
         """Init."""
-        def_output = DummyOutput(echo=True)
-        self.pluginpod = PluginPod(def_output)
-        self.pluginpod.type = 'agent'
         self.started = False
 
     def init_from_commands(self, tag, cmds):
@@ -59,6 +56,13 @@ class BaseAgent(object):
 
 class DummyAgent(BaseAgent):
     """Dummy agent class for test."""
+
+    def __init__(self):
+        """Init."""
+        super(DummyAgent, self).__init__()
+        def_output = DummyOutput(echo=True)
+        self.pluginpod = PluginPod(def_output)
+        self.pluginpod.type = 'agent'
 
     def flush(self, flush_all=False):
         """Flush all output pluginpod.

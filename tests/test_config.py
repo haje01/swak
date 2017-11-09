@@ -19,7 +19,7 @@ def init_agent_from_cfg(cfgs, dryrun=False):
 
 def assert_cfg_error(cfgs, capsys, emsg):
     """Assert config error message."""
-    assert not init_agent_from_cfg(cfgs)
+    init_agent_from_cfg(cfgs)
     _, err = capsys.readouterr()
     assert emsg in err
 

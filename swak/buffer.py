@@ -169,9 +169,11 @@ class Buffer(object):
         while True:
             try:
                 head_chunk = self.chunks.popleft()
-                if self.output is not None:
-                    head_chunk.flush(self.output)
-                self.cnt_flushing += 1
+                # no flushing when chunk is empty
+                if not head_chunk.empty():
+                    if self.output is not None:
+                        head_chunk.flush(self.output)
+                    self.cnt_flushing += 1
                 if not flush_all:
                     break
             except IndexError:
