@@ -24,8 +24,10 @@ class Dummy(RecordInput):
     def generate_record(self):
         """Generate records.
 
-        Note: Don't do blocking operation. return an empty dict in inadequate
-            situations.
+        Note: This function can be written in synchronous or asynchronous
+         manner. But flushing with time interval does not work if this function
+         is blocking. To guarantee flushing with time interval work, return an
+         empty record in blocking situations.
 
         Yields:
             dict: A record.

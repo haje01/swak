@@ -8,8 +8,12 @@
     def generate_line(self):
         """Generate text lines.
 
-        Note: Don't do blocking operation. return an empty string in inadequate
-            situations.
+        This function can be written in synchronous or asynchronous manner. To
+         make it work asynchronously, return an empty record immediately under
+         blocking situations.
+
+        Note: When operating synchronously, flushing with time interval does
+         not work.
 
         Yields:
             str: A text line.
