@@ -18,7 +18,8 @@ from swak.config import main_logger_config, validate_cfg
 from swak.pluginpod import PluginPod
 from swak import __version__
 
-# set_log_verbosity(0)
+
+INTER_THREAD_QUEUE_SIZE = 1000
 
 
 def init_router(cmd):
@@ -105,7 +106,7 @@ class InputThread(BaseThread):
         if not isinstance(last_plugin, Output):
             # use buffering for inter-thread queue
             self.pluginpod.buffering = True
-            queue = Queue()
+            queue = Queue(INTER_THREAD_QUEUE_SIZE)
             proxy_output = ProxyOutput(queue)
             self.register_plugin(tag, proxy_output)
             return queue
@@ -283,6 +284,7 @@ class ServiceAgent(BaseAgent):
         """Stop service."""
         # Stop threads by stop event.
         logging.critical("stopping service agent '{}'".format(self.name))
+        logging.info("--{}--".format(self.stop_event))
         self.stop_event.set()
 
     def shutdown(self):
@@ -302,7 +304,7 @@ if __name__ == '__main__':
     cfgs = '''
 logger:
     root:
-        level: CRITICAL
+        level: DEBUG
 
 sources:
     - i.counter -n 100 | m.reform -w tag t1 | tag test1
@@ -314,8 +316,8 @@ matches:
     '''
     cfg = yaml.load(cfgs)
     agent = ServiceAgent()
-    agent.init_from_cfg(cfg, False)
-    agent.start()
-    time.sleep(1)
-    agent.stop()
-    agent.shutdown()
+    if agent.init_from_cfg(cfg, False):
+        agent.start()
+        time.sleep(1)
+        agent.stop()
+        agent.shutdown()

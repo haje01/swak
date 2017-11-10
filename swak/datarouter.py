@@ -34,21 +34,22 @@ class Pipeline(object):
         logging.debug("set_output {}".format(output))
         self.output = output
 
-    def emit_stream(self, tag, ds):
+    def emit_stream(self, tag, ds, stop_event):
         """Emit data stream output.
 
         Modify data and emit them.
 
         Args:
-            tag (str): data tag
-            ds (DataStream): data stream to emit
+            tag (str): Data tag.
+            ds (DataStream): Data stream to emit.
+            stop_event (threading.Event): Stop event.
 
         Returns:
             int: Adding size of the stream.
         """
         logging.debug("emit_stream")
         modified = self.modify_stream(tag, ds)
-        return self.output.emit_stream(tag, modified)
+        return self.output.emit_stream(tag, modified, stop_event)
 
     def modify_stream(self, tag, ds):
         """Modify data stream.
@@ -121,14 +122,6 @@ class Rule(object):
         return "<Rule pattern '{}' with collector '{}'>".format(self.pattern,
                                                                 self.collector)
 
-    # def emit_stream(self, ds):
-    #     """Emit data stream.
-
-    #     Args:
-    #         ds (DataStream): data stream to emit.
-    #     """
-    #     self.collector
-
 
 class Thread(object):
     """Thread class for plugins."""
@@ -173,33 +166,20 @@ class DataRouter(object):
         """
         return self.emit_stream(tag, OneDataStream(utime, record))
 
-    # def emit_multi(self, tag, utimes, records):
-    #     """Emit multiple datas.
-
-    #     Args:
-    #         tag (str): data tag.
-    #         utimes (float): data time stamps.
-    #         records (dict): Records.
-
-    #     Returns:
-    #         int: Adding size of the stream if succeeded, or None.
-    #     """
-    #     ms = MultiDataStream(utimes, records)
-    #     return self.emit_stream(tag, ms)
-
-    def emit_stream(self, tag, ds):
+    def emit_stream(self, tag, ds, stop_event):
         """Emit an data stream with tag.
 
         Args:
-            tag (str): data tag
-            ds (DataStream): data stream
+            tag (str): Data tag
+            ds (DataStream): Data stream
+            stop_event (threading.Event): Stop event.
 
         Returns:
             int: Adding size of the stream if succeeded, or None.
         """
         logging.debug("emit_stream tag '{}' ds {}".format(tag, ds))
         try:
-            adding_size = self.match(tag).emit_stream(tag, ds)
+            adding_size = self.match(tag).emit_stream(tag, ds, stop_event)
             return adding_size
         except Exception as e:
             if DEBUG:

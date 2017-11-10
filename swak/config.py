@@ -212,6 +212,9 @@ def _validate_agent_cfg(cfg):
         cmds = parse_and_validate_cmds(srccmds, True)
         tag = cmds[-1][-1]
         validate_tag(tag)
+        if tag in source_tags:
+            raise ConfigError("source tag '{}' has already been used.".
+                              format(tag))
         source_tags.add(tag)
         first = cmds[0][0]
         check_source_input(first)

@@ -7,7 +7,7 @@ from collections import namedtuple
 import logging
 import types
 import time
-from queue import Empty
+from queue import Empty, Full
 
 from swak.config import get_exe_dir
 from swak.exception import UnsupportedPython
@@ -17,6 +17,7 @@ from swak.util import get_plugin_module_name, stop_iter_when_signalled
 from swak.data import OneDataStream
 
 
+PUT_WAIT_TIME = 1.0
 PREFIX = ['i', 'p', 'm', 'o']
 
 PluginInfo = namedtuple('PluginInfo', ['fname', 'pname', 'dname', 'cname',
@@ -287,10 +288,6 @@ class TextInput(Input):
         for line in self.generate_line():
             stop_iter_when_signalled(stop_event)
 
-            if stop_event is not None:
-                if not stop_event.wait(0.0):
-                    raise StopIteration()
-
             if self.encoding is not None:
                 line = line.decode(self.encoding)
             # Test by filter function
@@ -432,27 +429,13 @@ class Output(Plugin):
         if self.buffer is not None:
             self.buffer.stop()
 
-    def emit_stream(self, tag, ds):
+    def emit_stream(self, tag, ds, stop_event):
         """Emit data stream to queue or directly to output target.
 
         Args:
-            tag (str): data tag.
-            ds (datatream): data stream.
-
-        Returns:
-            int: Adding size of the stream.
-        """
-        logging.debug("Output.emit_stream")
-        return self.handle_stream(tag, ds)
-
-    def handle_stream(self, tag, ds):
-        """Handle data stream from emit events.
-
-        Format each data and write it to buffer.
-
-        Args:
-            tag (str)
-            ds (datatream)
+            tag (str): Data tag.
+            ds (datatream): Data stream.
+            stop_event (threading.Event): Stop event.
 
         Returns:
             int: Adding size of the stream.
@@ -480,7 +463,7 @@ class Output(Plugin):
          and supported formats of the buffer.
 
         Args:
-            bulk
+            bulk:
         """
         if len(bulk) == 0:
             return
@@ -499,7 +482,7 @@ class Output(Plugin):
          presence and supported formats of the buffer.
 
         Args:
-            bulk
+            bulk:
         """
         raise NotImplementedError()
 
@@ -537,16 +520,31 @@ class ProxyOutput(Plugin):
         logging.debug("ProxyOutput queue {}".format(queue))
         self.proxy = True
 
-    def emit_stream(self, tag, ds):
+    def emit_stream(self, tag, ds, stop_event):
         """Emit data stream to inter-thread queue.
 
         Args:
             tag (str): Data tag.
             ds (datatream): Data stream.
+            stop_event (threading.Event): Stop event.
         """
+        logging.debug("ProxyOutput.emit_stream")
         # Put data stream to the queue, block if necessary.
         st = time.time()
-        self.send_queue.put(ds, True)
+
+        while True:
+            try:
+                self.send_queue.put(ds, True, PUT_WAIT_TIME)
+            except Full:
+                logging.info(" queue full!")
+                if stop_event is not None:
+                    if stop_event.wait(0.0):
+                        logging.info(" stop_event triggered!")
+                        # stop event triggered. exit.
+                        return
+            else:
+                break
+
         latency = time.time() - st
         logging.debug("ProxyOutput.emit_events - queue put latency {:.2f}".
                       format(latency))

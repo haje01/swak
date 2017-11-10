@@ -51,35 +51,42 @@ sources:
 sources:
     "test": i.counter
     ''', capsys, "'sources' field must be a list")
+
     assert_cfg_error('''
 sources:
     - o.stdout
     ''', capsys, "commands must starts with input")
+
     assert_cfg_error('''
 sources:
     - i.counter
     ''', capsys, "commands must ends with a tag command")
+
     assert_cfg_error('''
 sources:
     - {}
     ''', capsys, "each source must be a string")
+
     assert_cfg_error('''
 sources:
     - i.counter | tag foo
 matches:
     ''', capsys, "'matches' field has no declaration")
+
     assert_cfg_error('''
 sources:
     - i.counter | tag foo
 matches:
     - o.stdout
     ''', capsys, "'matches' field must be a dictionary")
+
     assert_cfg_error('''
 sources:
     - i.counter | tag foo
 matches:
     foo: {}
     ''', capsys, "each match must be a string")
+
     assert_cfg_error('''
 sources:
     - i.counter | tag foo
@@ -87,9 +94,18 @@ matches:
     boo:
         - o.stdout
     ''', capsys, "each match must be a string.")
+
     assert_cfg_error('''
 sources:
     - i.counter | tag foo
 matches:
     boo: o.stdout
     ''', capsys, "tag 'foo' does not have corresponding match tag.")
+
+    assert_cfg_error('''
+sources:
+    - i.counter | tag foo
+    - i.counter | tag foo
+matches:
+    foo: o.stdout
+    ''', capsys, "tag 'foo' has already been used.")

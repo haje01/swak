@@ -159,10 +159,10 @@ class PluginPod(object):
         logging.info("start processing")
         # Read input and emit to data router until input finished.
         for tag, ds in self.input.read(stop_event):
-            # Tag is none when no data from receiving queue of ProxyInput in
+            # Tag is None when no data from receiving queue of ProxyInput in
             #  aggregated thread model.
             if not(tag is None or ds.empty()):
-                self.router.emit_stream(tag, ds)
+                self.router.emit_stream(tag, ds, stop_event)
             # Need to check for flushing even if there is no data
             self.may_flushing()
         logging.info("stop event received")
