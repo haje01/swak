@@ -11,7 +11,7 @@ JPype1==0.6.2
 konlpy==0.4.4
 pluggy==0.5.2
 py==1.4.34
-Pygments==2.2.0
+Pygments==2.7.4
 pytest==3.2.2
 requests==2.18.4
 snowballstemmer==1.2.1
